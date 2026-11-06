@@ -1,8 +1,10 @@
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
+using eNote.Application.Constants;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Identity;
 
@@ -49,6 +51,70 @@ public sealed class UserAccountServiceTests
             service.CreateUserAsync("other", "jdoe@example.com", "Password1!", null, null));
 
         Assert.Equal(Messages.EmailTaken, exception.Message);
+    }
+
+    [Theory]
+    [InlineData("DuplicateUserName", "Korisničko ime je već zauzeto.")]
+    [InlineData("DuplicateEmail", "Email adresa je već registrovana.")]
+    public async Task CreateUserAsync_ThrowsConflict_WhenIdentityReportsADuplicate(string errorCode, string expectedMessage)
+    {
+        var harness = await CreateHarnessAsync();
+        harness.UserManager.UserValidators.Add(new FailingUserValidator(errorCode));
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            harness.Service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null));
+
+        Assert.Equal(expectedMessage, exception.Message);
+    }
+
+    [Theory]
+    [InlineData(DbConstraintNames.UserNameUniqueIndex, "Korisničko ime je već zauzeto.")]
+    [InlineData(DbConstraintNames.UserEmailUniqueIndex, "Email adresa je već registrovana.")]
+    public async Task CreateUserAsync_ThrowsConflict_WhenTheDatabaseRefusesADuplicate(string indexName, string expectedMessage)
+    {
+        var harness = await CreateHarnessAsync();
+        harness.UserManager.UserValidators.Add(new UniqueViolationUserValidator(indexName));
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            harness.Service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null));
+
+        Assert.Equal(expectedMessage, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_KeepsTheDatabaseError_ForAnotherIndex()
+    {
+        var harness = await CreateHarnessAsync();
+        harness.UserManager.UserValidators.Add(new UniqueViolationUserValidator("IX_Other"));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            harness.Service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null));
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_ThrowsConflict_WhenIdentityReportsADuplicateEmail()
+    {
+        var harness = await CreateHarnessAsync();
+        var userId = await harness.Service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        harness.UserManager.UserValidators.Add(new FailingUserValidator("DuplicateEmail"));
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            harness.Service.UpdateExistingUserAsync(userId, "new@example.com", null, null));
+
+        Assert.Equal("Email adresa je već registrovana.", exception.Message);
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_ThrowsConflict_WhenTheDatabaseRefusesADuplicateEmail()
+    {
+        var harness = await CreateHarnessAsync();
+        var userId = await harness.Service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        harness.UserManager.UserValidators.Add(new UniqueViolationUserValidator(DbConstraintNames.UserEmailUniqueIndex));
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            harness.Service.UpdateExistingUserAsync(userId, "new@example.com", null, null));
+
+        Assert.Equal("Email adresa je već registrovana.", exception.Message);
     }
 
     [Fact]
@@ -383,6 +449,22 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task ChangePasswordAsync_ThrowsCurrentPasswordInvalid_AndKeepsThePassword_WhenCurrentPasswordIsWrong()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        var exception = await Assert.ThrowsAsync<CurrentPasswordInvalidException>(() =>
+            service.ChangePasswordAsync(userId, "Wrong-password1!", "Newpassword1!"));
+
+        Assert.Equal("Trenutna lozinka nije ispravna.", exception.Message);
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.True(await harness.UserManager.CheckPasswordAsync(user, "Password1!"));
+    }
+
+    [Fact]
     public async Task VerifyPasswordAsync_ChecksTheStoredPassword()
     {
         var harness = await CreateHarnessAsync();
@@ -392,6 +474,21 @@ public sealed class UserAccountServiceTests
 
         Assert.True(await service.VerifyPasswordAsync(userId, "Password1!"));
         Assert.False(await service.VerifyPasswordAsync(userId, "Wrong1!"));
+    }
+
+    [Fact]
+    public async Task CloseAccountAsync_Succeeds_WhenAnotherUserHoldsANameBuiltFromTheUserId()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        var userId = await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        await service.CreateUserAsync($"obrisan-{userId}", "other@example.com", "Password1!", null, null);
+
+        await service.CloseAccountAsync(userId);
+
+        var closed = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.False(closed.IsActive);
+        Assert.Equal("Obrisani", closed.FirstName);
     }
 
     [Fact]
@@ -434,8 +531,8 @@ public sealed class UserAccountServiceTests
         var closed = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.Equal("Obrisani", closed.FirstName);
         Assert.Equal("korisnik", closed.LastName);
-        Assert.Equal($"obrisan-{closed.Id}", closed.UserName);
-        Assert.Equal($"obrisan-{closed.Id}@enote.invalid", closed.Email);
+        Assert.Matches("^obrisan-[0-9a-f]{32}$", closed.UserName);
+        Assert.Equal($"{closed.UserName}@enote.invalid", closed.Email);
         Assert.Null(closed.PhoneNumber);
         Assert.Null(closed.DateOfBirth);
         Assert.Null(closed.PasswordHash);
@@ -501,6 +598,18 @@ public sealed class UserAccountServiceTests
 
     private static MemoryStream PngStream() =>
         new([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    private sealed class FailingUserValidator(string errorCode) : IUserValidator<AppUser>
+    {
+        public Task<IdentityResult> ValidateAsync(UserManager<AppUser> manager, AppUser user) =>
+            Task.FromResult(IdentityResult.Failed(new IdentityError { Code = errorCode, Description = "English text." }));
+    }
+
+    private sealed class UniqueViolationUserValidator(string indexName) : IUserValidator<AppUser>
+    {
+        public Task<IdentityResult> ValidateAsync(UserManager<AppUser> manager, AppUser user) =>
+            throw new DbUpdateException("Save failed.", new Exception($"Cannot insert duplicate key row with unique index '{indexName}'."));
+    }
 
     private sealed class ThrowingUserValidator : IUserValidator<AppUser>
     {

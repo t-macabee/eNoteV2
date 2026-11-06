@@ -8,6 +8,12 @@ public static class DbConstraintNames
 
     public const string InstrumentTypeTypeUniqueIndex = "UX_InstrumentType_Type";
 
+    public const string CityNameUniqueIndex = "UX_City_Name";
+
+    public const string UserNameUniqueIndex = "UserNameIndex";
+
+    public const string UserEmailUniqueIndex = "UX_AspNetUsers_NormalizedEmail";
+
     public const string NotificationUserRentalCreatedAtUniqueIndex = "IX_Notification_UserId_RentalId_CreatedAt";
 
     public const string AssignmentSubmissionAssignmentIdStudentIdUniqueIndex = "UX_AssignmentSubmission_AssignmentId_StudentId";

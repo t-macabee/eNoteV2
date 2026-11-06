@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
@@ -26,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
-    _sessionExpired = context.read<SessionController>().consumeSessionExpired();
+    _sessionExpired = context.read<AuthState>().consumeSessionExpired();
   }
 
   @override
@@ -58,9 +57,7 @@ class _LoginScreenState extends State<LoginScreen>
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             if (_sessionExpired) ...[
-              const ErrorBanner(
-                message: 'Vaša sesija je istekla. Prijavite se ponovo.',
-              ),
+              const ErrorBanner(message: AuthState.sessionExpiredMessage),
               const SizedBox(height: AppSpacing.lg),
             ],
             AppTextField(

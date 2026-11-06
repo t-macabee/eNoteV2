@@ -211,4 +211,34 @@ void main() {
     expect(controller.profile, isNull);
     expect(controller.bootstrapError, isNotNull);
   });
+
+  test('logoutAndRevoke clears the notifications of the user', () async {
+    final http = _stub(_bootstrapResponses());
+    final authState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: http,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: http,
+    );
+    final notifications = NotificationController(
+      apiClient: apiClient,
+      endpoint: 'student/notifications',
+    );
+    final controller = SessionController(
+      apiClient: apiClient,
+      authState: authState,
+      notifications: notifications,
+    );
+    await controller.bootstrap();
+    expect(notifications.unreadCount, 2);
+
+    await controller.logoutAndRevoke();
+
+    expect(notifications.notifications, isEmpty);
+    expect(notifications.unreadCount, 0);
+  });
 }

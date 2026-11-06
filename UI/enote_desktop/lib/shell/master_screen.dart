@@ -23,7 +23,6 @@ class MasterScreen extends StatefulWidget {
 class _MasterScreenState extends State<MasterScreen> {
   RoleMenuEntry? _selectedEntry;
   RoleMenuEntry? _homeEntry;
-  AuthState? _authState;
   NotificationController? _notificationController;
 
   @override
@@ -44,11 +43,6 @@ class _MasterScreenState extends State<MasterScreen> {
     super.didChangeDependencies();
     final authState = context.read<AuthState>();
     final notificationController = context.read<NotificationController>();
-    if (!identical(_authState, authState)) {
-      _authState?.removeListener(_onAuthChanged);
-      _authState = authState;
-      _authState!.addListener(_onAuthChanged);
-    }
     if (!identical(_notificationController, notificationController)) {
       _notificationController = notificationController;
       if (authState.isAuthenticated) {
@@ -57,21 +51,9 @@ class _MasterScreenState extends State<MasterScreen> {
     }
   }
 
-  void _onAuthChanged() {
-    final authState = _authState;
-    final controller = _notificationController;
-    if (authState == null || controller == null) return;
-    if (authState.isAuthenticated) {
-      controller.startPolling();
-    } else {
-      controller.stopPolling();
-    }
-  }
-
   @override
   void dispose() {
-    _authState?.removeListener(_onAuthChanged);
-    _notificationController?.stopPolling();
+    _notificationController?.endSession();
     super.dispose();
   }
 

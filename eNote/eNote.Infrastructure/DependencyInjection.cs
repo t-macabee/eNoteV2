@@ -80,6 +80,8 @@ public static class DependencyInjection
 
         services.AddIdentityCore<AppUser>(options =>
         {
+            options.User.RequireUniqueEmail = true;
+            options.User.AllowedUserNameCharacters = IdentityPolicy.UserNameAllowedCharacters;
             options.Password.RequireDigit = true;
             options.Password.RequireNonAlphanumeric = true;
             options.Password.RequireUppercase = true;

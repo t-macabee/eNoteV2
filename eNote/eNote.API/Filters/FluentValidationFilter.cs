@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -9,6 +10,13 @@ public sealed class FluentValidationFilter : IAsyncActionFilter
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        var bindingFailed = !context.ModelState.IsValid && !context.HttpContext.Request.HasFormContentType;
+
+        if (bindingFailed)
+        {
+            context.ModelState.Clear();
+        }
+
         foreach (var argument in context.ActionArguments.Values)
         {
             if (argument is null)
@@ -30,6 +38,11 @@ public sealed class FluentValidationFilter : IAsyncActionFilter
             {
                 context.ModelState.AddModelError(failure.PropertyName, failure.ErrorMessage);
             }
+        }
+
+        if (bindingFailed && context.ModelState.ErrorCount == 0)
+        {
+            context.ModelState.AddModelError(string.Empty, Messages.BadRequest);
         }
 
         await next();

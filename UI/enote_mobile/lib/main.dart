@@ -8,6 +8,12 @@ import 'config.dart';
 import 'session/session_controller.dart';
 import 'session/token_store.dart';
 
+void handleSessionExpired(AuthState authState) {
+  appNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+  authState.expireSession();
+  SessionController.stopRealtime?.call();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final tokenStore = TokenStore();
@@ -15,12 +21,7 @@ Future<void> main() async {
   late AuthState authState;
   late ApiClient apiClient;
   final sessionHttp = SessionHttpClient(
-    onUnauthorized: () {
-      SessionController.markSessionExpired();
-      appNavigatorKey.currentState?.popUntil((route) => route.isFirst);
-      authState.logout();
-      SessionController.stopRealtime?.call();
-    },
+    onUnauthorized: () => handleSessionExpired(authState),
   );
   authState = AuthState(
     baseUrl: kApiBaseUrl,

@@ -12,6 +12,7 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
         RuleFor(x => x.LastName).MaximumLength(IdentityPolicy.PersonNameMaxLength);
         RuleFor(x => x.DateOfBirth)
             .LessThanOrEqualTo(_ => clock.UtcNow.Date)
+            .WithMessage(Messages.DateOfBirthInFuture)
             .When(x => x.DateOfBirth.HasValue);
     }
 }

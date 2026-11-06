@@ -88,7 +88,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _notifications?.stopPolling();
+    _notifications?.endSession();
     if (_hub != null) {
       _hub!.onRefresh = () {};
       _hub!.onPush = (_) {};

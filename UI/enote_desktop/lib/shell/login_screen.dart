@@ -18,6 +18,13 @@ class _LoginScreenState extends State<LoginScreen>
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _sessionExpired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionExpired = context.read<AuthState>().consumeSessionExpired();
+  }
 
   @override
   void dispose() {
@@ -51,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen>
       passwordController: _passwordController,
       obscurePassword: _obscurePassword,
       isSubmitting: isSubmitting,
+      sessionExpired: _sessionExpired,
       onToggleObscure: _togglePasswordVisibility,
       onSubmit: _submit,
     );
@@ -183,6 +191,7 @@ class _LoginForm extends StatelessWidget {
     required this.passwordController,
     required this.obscurePassword,
     required this.isSubmitting,
+    required this.sessionExpired,
     required this.onToggleObscure,
     required this.onSubmit,
   });
@@ -192,6 +201,7 @@ class _LoginForm extends StatelessWidget {
   final TextEditingController passwordController;
   final bool obscurePassword;
   final bool isSubmitting;
+  final bool sessionExpired;
   final VoidCallback onToggleObscure;
   final VoidCallback onSubmit;
 
@@ -215,6 +225,10 @@ class _LoginForm extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
+          if (sessionExpired) ...[
+            const ErrorBanner(message: AuthState.sessionExpiredMessage),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           AutofillGroup(
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -77,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               AppTextField(
                 controller: _usernameController,
                 label: 'Korisničko ime *',
-                validator: Validators.required('Korisničko ime'),
+                validator: Validators.username,
                 maxLength: 256,
               ),
               const SizedBox(height: AppSpacing.lg),

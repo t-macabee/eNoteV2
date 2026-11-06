@@ -24,6 +24,17 @@ class Validators {
     return null;
   }
 
+  static final RegExp _usernameRegex = RegExp(r'^[a-zA-Z0-9\-._@+čćšžđČĆŠŽĐ]+$');
+
+  static String? username(String? value) {
+    final missing = required('Korisničko ime')(value);
+    if (missing != null) return missing;
+    if (!_usernameRegex.hasMatch(value!.trim())) {
+      return 'Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +';
+    }
+    return null;
+  }
+
   static String? password(String? value) {
     if (value == null || value.isEmpty) {
       return 'Lozinka je obavezna.';

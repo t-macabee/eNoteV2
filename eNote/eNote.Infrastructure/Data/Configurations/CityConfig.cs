@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +9,6 @@ public sealed class CityConfig : IEntityTypeConfiguration<City>
     public void Configure(EntityTypeBuilder<City> builder)
     {
         builder.Property(c => c.Name).HasStringConfig(City.NameMaxLength, true);
-        builder.HasIndex(c => c.Name).IsUnique();
+        builder.HasIndex(c => c.Name).IsUnique().HasDatabaseName(DbConstraintNames.CityNameUniqueIndex);
     }
 }

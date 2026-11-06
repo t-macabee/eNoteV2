@@ -13,6 +13,7 @@ public static class Messages
     public const string InvalidCredentials = "Pogrešno korisničko ime ili lozinka.";
     public const string AccountLocked = "Nalog je privremeno zaključan. Pokušajte ponovo kasnije.";
     public const string UsernameTaken = "Korisničko ime je već zauzeto.";
+    public const string UsernameInvalidCharacters = "Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +";
     public const string EmailTaken = "Email adresa je već registrovana.";
     public const string TokenRevoked = "Token je opozvan.";
     public const string TokenInvalid = "Token više nije važeći.";
@@ -71,6 +72,8 @@ public static class Messages
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentTypeAlreadyExists = "Tip instrumenta s tim nazivom već postoji.";
+    public const string CityAlreadyExists = "Grad s tim nazivom već postoji.";
+    public const string DateOfBirthInFuture = "Datum rođenja ne smije biti u budućnosti.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";
     public const string InstrumentReservedOrRented = "Instrument je rezervisan ili već iznajmljen.";
     public const string InstrumentDeleteBlocked = "Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.";

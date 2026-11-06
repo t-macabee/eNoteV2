@@ -21,6 +21,7 @@ class AuthState extends ChangeNotifier {
   String? _username;
   List<String> _roles = [];
   bool _isManager = false;
+  bool _sessionExpired = false;
 
   AuthState({
     String baseUrl = '',
@@ -36,6 +37,21 @@ class AuthState extends ChangeNotifier {
     if (_accessToken != null && !_decodeToken(_accessToken)) {
       _tokenWriter?.call(null);
     }
+  }
+
+  static const sessionExpiredMessage =
+      'Vaša sesija je istekla. Prijavite se ponovo.';
+
+  Future<void> expireSession() async {
+    if (_accessToken == null) return;
+    _sessionExpired = true;
+    await logout();
+  }
+
+  bool consumeSessionExpired() {
+    final value = _sessionExpired;
+    _sessionExpired = false;
+    return value;
   }
 
   String? get accessToken => _accessToken;

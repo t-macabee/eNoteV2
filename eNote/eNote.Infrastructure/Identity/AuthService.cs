@@ -124,5 +124,8 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
             throw new BusinessException(Messages.PasswordResetFailed);
         }
+
+        await userManager.SetLockoutEndDateAsync(user, null);
+        await userManager.ResetAccessFailedCountAsync(user);
     }
 }

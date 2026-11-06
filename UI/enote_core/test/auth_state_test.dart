@@ -230,4 +230,46 @@ void main() {
       expect(logged.single, contains('offline'));
     });
   });
+
+  group('AuthState session expiry', () {
+    AuthState signedIn() => AuthState(
+      tokenReader: () => fakeJwt(),
+      httpClient: RecordingHttpClient(body: const {}),
+    );
+
+    test('expireSession signs out and sets a flag that reads once', () async {
+      final authState = signedIn();
+
+      await authState.expireSession();
+
+      expect(authState.isAuthenticated, isFalse);
+      expect(authState.consumeSessionExpired(), isTrue);
+      expect(authState.consumeSessionExpired(), isFalse);
+    });
+
+    test('a plain logout does not set the flag', () async {
+      final authState = signedIn();
+
+      await authState.logout();
+
+      expect(authState.consumeSessionExpired(), isFalse);
+    });
+
+    test('expireSession with no session does not set the flag', () async {
+      final authState = AuthState(
+        httpClient: RecordingHttpClient(body: const {}),
+      );
+
+      await authState.expireSession();
+
+      expect(authState.consumeSessionExpired(), isFalse);
+    });
+
+    test('the message is the Bosnian text the users read', () {
+      expect(
+        AuthState.sessionExpiredMessage,
+        'Vaša sesija je istekla. Prijavite se ponovo.',
+      );
+    });
+  });
 }

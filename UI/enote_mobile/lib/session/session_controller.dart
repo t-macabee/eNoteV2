@@ -10,12 +10,6 @@ class SessionController extends ChangeNotifier {
   final NotificationController notifications;
   final VoidCallback? onStopRealtime;
 
-  static bool _sessionExpired = false;
-
-  static void markSessionExpired() {
-    _sessionExpired = true;
-  }
-
   static VoidCallback? stopRealtime;
 
   UserProfileResponse? _profile;
@@ -38,12 +32,6 @@ class SessionController extends ChangeNotifier {
 
   bool get isMembershipActive =>
       membership.isMembershipActive(membershipPaidUntil);
-
-  bool consumeSessionExpired() {
-    final value = _sessionExpired;
-    _sessionExpired = false;
-    return value;
-  }
 
   void _clearProfile() {
     _profile = null;
@@ -82,7 +70,7 @@ class SessionController extends ChangeNotifier {
   Future<void> _endSession({bool revoke = false}) async {
     _clearProfile();
     await authState.logout(revoke: revoke);
-    notifications.stopPolling();
+    notifications.endSession();
     onStopRealtime?.call();
   }
 

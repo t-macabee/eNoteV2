@@ -7,7 +7,7 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
 {
     public RegisterRequestValidator()
     {
-        RuleFor(x => x.Username).NotEmpty().MaximumLength(IdentityPolicy.UserNameMaxLength);
+        RuleFor(x => x.Username).NotEmpty().MaximumLength(IdentityPolicy.UserNameMaxLength).Must(IdentityPolicy.HasOnlyAllowedUserNameCharacters).WithMessage(Messages.UsernameInvalidCharacters);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(IdentityPolicy.EmailMaxLength);
         RuleFor(x => x.Password).Password();
         RuleFor(x => x.FirstName).MaximumLength(IdentityPolicy.PersonNameMaxLength);

@@ -56,6 +56,7 @@ class _Harness {
   late final NotificationController notifications;
   late final SessionController session;
   late final _FakeHub hub;
+  int unreadCount = 0;
 
   _Harness() {
     client = ScriptedClient((request) {
@@ -65,7 +66,7 @@ class _Harness {
         body = meJson();
       } else if (request.method == 'GET' &&
           path == '/api/v1/student/notifications/unread-count') {
-        body = {'unreadCount': 0};
+        body = {'unreadCount': unreadCount};
       } else if (request.method == 'GET' &&
           path == '/api/v1/student/notifications') {
         body = {'items': [], 'totalCount': 0};
@@ -175,6 +176,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(harness.hub.stopCalls, 1);
+  });
+
+  testWidgets('disposing the shell clears the notifications of the user', (
+    tester,
+  ) async {
+    final harness = _Harness()..unreadCount = 7;
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+    expect(harness.notifications.unreadCount, 7);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+
+    expect(harness.notifications.unreadCount, 0);
   });
 
   testWidgets('a notification with only courseId opens the course on tab 1', (

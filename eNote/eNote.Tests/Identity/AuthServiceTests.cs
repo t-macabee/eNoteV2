@@ -353,6 +353,58 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
+    public async Task ResetPasswordAsync_UnlocksTheAccount_SoTheNewPasswordLogsIn()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Assert.ThrowsAsync<AuthenticationException>(() =>
+                auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+        }
+        var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
+
+        await auth.ResetPasswordAsync(new ResetPasswordRequest { Email = "jdoe@example.com", Token = token, NewPassword = "Newpassword1!" });
+
+        var response = await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Newpassword1!" });
+        Assert.Equal("jdoe", response.Username);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ClearsTheFailedCount()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await Assert.ThrowsAsync<AuthenticationException>(() =>
+                auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+        }
+        var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
+
+        await auth.ResetPasswordAsync(new ResetPasswordRequest { Email = "jdoe@example.com", Token = token, NewPassword = "Newpassword1!" });
+
+        Assert.Equal(0, await harness.UserManager.GetAccessFailedCountAsync(harness.User));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_KeepsTheLock_WhenTheTokenIsInvalid()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Assert.ThrowsAsync<AuthenticationException>(() =>
+                auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+        }
+
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            auth.ResetPasswordAsync(new ResetPasswordRequest { Email = "jdoe@example.com", Token = "bad", NewPassword = "Newpassword1!" }));
+
+        Assert.True(await harness.UserManager.IsLockedOutAsync(harness.User));
+    }
+
+    [Fact]
     public async Task ResetPasswordAsync_Throws_ForUnknownUser()
     {
         var harness = await CreateHarnessAsync(withRole: "Student");

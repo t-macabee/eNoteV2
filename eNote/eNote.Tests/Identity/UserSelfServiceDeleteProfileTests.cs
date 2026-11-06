@@ -218,8 +218,8 @@ public sealed class UserSelfServiceDeleteProfileTests
         var closed = (await harness.UserManager.FindByIdAsync(harness.Student.AppUserId.ToString()))!;
         Assert.Equal("Obrisani", closed.FirstName);
         Assert.Equal("korisnik", closed.LastName);
-        Assert.Equal($"obrisan-{closed.Id}", closed.UserName);
-        Assert.Equal($"obrisan-{closed.Id}@enote.invalid", closed.Email);
+        Assert.Matches("^obrisan-[0-9a-f]{32}$", closed.UserName);
+        Assert.Equal($"{closed.UserName}@enote.invalid", closed.Email);
         Assert.Null(closed.PhoneNumber);
         Assert.Null(closed.DateOfBirth);
         Assert.Null(closed.PasswordHash);

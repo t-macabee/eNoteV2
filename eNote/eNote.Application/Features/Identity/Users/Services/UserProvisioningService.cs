@@ -33,6 +33,12 @@ public sealed class UserProvisioningService(
             throw new BusinessException(Messages.MusicStoreRequiredForEmployee);
         }
 
+        if (request.Role == AppRoles.StoreEmployee
+            && !await context.Set<MusicStore>().AnyAsync(store => store.Id == request.MusicStoreId, cancellationToken))
+        {
+            throw new BusinessException(Messages.StoreNotFound);
+        }
+
         return await ProvisionCoreAsync(
             request.Username,
             request.Email,

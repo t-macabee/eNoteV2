@@ -164,4 +164,30 @@ void main() {
       });
     }
   });
+
+  group('username', () {
+    const invalid =
+        'Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +';
+
+    test('refuses a space and a character the server refuses', () {
+      expect(Validators.username('ime prezime'), invalid);
+      expect(Validators.username('ime/prezime'), invalid);
+      expect(Validators.username('ime!'), invalid);
+    });
+
+    test('accepts Bosnian letters, digits and the allowed signs', () {
+      expect(Validators.username('đuro'), isNull);
+      expect(Validators.username('Čedomir.Šišić_1'), isNull);
+      expect(Validators.username('a-b+c@d'), isNull);
+    });
+
+    test('checks the trimmed value', () {
+      expect(Validators.username('  jdoe  '), isNull);
+    });
+
+    test('still requires a value', () {
+      expect(Validators.username(''), 'Korisničko ime je obavezan.');
+      expect(Validators.username(null), 'Korisničko ime je obavezan.');
+    });
+  });
 }

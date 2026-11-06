@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ class _PagedFakeClient extends http.BaseClient {
   final bool throwOnUnreadCount;
   final Set<int> failPages;
   bool failUnreadCount = false;
+  Completer<void>? gate;
 
   _PagedFakeClient(
     this.pages, {
@@ -31,6 +33,7 @@ class _PagedFakeClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     urls.add(request.url);
+    await gate?.future;
     if (request.url.path.endsWith('/unread-count')) {
       if (throwOnUnreadCount) {
         throw http.ClientException('offline');
@@ -253,5 +256,107 @@ void main() {
 
     await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
     expect(_listRequests(client, 2), 2);
+  });
+
+  group('endSession', () {
+    test('clears the list, the count, the error and the paging', () async {
+      final client = _PagedFakeClient({
+        1: [_item(1), _item(2)],
+      }, unreadCount: 7);
+      final c = _controller(client);
+      await c.refresh(search: NotificationSearchObject(pageSize: 2));
+      expect(c.notifications.length, 2);
+      expect(c.unreadCount, 7);
+      expect(c.hasMore, isTrue);
+
+      c.endSession();
+
+      expect(c.notifications, isEmpty);
+      expect(c.unreadCount, 0);
+      expect(c.hasMore, isFalse);
+      expect(c.error, isNull);
+    });
+
+    test('a failed load of the next user shows nothing of the previous user',
+        () async {
+      final client = _PagedFakeClient({
+        1: [_item(1)],
+      }, unreadCount: 7, failPages: {});
+      final c = _controller(client);
+      await c.refresh();
+
+      c.endSession();
+      client.failPages.add(1);
+      client.failUnreadCount = true;
+      await c.refresh();
+
+      expect(c.notifications, isEmpty);
+      expect(c.unreadCount, 0);
+      expect(c.error, isNotNull);
+    });
+
+    test('a response that arrives after endSession is dropped', () async {
+      final gate = Completer<void>();
+      final client = _PagedFakeClient({
+        1: [_item(1)],
+      }, unreadCount: 7)..gate = gate;
+      final c = _controller(client);
+
+      final load = c.refresh();
+      final count = c.refreshUnreadCount();
+      c.endSession();
+      gate.complete();
+      await load;
+      await count;
+
+      expect(c.notifications, isEmpty);
+      expect(c.unreadCount, 0);
+    });
+
+    test('an error of the ended session is dropped', () async {
+      final gate = Completer<void>();
+      final client = _PagedFakeClient({}, failPages: {1})..gate = gate;
+      final c = _controller(client);
+
+      final load = c.refresh();
+      c.endSession();
+      gate.complete();
+      await load;
+
+      expect(c.error, isNull);
+    });
+
+    test('a loadMore response that arrives after endSession is dropped',
+        () async {
+      final client = _PagedFakeClient({
+        1: [_item(1), _item(2)],
+        2: [_item(3)],
+      });
+      final c = _controller(client);
+      await c.refresh(search: NotificationSearchObject(pageSize: 2));
+
+      final gate = Completer<void>();
+      client.gate = gate;
+      final more = c.loadMore();
+      c.endSession();
+      gate.complete();
+      await more;
+
+      expect(c.notifications, isEmpty);
+    });
+
+    test('a new session loads normally after endSession', () async {
+      final client = _PagedFakeClient({
+        1: [_item(5)],
+      }, unreadCount: 1);
+      final c = _controller(client);
+      await c.refresh();
+      c.endSession();
+
+      await c.refresh();
+
+      expect(c.notifications.single.id, 5);
+      expect(c.unreadCount, 1);
+    });
   });
 }

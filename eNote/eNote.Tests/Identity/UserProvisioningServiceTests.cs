@@ -100,6 +100,25 @@ public sealed class UserProvisioningServiceTests
     }
 
     [Fact]
+    public async Task ProvisionUserAsync_ThrowsBusinessException_AndCreatesNoUser_WhenTheStoreDoesNotExist()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService { CreateUserId = null };
+        var service = CreateService(context, account);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "emp",
+            Email = "emp@example.com",
+            Password = "Password1!",
+            Role = AppRoles.StoreEmployee,
+            MusicStoreId = 99999
+        }));
+
+        Assert.Equal("Radnja nije pronađena.", exception.Message);
+    }
+
+    [Fact]
     public async Task ProvisionUserAsync_ThrowsBusinessException_WhenRoleAssignmentFails()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

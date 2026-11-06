@@ -2,6 +2,7 @@ using System.Reflection;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.ReferenceData.Cities;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Identity;
@@ -351,6 +352,60 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
     }
 
     [Fact]
+    public async Task DuplicateCityName_GivesConflict_OnCreateAndOnUpdate()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var seedContext = database.CreateContext();
+        var service = new CityService(seedContext);
+        await service.CreateAsync(new CityRequest { Name = "Mostar A6" });
+        var other = await service.CreateAsync(new CityRequest { Name = "Tuzla A6" });
+
+        await using var createContext = database.CreateContext();
+        var createError = await Assert.ThrowsAsync<ConflictException>(() =>
+            new CityService(createContext).CreateAsync(new CityRequest { Name = "Mostar A6" }));
+        await using var updateContext = database.CreateContext();
+        var updateError = await Assert.ThrowsAsync<ConflictException>(() =>
+            new CityService(updateContext).UpdateAsync(other.Id, new CityRequest { Name = "Mostar A6" }));
+
+        Assert.Equal("Grad s tim nazivom već postoji.", createError.Message);
+        Assert.Equal("Grad s tim nazivom već postoji.", updateError.Message);
+    }
+
+    [Fact]
+    public async Task ParallelCreates_WithOneEmail_LeaveOneUser_AndGiveConflicts()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var outcomes = await RunParallelCreatesAsync(database, index => ($"race{index}", "race@example.com"));
+
+        Assert.Equal(1, outcomes.Count(outcome => outcome is null));
+        Assert.All(outcomes.Where(outcome => outcome is not null), outcome =>
+        {
+            Assert.IsType<ConflictException>(outcome);
+            Assert.Equal("Email adresa je već registrovana.", outcome!.Message);
+        });
+        await using var context = database.CreateContext();
+        Assert.Equal(1, await context.Set<AppUser>().CountAsync(user => user.NormalizedEmail == "RACE@EXAMPLE.COM"));
+    }
+
+    [Fact]
+    public async Task ParallelCreates_WithOneUsername_LeaveOneUser_AndGiveConflicts()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var outcomes = await RunParallelCreatesAsync(database, index => ("raceuser", $"race{index}@example.com"));
+
+        Assert.Equal(1, outcomes.Count(outcome => outcome is null));
+        Assert.All(outcomes.Where(outcome => outcome is not null), outcome =>
+        {
+            Assert.IsType<ConflictException>(outcome);
+            Assert.Equal("Korisničko ime je već zauzeto.", outcome!.Message);
+        });
+        await using var context = database.CreateContext();
+        Assert.Equal(1, await context.Set<AppUser>().CountAsync(user => user.NormalizedUserName == "RACEUSER"));
+    }
+
+    [Fact]
     public async Task DuplicateMembershipReceiptNumber_IsUniqueViolation()
     {
         var database = await fixture.CreateDatabaseAsync();
@@ -460,6 +515,31 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
 
         var sqlException = Assert.IsType<SqlException>(exception.InnerException);
         Assert.Equal(547, sqlException.Number);
+    }
+
+    private static async Task<Exception?[]> RunParallelCreatesAsync(SqlServerDatabase database, Func<int, (string UserName, string Email)> identityOf)
+    {
+        using var start = new ManualResetEventSlim();
+        var tasks = Enumerable.Range(0, 8).Select(index => Task.Run(async () =>
+        {
+            await using var context = database.CreateContext();
+            var identity = IdentityTestHarness.Create(context);
+            var service = new UserAccountService(identity.UserManager, new StubFileStorageService());
+            var (userName, email) = identityOf(index);
+            start.Wait();
+            try
+            {
+                await service.CreateUserAsync(userName, email, "Password1!", null, null);
+                return null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
+            }
+        })).ToList();
+        start.Set();
+
+        return await Task.WhenAll(tasks);
     }
 
     private static async Task<(Student Student, Instrument Instrument)> SeedRentalStudentAndInstrumentAsync(ENoteContext context)

@@ -1,5 +1,6 @@
 using eNote.API.Extensions;
 using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Users;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -82,7 +83,108 @@ public sealed class FluentValidationPipelineTests
             using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             Assert.Equal(400, body.RootElement.GetProperty("status").GetInt32());
             Assert.Equal("error.validation", body.RootElement.GetProperty("code").GetString());
-            Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("message").GetString()));
+            Assert.Equal("Neispravan zahtjev.", body.RootElement.GetProperty("message").GetString());
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData("{\"username\":")]
+    [InlineData("")]
+    public async Task UnreadableLoginBody_GivesOneBosnianMessage(string json)
+    {
+        await using var app = CreateApp();
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("/validation/login", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            var text = await response.Content.ReadAsStringAsync();
+            using var body = JsonDocument.Parse(text);
+            Assert.Equal("Neispravan zahtjev.", body.RootElement.GetProperty("message").GetString());
+            Assert.DoesNotContain("eNote.", text);
+            Assert.DoesNotContain("JSON", text);
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task MissingLoginFields_GiveOnlyTheValidatorMessages()
+    {
+        await using var app = CreateApp();
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+            using var response = await client.PostAsync("/validation/login", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var errors = body.RootElement.GetProperty("errors");
+            Assert.Equal(["Korisničko ime je obavezno."], errors.GetProperty("Username").EnumerateArray().Select(error => error.GetString()));
+            Assert.Equal(["Lozinka je obavezna."], errors.GetProperty("Password").EnumerateArray().Select(error => error.GetString()));
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task EmptyStatusBody_IsRefused_AndDoesNotReachTheAction()
+    {
+        await using var app = CreateApp();
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+            using var response = await client.PutAsync("/validation/status", content);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("Neispravan zahtjev.", body.RootElement.GetProperty("message").GetString());
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Theory]
+    [InlineData("{\"isActive\":true}", true)]
+    [InlineData("{\"isActive\":false}", false)]
+    public async Task StatusBody_WithAValue_ReachesTheAction(string json, bool expected)
+    {
+        await using var app = CreateApp();
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            using var response = await client.PutAsync("/validation/status", content);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(expected, body.RootElement.GetProperty("isActive").GetBoolean());
         }
         finally
         {
@@ -109,4 +211,7 @@ public sealed class ValidationTestController : ControllerBase
 {
     [HttpPost("login")]
     public ActionResult<LoginRequest> Login([FromBody] LoginRequest request) => Ok(request);
+
+    [HttpPut("status")]
+    public ActionResult<UserStatusRequest> Status([FromBody] UserStatusRequest request) => Ok(request);
 }

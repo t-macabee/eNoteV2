@@ -1,9 +1,13 @@
 using eNote.Application.Common.Crud;
+using eNote.Application.Constants;
 
 namespace eNote.Application.Features.ReferenceData.Cities;
 
 public sealed class CityService(IAppDbContext context) : ReferenceDataCrudService<City, CityDto, CityRequest, CitySearchObject>(context)
 {
+    protected override (string IndexName, string Message)? UniqueConflict =>
+        (DbConstraintNames.CityNameUniqueIndex, Messages.CityAlreadyExists);
+
     protected override CityDto Map(City entity) => new()
     {
         Id = entity.Id,

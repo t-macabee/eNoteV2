@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -9,5 +10,9 @@ public sealed class AppUserConfig : IEntityTypeConfiguration<AppUser>
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
         builder.Property(u => u.PicturePath).HasMaxLength(512);
+        builder.HasIndex(u => u.NormalizedEmail)
+            .IsUnique()
+            .HasDatabaseName(DbConstraintNames.UserEmailUniqueIndex)
+            .HasFilter("[NormalizedEmail] IS NOT NULL");
     }
 }

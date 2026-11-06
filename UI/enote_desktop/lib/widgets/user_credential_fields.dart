@@ -64,7 +64,7 @@ class UserCredentialFields extends StatelessWidget {
                     labelText: 'Korisničko ime',
                     errorMaxLines: 3,
                   ),
-                  validator: Validators.required('Korisničko ime'),
+                  validator: Validators.username,
                   maxLength: 256,
                 ),
                 TextFormField(

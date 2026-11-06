@@ -1635,7 +1635,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UX_City_Name");
 
                     b.ToTable("City");
 
@@ -1864,7 +1865,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .IsUnique()
+                        .HasDatabaseName("UX_AspNetUsers_NormalizedEmail")
+                        .HasFilter("[NormalizedEmail] IS NOT NULL");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()

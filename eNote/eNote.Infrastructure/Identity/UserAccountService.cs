@@ -2,6 +2,8 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
@@ -40,7 +42,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
             LastName = lastName?.Trim()
         };
 
-        var createResult = await userManager.CreateAsync(user, password);
+        var createResult = await RefusingDuplicatesAsync(() => userManager.CreateAsync(user, password));
 
         if (!createResult.Succeeded)
         {
@@ -77,6 +79,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         var user = await FindUserOrThrowAsync(userId);
 
         var result = await userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+        if (result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.PasswordMismatch)))
+        {
+            throw new CurrentPasswordInvalidException();
+        }
 
         if (!result.Succeeded)
         {
@@ -115,7 +122,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         var user = await FindUserOrThrowAsync(userId);
 
         var previousPicturePath = user.PicturePath;
-        var anonymousUserName = $"obrisan-{user.Id}";
+        var anonymousUserName = $"obrisan-{Guid.NewGuid():N}";
 
         user.FirstName = ClosedAccountFirstName;
         user.LastName = ClosedAccountLastName;
@@ -148,7 +155,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         ApplyProfileFields(user, firstName, lastName, dateOfBirth);
 
-        var updateResult = await userManager.UpdateAsync(user);
+        var updateResult = await RefusingDuplicatesAsync(() => userManager.UpdateAsync(user));
 
         if (!updateResult.Succeeded)
         {
@@ -216,6 +223,36 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
 
         return user.PicturePath;
+    }
+
+    private static async Task<IdentityResult> RefusingDuplicatesAsync(Func<Task<IdentityResult>> save)
+    {
+        IdentityResult result;
+
+        try
+        {
+            result = await save();
+        }
+        catch (DbUpdateException exception) when (DbErrors.IsUniqueViolation(exception, DbConstraintNames.UserNameUniqueIndex))
+        {
+            throw new ConflictException(Messages.UsernameTaken);
+        }
+        catch (DbUpdateException exception) when (DbErrors.IsUniqueViolation(exception, DbConstraintNames.UserEmailUniqueIndex))
+        {
+            throw new ConflictException(Messages.EmailTaken);
+        }
+
+        if (result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.DuplicateUserName)))
+        {
+            throw new ConflictException(Messages.UsernameTaken);
+        }
+
+        if (result.Errors.Any(e => e.Code == nameof(IdentityErrorDescriber.DuplicateEmail)))
+        {
+            throw new ConflictException(Messages.EmailTaken);
+        }
+
+        return result;
     }
 
     private async Task<AppUser> FindUserOrThrowAsync(int userId)

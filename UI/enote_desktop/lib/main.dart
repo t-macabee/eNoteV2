@@ -33,6 +33,15 @@ import 'features/store_employee/rental/rental_provider.dart';
 import 'features/store_employee/store/shop_store_provider.dart';
 import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
+import 'shell/role_blocked_screen.dart';
+
+void handleSessionExpired(
+  GlobalKey<NavigatorState> navigatorKey,
+  AuthState authState,
+) {
+  navigatorKey.currentState?.popUntil((route) => route.isFirst);
+  authState.expireSession();
+}
 
 void main() {
   final navigatorKey = GlobalKey<NavigatorState>();
@@ -40,10 +49,7 @@ void main() {
   late ApiClient apiClient;
   final sessionHttp = SessionHttpClient(
     timeout: const Duration(seconds: 20),
-    onUnauthorized: () {
-      navigatorKey.currentState?.popUntil((route) => route.isFirst);
-      authState.logout();
-    },
+    onUnauthorized: () => handleSessionExpired(navigatorKey, authState),
   );
   authState = AuthState(
     baseUrl: kApiBaseUrl,
@@ -175,6 +181,9 @@ class MyApp extends StatelessWidget {
           builder: (context, authState, _) {
             if (!authState.isAuthenticated) {
               return const LoginScreen();
+            }
+            if (authState.hasRole('Student')) {
+              return const RoleBlockedScreen();
             }
             return const MasterScreen();
           },

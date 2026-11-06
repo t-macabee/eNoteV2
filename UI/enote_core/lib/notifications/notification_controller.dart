@@ -21,6 +21,7 @@ class NotificationController extends ChangeNotifier {
   int _pageSize = 50;
   bool _hasMore = false;
   bool _isLoadingMore = false;
+  int _session = 0;
 
   NotificationController({
     required this.apiClient,
@@ -40,12 +41,20 @@ class NotificationController extends ChangeNotifier {
     _pollTimer = Timer.periodic(pollInterval, (_) => refreshUnreadCount());
   }
 
-  void stopPolling() {
+  void endSession() {
     _pollTimer?.cancel();
     _pollTimer = null;
+    _session++;
+    _notifications = [];
+    _unreadCount = 0;
+    _error = null;
+    _page = 1;
+    _pageSize = 50;
+    _hasMore = false;
   }
 
   Future<void> refresh({NotificationSearchObject? search}) async {
+    final session = _session;
     _isLoading = true;
     _error = null;
     scheduleMicrotask(notifyListeners);
@@ -61,6 +70,7 @@ class NotificationController extends ChangeNotifier {
           ..['pageSize'] = pageSize,
       );
       final data = decodeOrThrow(response);
+      if (session != _session) return;
       final items = (data['items'] as List<dynamic>? ?? []);
       _notifications = items
           .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
@@ -70,7 +80,7 @@ class NotificationController extends ChangeNotifier {
       _hasMore = _notifications.length == pageSize;
       await unreadFuture;
     } catch (e) {
-      _error = userMessage(e);
+      if (session == _session) _error = userMessage(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -79,6 +89,7 @@ class NotificationController extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (_isLoadingMore) return;
+    final session = _session;
     _isLoadingMore = true;
     try {
       final nextPage = _page + 1;
@@ -87,6 +98,7 @@ class NotificationController extends ChangeNotifier {
         queryParams: {'page': nextPage, 'pageSize': _pageSize},
       );
       final data = decodeOrThrow(response);
+      if (session != _session) return;
       final items = (data['items'] as List<dynamic>? ?? []);
       final parsed = items
           .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
@@ -101,9 +113,11 @@ class NotificationController extends ChangeNotifier {
   }
 
   Future<void> refreshUnreadCount() async {
+    final session = _session;
     try {
       final response = await apiClient.get('$endpoint/unread-count');
       final data = decodeOrThrow(response);
+      if (session != _session) return;
       _unreadCount = NotificationUnreadCountDto.fromJson(data).unreadCount;
       notifyListeners();
     } catch (e) {

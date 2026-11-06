@@ -108,4 +108,38 @@ void main() {
       tester.getTopLeft(emailField).dy,
     );
   });
+
+  testWidgets('the username field refuses a character the server refuses', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    controller = UserCredentialFieldsController();
+    controller!.usernameController.text = 'ime prezime';
+    final formKey = GlobalKey<FormState>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Form(
+            key: formKey,
+            child: UserCredentialFields(controller: controller!),
+          ),
+        ),
+      ),
+    );
+
+    expect(formKey.currentState!.validate(), isFalse);
+    await tester.pump();
+
+    expect(
+      find.text(
+        'Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +',
+      ),
+      findsOneWidget,
+    );
+  });
 }
