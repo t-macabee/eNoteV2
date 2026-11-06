@@ -59,7 +59,6 @@ class _Card extends StatelessWidget {
   Widget build(BuildContext context) {
     final instrument = recommendation.instrument;
     final reasons = recommendation.reasons;
-    final extraReasons = reasons.length > 1 ? reasons.length - 1 : 0;
 
     return SizedBox(
       width: RecommendationStrip.cardWidth,
@@ -109,7 +108,7 @@ class _Card extends StatelessWidget {
                   ),
                 ),
               ),
-              if (extraReasons > 0)
+              if (reasons.isNotEmpty)
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
@@ -121,7 +120,7 @@ class _Card extends StatelessWidget {
                       minimumSize: const Size(0, _Card.reasonButtonHeight),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text('+$extraReasons razloga'),
+                    child: const Text('Zašto?'),
                   ),
                 ),
             ],

@@ -6,16 +6,37 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/instruments/instrument_catalog_screen.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
+import 'package:enote_mobile/shell/routes.dart';
 
 import '../../helpers.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 
 const _debtErrorCopy = 'Stanje dugovanja trenutno nije moguće provjeriti.';
+const _recommendationsErrorCopy = 'Preporuke trenutno nije moguće učitati.';
+
+Map<String, dynamic> _recommendationJson({int id = 3}) => {
+  'instrument': {
+    'id': id,
+    'model': 'C40',
+    'manufacturer': 'Yamaha',
+    'description': 'Klasična gitara za početnike.',
+    'instrumentTypeId': 1,
+    'instrumentType': 'Klasična gitara',
+    'monthlyFee': 45.0,
+    'musicStore': 'Muzika d.o.o.',
+    'isAvailable': true,
+  },
+  'score': 0.645,
+  'reasons': const ['Pregledali ste ovaj instrument.'],
+};
 
 Future<ScriptedClient> _pumpCatalog(
   WidgetTester tester, {
   required bool Function() debtFails,
+  bool Function()? recommendationFails,
+  List<Map<String, dynamic>> recommendations = const [],
+  Widget? instrumentDetailPage,
 }) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
@@ -34,7 +55,13 @@ Future<ScriptedClient> _pumpCatalog(
       return jsonResponse({'hasUnpaidDebt': false}, 200);
     }
     if (path.endsWith('/student/instruments/recommended')) {
-      return jsonResponse(const [], 200);
+      if (recommendationFails?.call() ?? false) {
+        return jsonResponse({
+          'code': 'error.internal',
+          'message': 'Greška na serveru.',
+        }, 500);
+      }
+      return jsonResponse(recommendations, 200);
     }
     if (path.endsWith('/instruments/public')) {
       return jsonResponse({
@@ -70,7 +97,18 @@ Future<ScriptedClient> _pumpCatalog(
           create: (_) => RentalProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(home: Scaffold(body: InstrumentCatalogScreen())),
+      child: MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.instrumentDetail &&
+              instrumentDetailPage != null) {
+            return MaterialPageRoute<void>(
+              builder: (_) => instrumentDetailPage,
+            );
+          }
+          return null;
+        },
+        home: const Scaffold(body: InstrumentCatalogScreen()),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -100,6 +138,56 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(_debtErrorCopy), findsNothing);
+  });
+
+  testWidgets('shows the recommendation error and recovers on retry', (
+    tester,
+  ) async {
+    var fails = true;
+    await _pumpCatalog(
+      tester,
+      debtFails: () => false,
+      recommendationFails: () => fails,
+      recommendations: [_recommendationJson()],
+    );
+
+    expect(find.text(_recommendationsErrorCopy), findsOneWidget);
+    expect(find.text('Pokušaj ponovo'), findsOneWidget);
+
+    fails = false;
+    await tester.tap(find.text('Pokušaj ponovo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(_recommendationsErrorCopy), findsNothing);
+    expect(find.text('PREPORUČENO ZA VAS'), findsOneWidget);
+    expect(find.text('Yamaha C40'), findsOneWidget);
+  });
+
+  testWidgets('returning from an instrument reloads the recommendations', (
+    tester,
+  ) async {
+    final client = await _pumpCatalog(
+      tester,
+      debtFails: () => false,
+      recommendations: [_recommendationJson()],
+      instrumentDetailPage: Scaffold(
+        appBar: AppBar(title: const Text('Detalj instrumenta')),
+      ),
+    );
+
+    final path = '/api/v1/student/instruments/recommended';
+    int requests() => client.requests.where((r) => r.url.path == path).length;
+
+    expect(requests(), 1);
+
+    await tester.tap(find.text('Yamaha C40'));
+    await tester.pumpAndSettle();
+    expect(find.text('Detalj instrumenta'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(requests(), 2);
   });
 
   testWidgets('opens on Dostupni and sends IsAvailable', (tester) async {

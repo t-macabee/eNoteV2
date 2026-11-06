@@ -30,11 +30,8 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
     );
   }
 
-  Future<List<InstrumentRecommendationDto>> recommended({int count = 5}) async {
-    final response = await apiClient.get(
-      'student/instruments/recommended',
-      queryParams: {'count': count},
-    );
+  Future<List<InstrumentRecommendationDto>> recommended() async {
+    final response = await apiClient.get('student/instruments/recommended');
     return decodeList(response, InstrumentRecommendationDto.fromJson);
   }
 

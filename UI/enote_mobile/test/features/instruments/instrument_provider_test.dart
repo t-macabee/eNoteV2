@@ -98,8 +98,7 @@ void main() {
     expect(instrument.model, 'Stratocaster');
   });
 
-  test('recommended reads student/instruments/recommended with the count',
-      () async {
+  test('recommended reads student/instruments/recommended', () async {
     final client = ScriptedClient(
       (_) => jsonResponse(
         jsonEncode([
@@ -120,18 +119,10 @@ void main() {
       client.requests.single.url.path,
       '/api/v1/student/instruments/recommended',
     );
-    expect(client.requests.single.url.queryParameters, {'count': '5'});
+    expect(client.requests.single.url.queryParameters, isEmpty);
     expect(recommendations, hasLength(1));
     expect(recommendations.single.instrument.model, 'Stratocaster');
     expect(recommendations.single.reasons, hasLength(2));
-  });
-
-  test('recommended sends the requested count', () async {
-    final client = ScriptedClient((_) => jsonResponse('[]', 200));
-    final provider = _provider(client);
-    await provider.recommended(count: 3);
-
-    expect(client.requests.single.url.queryParameters, {'count': '3'});
   });
 
   test('recommended rejects a non-list body through decodeListOrThrow',

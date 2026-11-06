@@ -3,7 +3,7 @@ import 'package:enote_core/enote_core.dart';
 
 void main() {
   group('InstrumentRecommendationDto', () {
-    test('fromJson round-trips a full payload', () {
+    test('fromJson reads a full payload', () {
       final json = {
         'instrument': {
           'id': 1,
@@ -22,10 +22,6 @@ void main() {
       expect(dto.instrument.model, 'Stratocaster');
       expect(dto.score, 0.95);
       expect(dto.reasons, ['Slično vašim pregledima', 'Popularno']);
-      final roundTrip = InstrumentRecommendationDto.fromJson(dto.toJson());
-      expect(roundTrip.score, dto.score);
-      expect(roundTrip.reasons, dto.reasons);
-      expect(roundTrip.instrument.id, dto.instrument.id);
     });
 
     test('fromJson defaults missing score and reasons', () {

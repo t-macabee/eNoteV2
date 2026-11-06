@@ -8,7 +8,7 @@ studenata, evidencije pregleda kataloga i ukupnog broja najmova po instrumentu.
 
 Servis: `eNote/eNote.Application/Features/Rentals/Recommendations/Services/RecommendationService.cs`
 
-Kontroler: `eNote/eNote.API/Controllers/Instruments/InstrumentController.cs`
+Kontroler: `eNote/eNote.API/Controllers/Rentals/InstrumentController.cs`
 
 | Endpoint | Uloga | Šta radi |
 |---|---|---|
@@ -23,31 +23,31 @@ Ukupni skor je zbir četiri signala sa fiksnim težinama. Konstante su na vrhu
 | Signal | Težina | Odakle dolazi |
 |---|---|---|
 | Najam | 0.40 | Vrste instrumenata koje je student već najmio, plus instrumenti koje biraju slični studenti |
-| Pregledi | 0.30 | `InstrumentView` za tog korisnika, normalizovano po najvećem broju pregleda |
-| Sličnost | 0.20 | Isti proizvođač daje 1.0, ista vrsta daje 0.6 (`TypeSimilarityScore`) |
-| Popularnost | 0.10 | Broj najmova instrumenta (odobreni, aktivni, završeni i vraćeni prije roka), normalizovan po najnajmljenijem |
+| Pregledi | 0.30 | `InstrumentView` za tog korisnika, podijeljeno najvećim brojem pregleda među instrumentima koji se mogu preporučiti |
+| Sličnost | 0.20 | Proizvođač kojeg je student već najmio daje 1.0, vrsta koju je već najmio daje 0.6 |
+| Popularnost | 0.10 | Broj najmova instrumenta (odobreni, aktivni, završeni i vraćeni prije roka), podijeljen brojem najmova najnajmljenijeg instrumenta koji se može preporučiti |
 
 ```
 total = najam * 0.40 + pregledi * 0.30 + sličnost * 0.20 + popularnost * 0.10
 ```
 
-Signal najma se dijeli još jednom. Kada student ima i vlastitu historiju i
-poklapanje sa sličnim studentima, vlastita historija nosi 0.60 a kolaborativni
-dio 0.40 (`OwnRentalHistoryWeight`, `CollaborativeRentalWeight`). Kada postoji
-samo jedan od ta dva signala, uzima se veći od njih.
+Signal najma se računa kao `najam = vlastita historija * 0.60 + kolaborativni dio * 0.40`.
+Vlastita historija je broj najmova te vrste podijeljen brojem najmova najčešće vrste
+tog studenta. Kolaborativni dio je 1 za instrument u kolaborativnom skupu, inače 0.
 
 Kolaborativni dio radi u dva koraka u metodi `BuildCollaborativeInstrumentIdsAsync`.
 Prvo se nađu studenti koji su najmili bar jedan isti instrument kao trenutni
 student. Zatim se uzmu instrumenti koje su ti studenti najmili, a trenutni student
 nije. Ti instrumenti ulaze u kandidate i dobijaju puni kolaborativni skor.
 
-Ako student nije pregledao konkretan instrument, ali je taj instrument iste vrste
-koju je ranije najmio, signal pregleda dobija vrijednost 0.35
-(`TypeViewFallbackScore`) umjesto nule. Bez toga bi novi instrumenti u poznatoj
-vrsti ispadali iz preporuka.
+Ako je instrument iste vrste koju je student ranije najmio, signal pregleda dobija
+najmanje 0.35 (`TypeViewFallbackScore`). Bez toga bi novi instrumenti u poznatoj
+vrsti ispadali iz preporuka. Zato pregled nikad ne spušta skor instrumenta.
 
-Instrumenti koje student trenutno drži u najmu (status `Approved` ili `Active`)
-izbacuju se iz rezultata.
+U preporuke ulaze samo aktivni instrumenti koje student može zatražiti. Izbacuju se
+instrumenti sa odobrenim ili aktivnim najmom bilo kojeg studenta i instrumenti na koje
+taj student već ima zahtjev na čekanju (`RecommendableInstruments`). Zato svaka
+preporuka ima `isAvailable: true`.
 
 ## Kandidati za preporuku
 
@@ -59,17 +59,16 @@ dakle 80 za podrazumijevanih pet preporuka. `PoolSizePerResult` je 12.
 |---|---|---|
 | Preferirane vrste | aktivni instrumenti vrsta iz historije najma studenta, po id-u | do `poolSize / 2` |
 | Pregledi | `InstrumentView` tog korisnika, po broju pregleda opadajuće pa po id-u | do `poolSize / 4` |
-| Kolaborativni | instrumenti studenata sa sličnim izborima najma | svi, po broju zajedničkih najmova |
+| Kolaborativni | instrumenti studenata sa sličnim izborima najma | svi, po broju najmova među sličnim studentima |
 | Popularni | instrumenti sa najviše najmova ukupno | do `poolSize / 2` |
 
 Redoslijed je važan. Identifikatori se spajaju upravo tim redom (preferirane vrste,
 pregledi, kolaborativni, popularni), duplikati se uklanjaju i zadržava se prvih
-`poolSize`. Zato `Take(poolSize)` ne može odsjeći instrument koji je student
-pregledao: pregledani instrument ulazi u kandidate i kada nije ni preferirane vrste,
-ni kolaborativni, ni popularan. Prije odsijecanja izbacuju se neaktivni instrumenti,
-a ako kandidata ima manje od traženog broja `count`, skup se dopunjava aktivnim
-instrumentima po id-u. Na kraju se izbacuju instrumenti koje student trenutno drži
-u najmu.
+`poolSize`. Sva ograničenja važe samo za instrumente koji se mogu preporučiti, pa
+arhivirani ili iznajmljeni instrument ne zauzima mjesto. Prvih `poolSize / 4`
+pregledanih instrumenata uvijek ulazi u formulu, jer preferirane vrste i pregledi
+zajedno uzimaju najviše 3/4 skupa. Ako kandidata ima manje od traženog broja `count`,
+skup se dopunjava instrumentima po id-u.
 
 ## Objašnjive preporuke
 
@@ -79,9 +78,9 @@ prag:
 
 | Uslov | Razlog koji se prikazuje |
 |---|---|
-| Skor najma >= 0.5 i vrsta se poklapa | "Na osnovu vaše historije najma (vrsta)." |
+| Skor vlastite historije >= 0.5 | "Na osnovu vaše historije najma (vrsta)." |
 | Instrument je u kolaborativnom skupu | "Studenti sa sličnim izborima najma biraju ovaj instrument." |
-| Skor pregleda >= 0.5 | "Pregledali ste ovaj instrument ili slične modele." |
+| Skor pregleda >= 0.5 | "Pregledali ste ovaj instrument." |
 | Skor sličnosti >= 0.6 | "Sličan vašim prethodnim izborima proizvođača ili vrste." |
 | Skor popularnosti >= 0.5 | "Popularan među studentima." |
 | Nijedan prag nije pređen | "Preporučeno na osnovu dostupnosti i ukupnog interesovanja." |
@@ -95,12 +94,13 @@ Endpoint vraća 5 preporuka po podrazumijevanju (`DefaultCount`) i najviše 20
 
 ```json
 {
-  "instrument": { "id": 1, "model": "Stratocaster", "manufacturer": "Fender" },
-  "score": 0.805,
+  "instrument": { "id": 8, "model": "D-28", "manufacturer": "Martin" },
+  "score": 0.7033,
   "reasons": [
     "Na osnovu vaše historije najma (Žičani).",
-    "Sličan vašim prethodnim izborima proizvođača ili vrste.",
-    "Popularan među studentima."
+    "Studenti sa sličnim izborima najma biraju ovaj instrument.",
+    "Pregledali ste ovaj instrument.",
+    "Sličan vašim prethodnim izborima proizvođača ili vrste."
   ]
 }
 ```
@@ -126,11 +126,11 @@ ne koriste.
 
 `eNote/eNote.Application/Features/Rentals/Recommendations/Services/RecommendationService.cs`
 
-Petlja koja računa četiri signala i ukupni skor (linije 98–111):
+Petlja koja računa četiri signala i ukupni skor (linije 85–100):
 
 ![Računanje skora](docs/recommender/kod-skor.png)
 
-Metoda BuildReasons, koja gradi objašnjenja (linije 341–376):
+Metoda BuildReasons, koja gradi objašnjenja (linije 264–299):
 
 ![Razlozi preporuke](docs/recommender/kod-razlozi.png)
 
@@ -143,6 +143,6 @@ Mobilna aplikacija, tab Instrumenti, prijavljen student:
 
 ![Traka s preporukama](docs/recommender/aplikacija-preporuke.png)
 
-Dugme "+N razloga" otvara sva objašnjenja jedne preporuke:
+Dugme 'Zašto?' otvara sva objašnjenja jedne preporuke:
 
 ![Objašnjenja preporuke](docs/recommender/aplikacija-razlozi.png)

@@ -31,6 +31,7 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   List<InstrumentRecommendationDto> _recommendations = const [];
   RentalDebtDto? _debt;
   bool _debtLoadFailed = false;
+  bool _recommendationsLoadFailed = false;
   bool _onlyAvailable = true;
 
   @override
@@ -61,9 +62,19 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   Future<void> _loadRecommendations() async {
     try {
       final result = await context.read<InstrumentProvider>().recommended();
-      if (mounted) setState(() => _recommendations = result);
+      if (mounted) {
+        setState(() {
+          _recommendations = result;
+          _recommendationsLoadFailed = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _recommendations = const []);
+      if (mounted) {
+        setState(() {
+          _recommendations = const [];
+          _recommendationsLoadFailed = true;
+        });
+      }
     }
   }
 
@@ -87,10 +98,14 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   }
 
   void _openInstrument(int instrumentId) {
-    Navigator.of(context).pushNamed(
-      AppRoutes.instrumentDetail,
-      arguments: InstrumentDetailArgs(instrumentId),
-    );
+    Navigator.of(context)
+        .pushNamed(
+          AppRoutes.instrumentDetail,
+          arguments: InstrumentDetailArgs(instrumentId),
+        )
+        .then((_) {
+          if (mounted) _loadRecommendations();
+        });
   }
 
   void _openPayment(int rentalId) {
@@ -133,6 +148,17 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
               tone: StatusTone.warning,
               actionLabel: 'Pokušaj ponovo',
               onAction: _loadDebt,
+            ),
+          ),
+        if (_recommendationsLoadFailed)
+          Padding(
+            padding: _bannerPadding,
+            child: StatusBanner(
+              icon: Icons.error_outline,
+              message: 'Preporuke trenutno nije moguće učitati.',
+              tone: StatusTone.warning,
+              actionLabel: 'Pokušaj ponovo',
+              onAction: _loadRecommendations,
             ),
           ),
         RecommendationStrip(
