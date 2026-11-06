@@ -120,6 +120,8 @@ iznajmljivanje unutar prozora za produženje, a `student1` aktivno iznajmljivanj
 koje kasni. Seedovana plaćena iznajmljivanja nemaju Stripe plaćanje, pa se
 povrat novca prikazuje uz novo testno plaćanje.
 
+Prva zatvorena predaja naloga `mobile` ima seed PDF, koji `instructor` preuzima na desktop ekranu predaja zadatka, uz filter `Sve`.
+
 Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
 (najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed
 nalozi su izuzetak i postoje samo da pregled aplikacije bude brz.

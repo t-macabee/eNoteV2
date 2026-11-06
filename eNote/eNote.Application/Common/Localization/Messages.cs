@@ -143,9 +143,10 @@ public static class Messages
 
     public const string FileNotProvided = "Fajl nije priložen.";
     public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
-    public const string StorageQuotaExceeded = "Prekoračen je maksimalni dozvoljeni prostor za slike prodavnice.";
-    public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
-    public const string AssignmentFileTypeNotAllowed = "Dozvoljeni formati za zadatak su JPEG, PNG i PDF.";
+    public const string FileNotReadable = "Fajl nije moguće pročitati. Pokušajte ponovo.";
+    public const string StorageQuotaExceeded = "Prekoračen je maksimalni prostor od 500 MB za slike prodavnice.";
+    public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP. Sadržaj fajla mora odgovarati njegovom formatu.";
+    public const string AssignmentFileTypeNotAllowed = "Dozvoljeni formati za zadatak su JPEG, PNG i PDF. Sadržaj fajla mora odgovarati njegovom formatu.";
 
     public const string EventNotFound = "Događaj nije pronađen.";
     public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";

@@ -222,6 +222,41 @@ public sealed class DevelopmentDataSeedTests
         }
     }
 
+    [Fact]
+    public async Task SeedAsync_SubmissionFilesExistOnDisk_AsPdf_AndBelongToOneRow()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        await ctx.Database.EnsureCreatedAsync();
+        await using var provider = SeedTestHarness.BuildProvider(ctx, Now);
+
+        await IdentitySeed.SeedAsync(provider);
+        await DevelopmentDataSeed.SeedAsync(ctx, new FixedClock(Now), new RentalOptions { OverduePenaltyMultiplier = 0.5m });
+
+        var filePath = Assert.Single(await ctx.Set<AssignmentSubmission>().Where(s => s.FilePath != null).Select(s => s.FilePath!).ToListAsync());
+        Assert.Equal($"{UploadPaths.RoutePrefix}/assignments/seed-submission.pdf", filePath);
+
+        var fullPath = Path.Combine(ApiWebRoot(), "uploads", "assignments", "seed-submission.pdf");
+        var bytes = await File.ReadAllBytesAsync(fullPath);
+
+        Assert.Equal("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+        Assert.True(bytes.Length <= FileUploadLimits.MaxFileBytes);
+    }
+
+    [Fact]
+    public async Task SeedAsync_OpenAssignments_DoNotAskForAFileTypeThatCannotBeUploaded()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        await ctx.Database.EnsureCreatedAsync();
+        await using var provider = SeedTestHarness.BuildProvider(ctx, Now);
+
+        await IdentitySeed.SeedAsync(provider);
+        await DevelopmentDataSeed.SeedAsync(ctx, new FixedClock(Now), new RentalOptions { OverduePenaltyMultiplier = 0.5m });
+
+        var descriptions = await ctx.Set<Assignment>().Select(a => a.Description).ToListAsync();
+
+        Assert.DoesNotContain(descriptions, d => d.Contains("audio", StringComparison.OrdinalIgnoreCase) || d.Contains("video", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static string ApiWebRoot()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

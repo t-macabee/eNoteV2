@@ -18,7 +18,6 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   UserProfileResponse? _profileResponse;
   bool _isLoading = true;
-  int _pictureVersion = 0;
 
   @override
   void initState() {
@@ -32,10 +31,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
       final profileProvider = context.read<ProfileProvider>();
       final profile = await profileProvider.getProfile();
       if (mounted) {
-        setState(() {
-          _profileResponse = profile;
-          _pictureVersion++;
-        });
+        setState(() => _profileResponse = profile);
       }
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
@@ -184,7 +180,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
     final provider = context.read<ProfileProvider>();
     final apiClient = context.read<ApiClient>();
     return networkImageOrPlaceholder(
-      provider.pictureUrl(cacheBuster: _pictureVersion),
+      provider.pictureUrl(),
       apiClient,
       size: 80,
       borderRadius: 40,

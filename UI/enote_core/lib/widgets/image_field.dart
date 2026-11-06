@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../files/upload_rules.dart';
 import '../theme/app_theme.dart';
 import 'network_image.dart';
 
@@ -17,7 +18,7 @@ class ImageField extends StatefulWidget {
   final double borderRadius;
   final bool editable;
   final ImageUploadCallback? onUpload;
-  final Future<Uint8List?> Function()? imagePicker;
+  final Future<PickedImage?> Function()? imagePicker;
 
   final ApiClient? apiClient;
   final AlignmentGeometry alignment;
@@ -40,8 +41,6 @@ class ImageField extends StatefulWidget {
 
 class _ImageFieldState extends State<ImageField> {
   Uint8List? _localBytes;
-  String? _localFileName;
-  String? _localContentType;
   bool _isUploading = false;
 
   @override
@@ -107,23 +106,24 @@ class _ImageFieldState extends State<ImageField> {
       return;
     }
 
-    final bytes = await picker();
-    if (bytes == null || !mounted) return;
+    final picked = await picker();
+    if (picked == null || !mounted) return;
 
-    setState(() {
-      _localBytes = bytes;
-      _localFileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      _localContentType = 'image/jpeg';
-    });
+    setState(() => _localBytes = picked.bytes);
 
-    if (widget.onUpload != null) {
-      setState(() => _isUploading = true);
-      try {
-        await widget.onUpload!(bytes, _localFileName!, _localContentType!);
-      } finally {
-        if (mounted) {
-          setState(() => _isUploading = false);
-        }
+    final upload = widget.onUpload;
+    if (upload == null) return;
+
+    setState(() => _isUploading = true);
+    String? uploaded;
+    try {
+      uploaded = await upload(picked.bytes, picked.fileName, picked.contentType);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+          if (uploaded == null) _localBytes = null;
+        });
       }
     }
   }

@@ -2,6 +2,7 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace eNote.Infrastructure.Storage;
@@ -12,10 +13,12 @@ public sealed class LocalFileStorageService : IFileStorageService
     private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
 
     private readonly string _rootPath;
+    private readonly ILogger<LocalFileStorageService> _logger;
 
-    public LocalFileStorageService(IOptions<StorageOptions> options)
+    public LocalFileStorageService(IOptions<StorageOptions> options, ILogger<LocalFileStorageService> logger)
     {
         _rootPath = Path.GetFullPath(options.Value.Root);
+        _logger = logger;
     }
 
     public async Task<string> SaveAsync(Stream stream, string contentType, string subfolder, CancellationToken ct = default)
@@ -57,9 +60,18 @@ public sealed class LocalFileStorageService : IFileStorageService
     {
         var fullPath = ResolveUploadPath(path);
 
-        if (fullPath is not null && File.Exists(fullPath))
+        if (fullPath is null || !File.Exists(fullPath))
+        {
+            return;
+        }
+
+        try
         {
             File.Delete(fullPath);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(exception, "The stored file {Path} was not deleted", path);
         }
     }
 
@@ -74,24 +86,23 @@ public sealed class LocalFileStorageService : IFileStorageService
         var uniqueName = $"{Guid.NewGuid()}{ext}";
         var fullPath = Path.Combine(uploadsRoot, uniqueName);
 
-        await using FileStream fileStream = File.Create(fullPath);
+        try
+        {
+            await using FileStream fileStream = File.Create(fullPath);
 
-        await stream.CopyToAsync(fileStream, ct);
+            await stream.CopyToAsync(fileStream, ct);
+        }
+        catch
+        {
+            File.Delete(fullPath);
+            throw;
+        }
+
         return $"{UploadPaths.RoutePrefix}/{subfolder}/{uniqueName}";
     }
 
     private static async Task<string> ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(contentType))
-        {
-            throw new BusinessException(invalidFormatMessage);
-        }
-
-        if (!stream.CanSeek)
-        {
-            throw new ArgumentException("The upload stream must be seekable.", nameof(stream));
-        }
-
         if (stream.Length > FileUploadLimits.MaxFileBytes)
         {
             throw new BusinessException(Messages.FileTooLarge);
@@ -104,7 +115,7 @@ public sealed class LocalFileStorageService : IFileStorageService
 
         var detectedType = FileSignatureDetector.DetectContentType(header.AsSpan(0, read));
 
-        if (!allowedContentTypes.Contains(detectedType) || !allowedContentTypes.Contains(contentType.ToLowerInvariant()))
+        if (!allowedContentTypes.Contains(detectedType) || !string.Equals(contentType, detectedType, StringComparison.OrdinalIgnoreCase))
         {
             throw new BusinessException(invalidFormatMessage);
         }

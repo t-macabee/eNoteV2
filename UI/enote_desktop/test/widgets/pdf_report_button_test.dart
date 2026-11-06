@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/widgets/file_save.dart';
 import 'package:enote_desktop/widgets/pdf_report_button.dart';
 
 import '../helpers.dart';
@@ -34,7 +35,7 @@ void main() {
   Future<void> pumpButton(
     WidgetTester tester,
     ScriptedClient client, {
-    PdfSaver? savePdf,
+    FileSaver? savePdf,
   }) async {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

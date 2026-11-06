@@ -5,7 +5,14 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/file_save.dart';
 import 'submission_provider.dart';
+
+String submissionFileName(AssignmentSubmissionDto item, String assignmentTitle) {
+  final name = '${item.studentName ?? 'Predaja'} - $assignmentTitle'
+      .replaceAll(RegExp(r'[/\\:*?"<>|]'), '_');
+  return '$name.${fileExtension(item.filePath!)}';
+}
 
 class SubmissionListScreen extends StatefulWidget {
   final int lectureId;
@@ -14,6 +21,7 @@ class SubmissionListScreen extends StatefulWidget {
 
   final EntityListPresentation presentation;
   final VoidCallback? onMutation;
+  final FileSaver saveFile;
 
   const SubmissionListScreen({
     super.key,
@@ -22,6 +30,7 @@ class SubmissionListScreen extends StatefulWidget {
     required this.assignmentTitle,
     this.presentation = EntityListPresentation.page,
     this.onMutation,
+    this.saveFile = saveFileWithDialog,
   });
 
   @override
@@ -56,6 +65,22 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
   void _onGradedChanged(bool? value) {
     setState(() => _isGraded = value);
     _listKey.currentState?.refresh(resetPage: true);
+  }
+
+  Future<void> _downloadFile(AssignmentSubmissionDto item) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final filePath = item.filePath!;
+      final bytes = await context.read<SubmissionProvider>().downloadFile(filePath);
+      final saved = await widget.saveFile(
+        bytes,
+        submissionFileName(item, widget.assignmentTitle),
+      );
+      if (saved == null) return;
+      messenger.showSnackBar(SnackBar(content: Text('Datoteka sačuvana: $saved')));
+    } catch (e) {
+      if (mounted) ErrorBanner.show(context, message: userMessage(e));
+    }
   }
 
   Future<void> _openGradeDialog(AssignmentSubmissionDto item) async {
@@ -196,6 +221,17 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
             value: (item) => item.submittedAt != null
                 ? formatDateTime(item.submittedAt!)
                 : '-',
+          ),
+          ColumnSpec<AssignmentSubmissionDto>(
+            label: 'Datoteka',
+            value: (item) => item.filePath == null ? 'Nema datoteke' : '',
+            cellBuilder: (context, item) => item.filePath == null
+                ? const Text('Nema datoteke')
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    tooltip: 'Preuzmi datoteku',
+                    onPressed: () => _downloadFile(item),
+                  ),
           ),
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Ocjena',

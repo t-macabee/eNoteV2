@@ -1,10 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/assignment_submission/submission_list_screen.dart';
 import 'package:enote_desktop/features/instructor/assignment_submission/submission_provider.dart';
+
+import 'package:enote_desktop/widgets/file_save.dart';
 
 import '../../../helpers.dart';
 
@@ -12,28 +17,44 @@ Map<String, dynamic> _submissionJson({
   required int id,
   required String studentName,
   int? grade,
+  String? filePath,
 }) => {
   'id': id,
   'assignmentId': 2,
   'studentId': id,
   'studentName': studentName,
   'grade': grade,
+  'filePath': filePath,
   'submittedAt': '2026-10-01T10:00:00',
 };
 
 final _rows = [
-  _submissionJson(id: 1, studentName: 'Jana Janić'),
+  _submissionJson(
+    id: 1,
+    studentName: 'Jana Janić',
+    filePath: '/api/v1/uploads/assignments/abc.pdf',
+  ),
   _submissionJson(id: 2, studentName: 'Ivan Ivić'),
   _submissionJson(id: 3, studentName: 'Ana Anić', grade: 90),
 ];
 
-Future<ScriptedClient> _pumpList(WidgetTester tester) async {
+Future<ScriptedClient> _pumpList(
+  WidgetTester tester, {
+  FileSaver saveFile = saveFileWithDialog,
+  int downloadStatus = 200,
+}) async {
   tester.view.physicalSize = const Size(1400, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
   final client = ScriptedClient((request) {
+    if (request.url.path.contains('/uploads/assignments/')) {
+      return http.Response.bytes(
+        downloadStatus == 200 ? [37, 80, 68, 70] : [],
+        downloadStatus,
+      );
+    }
     final isCount = request.url.queryParameters['pageSize'] == '1';
     final isGraded = request.url.queryParameters['isGraded'];
     final matching = _rows
@@ -71,10 +92,11 @@ Future<ScriptedClient> _pumpList(WidgetTester tester) async {
     MaterialApp(
       home: ChangeNotifierProvider<SubmissionProvider>.value(
         value: provider,
-        child: const SubmissionListScreen(
+        child: SubmissionListScreen(
           lectureId: 1,
           assignmentId: 2,
           assignmentTitle: 'Test zadatak',
+          saveFile: saveFile,
         ),
       ),
     ),
@@ -85,6 +107,58 @@ Future<ScriptedClient> _pumpList(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('a row with a file offers the download, a row without does not', (
+    tester,
+  ) async {
+    await _pumpList(tester);
+
+    expect(find.byTooltip('Preuzmi datoteku'), findsOneWidget);
+    expect(find.text('Nema datoteke'), findsOneWidget);
+  });
+
+  testWidgets('the download saves the bytes under a readable name', (
+    tester,
+  ) async {
+    Uint8List? savedBytes;
+    String? savedName;
+    final client = await _pumpList(
+      tester,
+      saveFile: (bytes, name) async {
+        savedBytes = bytes;
+        savedName = name;
+        return '/tmp/$name';
+      },
+    );
+
+    await tester.tap(find.byTooltip('Preuzmi datoteku'));
+    await tester.pumpAndSettle();
+
+    expect(client.getUrls.last, 'http://localhost/uploads/assignments/abc.pdf');
+    expect(savedBytes, [37, 80, 68, 70]);
+    expect(savedName, 'Jana Janić - Test zadatak.pdf');
+    expect(find.textContaining('Datoteka sačuvana'), findsOneWidget);
+  });
+
+  testWidgets('a failed download shows the message and saves nothing', (
+    tester,
+  ) async {
+    var saved = false;
+    await _pumpList(
+      tester,
+      downloadStatus: 403,
+      saveFile: (bytes, name) async {
+        saved = true;
+        return name;
+      },
+    );
+
+    await tester.tap(find.byTooltip('Preuzmi datoteku'));
+    await tester.pumpAndSettle();
+
+    expect(saved, isFalse);
+    expect(find.text('Nemate pristup ovom resursu.'), findsOneWidget);
+  });
+
   testWidgets('SubmissionListScreen shows the student name search', (
     tester,
   ) async {

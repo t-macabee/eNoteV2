@@ -255,14 +255,21 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
     private async Task PersistPictureChangeAsync(AppUser user, string? previousPicturePath, string? rollbackPath = null)
     {
-        var updateResult = await userManager.UpdateAsync(user);
+        IdentityResult updateResult;
+
+        try
+        {
+            updateResult = await userManager.UpdateAsync(user);
+        }
+        catch
+        {
+            DeleteIfPresent(rollbackPath);
+            throw;
+        }
 
         if (!updateResult.Succeeded)
         {
-            if (rollbackPath is not null)
-            {
-                fileStorage.Delete(rollbackPath);
-            }
+            DeleteIfPresent(rollbackPath);
 
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
             throw new BusinessException(Messages.UserUpdateFailed(user.UserName!, errors));
@@ -271,6 +278,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         if (!string.IsNullOrWhiteSpace(previousPicturePath))
         {
             fileStorage.Delete(previousPicturePath);
+        }
+    }
+
+    private void DeleteIfPresent(string? path)
+    {
+        if (path is not null)
+        {
+            fileStorage.Delete(path);
         }
     }
 }

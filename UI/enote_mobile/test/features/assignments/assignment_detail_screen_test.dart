@@ -182,6 +182,17 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Predaj zadatak'), findsNothing);
   });
 
+  testWidgets('a submitted file shows its kind and not the stored name', (
+    tester,
+  ) async {
+    final harness = _Harness(dueAt: _futureDueAt, submission: _submissionJson());
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('PDF datoteka'), findsOneWidget);
+    expect(find.textContaining('abc.pdf'), findsNothing);
+  });
+
   testWidgets('state C shows the numeral and the ranking shortcut', (
     tester,
   ) async {

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Http;
 using eNote.API.Controllers.Academic;
 using eNote.API.Controllers.Communication;
 using eNote.API.Controllers.Identity;
@@ -81,26 +82,18 @@ public sealed class ControllerActionDiscoveryTests
     [Fact]
     public void UploadActions_AreSizeCapped_AndRateLimited()
     {
-        (Type Controller, string Action)[] uploadActions =
-        [
-            (typeof(InstrumentController), nameof(InstrumentController.UploadImage)),
-            (typeof(AdminMusicStoreController), nameof(AdminMusicStoreController.UploadImage)),
-            (typeof(ShopStoreController), nameof(ShopStoreController.UploadOwnStoreImage)),
-            (typeof(AssignmentSubmissionController), nameof(AssignmentSubmissionController.Submit)),
-            (typeof(UsersController), nameof(UsersController.UploadPicture)),
-            (typeof(AnnouncementController), nameof(AnnouncementController.UploadImageForCourse)),
-            (typeof(AnnouncementController), nameof(AnnouncementController.UploadImageForStore))
-        ];
+        var uploadActions = DiscoveredActions()
+            .Where(a => a.MethodInfo.GetParameters().Any(p => p.ParameterType == typeof(IFormFile)))
+            .ToList();
 
-        foreach (var (controller, action) in uploadActions)
+        Assert.Equal(7, uploadActions.Count);
+
+        foreach (var action in uploadActions)
         {
-            var method = controller.GetMethod(action);
-            Assert.NotNull(method);
-
-            var sizeLimit = Assert.Single(method!.GetCustomAttributes<RequestSizeLimitAttribute>());
+            var sizeLimit = Assert.Single(action.MethodInfo.GetCustomAttributes<RequestSizeLimitAttribute>());
             Assert.Equal(FileUploadLimits.MaxRequestBytes, ((IRequestSizeLimitMetadata)sizeLimit).MaxRequestBodySize);
 
-            var throttle = Assert.Single(method.GetCustomAttributes<EnableRateLimitingAttribute>());
+            var throttle = Assert.Single(action.MethodInfo.GetCustomAttributes<EnableRateLimitingAttribute>());
             Assert.Equal(RateLimitingExtensions.UploadsPolicy, throttle.PolicyName);
         }
     }

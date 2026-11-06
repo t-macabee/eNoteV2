@@ -11,22 +11,6 @@ import '../../widgets/mobile_form_scaffold.dart';
 import 'edit_profile_form.dart';
 import 'profile_provider.dart';
 
-const _allowedPictureExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-const _pictureErrorCopy = 'Dozvoljeni formati: JPG, PNG, WebP (do 5 MB).';
-const _pictureSizeLimit = 5 * 1024 * 1024;
-
-class _PickedImage {
-  final Uint8List bytes;
-  final String fileName;
-  final String contentType;
-
-  _PickedImage({
-    required this.bytes,
-    required this.fileName,
-    required this.contentType,
-  });
-}
-
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -91,63 +75,44 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     });
   }
 
-  Future<_PickedImage?> _pickImage() async {
+  Future<PickedImage?> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: _allowedPictureExtensions,
+      allowedExtensions: allowedImageExtensions,
       withData: true,
     );
     if (result == null || result.files.isEmpty) return null;
     final file = result.files.single;
     final bytes = file.bytes;
     if (bytes == null) return null;
-    final fileName = file.name;
-    final dot = fileName.lastIndexOf('.');
-    final extension = dot == -1
-        ? ''
-        : fileName.substring(dot + 1).toLowerCase();
-    final extensionOk = _allowedPictureExtensions.contains(extension);
-    if (!extensionOk || bytes.length > _pictureSizeLimit) {
-      if (mounted) {
-        setState(() => _pictureError = _pictureErrorCopy);
-      }
-      return null;
-    }
+    final picked = pickedImageOrNull(bytes, file.name);
     if (mounted) {
-      setState(() => _pictureError = null);
+      setState(() => _pictureError = picked == null ? imageRulesMessage : null);
     }
-    return _PickedImage(
-      bytes: bytes,
-      fileName: fileName,
-      contentType: switch (extension) {
-        'jpg' || 'jpeg' => 'image/jpeg',
-        'png' => 'image/png',
-        'webp' => 'image/webp',
-        _ => 'application/octet-stream',
-      },
-    );
+    return picked;
   }
 
-  Future<void> _uploadPicked(_PickedImage picked) async {
+  Future<bool> _uploadPicked(
+    Uint8List bytes,
+    String fileName,
+    String contentType,
+  ) async {
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
+    var uploaded = false;
     await submitWith((busy) => _pictureBusy = busy, () async {
-      await provider.uploadPicture(
-        picked.bytes,
-        picked.fileName,
-        picked.contentType,
-      );
+      await provider.uploadPicture(bytes, fileName, contentType);
       await session.reloadProfile();
+      uploaded = true;
     }, showBanner: true);
+    return uploaded;
   }
 
   Future<void> _changePicture() async {
     final picked = await _pickImage();
     if (picked == null || !mounted) return;
-    await _uploadPicked(picked);
+    await _uploadPicked(picked.bytes, picked.fileName, picked.contentType);
   }
-
-  Future<Uint8List?> _imagePickerBytes() async => (await _pickImage())?.bytes;
 
   Future<String?> _imageFieldUpload(
     Uint8List bytes,
@@ -156,10 +121,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   ) async {
     final session = context.read<SessionController>();
     final apiClient = context.read<ApiClient>();
-    await _uploadPicked(
-      _PickedImage(bytes: bytes, fileName: fileName, contentType: contentType),
-    );
-    if (!mounted) return null;
+    final uploaded = await _uploadPicked(bytes, fileName, contentType);
+    if (!uploaded || !mounted) return null;
     return userPictureUrl(apiClient, 'me', cacheBuster: session.pictureVersion);
   }
 
@@ -204,7 +167,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           apiClient: context.read<ApiClient>(),
           hasPicture: hasPicture,
           pictureError: _pictureError,
-          imagePicker: _imagePickerBytes,
+          imagePicker: _pickImage,
           onUpload: _imageFieldUpload,
           onChangePicture: _pictureBusy ? null : _changePicture,
           onRemovePicture: (!hasPicture || _pictureBusy)

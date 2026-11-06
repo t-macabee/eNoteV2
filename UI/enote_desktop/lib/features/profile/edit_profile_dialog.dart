@@ -36,7 +36,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   final _emailController = TextEditingController();
   DateTime? _dateOfBirth;
   bool _hasPicture = false;
-  int _pictureVersion = 0;
 
   @override
   void initState() {
@@ -80,12 +79,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     return uploadImageWith(() async {
       await provider.uploadPicture(bytes, fileName, contentType);
       if (mounted) {
-        setState(() {
-          _hasPicture = true;
-          _pictureVersion++;
-        });
+        setState(() => _hasPicture = true);
       }
-      return provider.pictureUrl(cacheBuster: _pictureVersion);
+      return provider.pictureUrl();
     }, context: context);
   }
 
@@ -99,10 +95,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     try {
       await context.read<ProfileProvider>().deletePicture();
       if (mounted) {
-        setState(() {
-          _hasPicture = false;
-          _pictureVersion++;
-        });
+        setState(() => _hasPicture = false);
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Slika uklonjena.')));
       }
@@ -113,6 +106,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.read<ProfileProvider>();
     return EntityFormScaffold(
       title: 'Uredi profil',
       presentation: EntityFormPresentation.dialog,
@@ -128,11 +122,11 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         Align(
           alignment: Alignment.centerLeft,
           child: ImageField(
-            key: ValueKey('profile-picture-$_pictureVersion-$_hasPicture'),
-            imageUrl: context.read<ProfileProvider>().pictureUrl(
-              cacheBuster: _pictureVersion,
+            key: ValueKey(
+              'profile-picture-${provider.pictureVersion}-$_hasPicture',
             ),
-            imagePicker: pickImageBytes,
+            imageUrl: provider.pictureUrl(),
+            imagePicker: () => pickImage(context),
             onUpload: _uploadImage,
             apiClient: context.read<ApiClient>(),
           ),

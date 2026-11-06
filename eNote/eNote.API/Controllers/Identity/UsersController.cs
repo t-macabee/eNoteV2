@@ -48,14 +48,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPicture(CancellationToken cancellationToken)
     {
-        (var data, var contentType) = await selfService.GetPictureAsync(cancellationToken);
-
-        if (data is null || contentType is null)
-        {
-            return NotFound();
-        }
-
-        return File(data, contentType);
+        return PictureResult(await selfService.GetPictureAsync(cancellationToken));
     }
 
     [HttpDelete("me/picture")]
@@ -86,9 +79,12 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUserPicture(int id, CancellationToken cancellationToken)
     {
-        (var data, var contentType) = await profileService.GetUserPictureAsync(id, cancellationToken);
+        return PictureResult(await profileService.GetUserPictureAsync(id, cancellationToken));
+    }
 
-        if (data is null || contentType is null)
+    private IActionResult PictureResult((Stream? Data, string? ContentType) picture)
+    {
+        if (picture.Data is null || picture.ContentType is null)
         {
             return NotFound();
         }
@@ -96,7 +92,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
         Response.Headers.CacheControl = "private, no-store";
         Response.Headers.Vary = "Authorization";
 
-        return File(data, contentType);
+        return File(picture.Data, picture.ContentType);
     }
 
     [HttpPut("me/password")]

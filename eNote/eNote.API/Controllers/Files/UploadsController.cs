@@ -73,7 +73,7 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
             return NotFound();
         }
 
-        return File(data, contentType ?? "application/octet-stream", enableRangeProcessing: true);
+        return File(data, contentType!, enableRangeProcessing: true);
     }
 
     private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);

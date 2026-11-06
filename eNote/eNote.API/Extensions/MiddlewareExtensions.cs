@@ -11,9 +11,10 @@ public static class MiddlewareExtensions
 
     public static WebApplication UseErrorHandling(this WebApplication app)
     {
-        _ = app.UseExceptionHandler(errorApp =>
+        _ = app.UseExceptionHandler(new ExceptionHandlerOptions
         {
-            errorApp.Run(async context =>
+            SuppressDiagnosticsCallback = context => context.Exception is AppException,
+            ExceptionHandler = async context =>
             {
                 context.Response.ContentType = "application/json";
 
@@ -46,7 +47,7 @@ public static class MiddlewareExtensions
                 };
 
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response, ErrorJsonOptions), context.RequestAborted);
-            });
+            }
         });
 
         return app;

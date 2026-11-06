@@ -19,24 +19,19 @@ class PickedAssignmentFile {
 }
 
 const _allowedAssignmentExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-const _assignmentSizeLimit = 5 * 1024 * 1024;
 
 String? validateAssignmentFile(String fileName, int byteLength) {
-  final dot = fileName.lastIndexOf('.');
-  final extension = dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase();
-  if (!_allowedAssignmentExtensions.contains(extension)) {
+  if (!_allowedAssignmentExtensions.contains(fileExtension(fileName))) {
     return 'Dozvoljeni formati: PDF, JPG, PNG.';
   }
-  if (byteLength > _assignmentSizeLimit) {
+  if (byteLength > maxUploadBytes) {
     return 'Datoteka je veća od 5 MB.';
   }
   return null;
 }
 
 String assignmentContentType(String fileName) {
-  final dot = fileName.lastIndexOf('.');
-  final extension = dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase();
-  return switch (extension) {
+  return switch (fileExtension(fileName)) {
     'pdf' => 'application/pdf',
     'jpg' || 'jpeg' => 'image/jpeg',
     'png' => 'image/png',
@@ -52,10 +47,14 @@ String formatFileSize(int bytes) {
   return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 }
 
-String assignmentFileName(String? filePath) {
-  if (filePath == null || filePath.isEmpty) return '—';
-  final segments = filePath.split('/');
-  return segments.isEmpty ? '—' : segments.last;
+bool isAssignmentImage(String? filePath) {
+  if (filePath == null) return false;
+  return const ['jpg', 'jpeg', 'png'].contains(fileExtension(filePath));
+}
+
+String assignmentFileLabel(String? filePath) {
+  if (filePath == null || filePath.isEmpty) return 'Nema datoteke';
+  return isAssignmentImage(filePath) ? 'Slika' : 'PDF datoteka';
 }
 
 class FilePickerField extends StatefulWidget {

@@ -30,7 +30,7 @@ public sealed class AssignmentSubmissionService(
                 assignment.AssignmentSubmissions.Add(existing);
             }
 
-            existing.Submit(path?.Trim(), clock.UtcNow);
+            existing.Submit(path, clock.UtcNow);
 
             await SaveWithSubmissionConflictMessageAsync(ct);
         }

@@ -156,7 +156,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
                 alignment: Alignment.centerLeft,
                 child: ImageField(
                   imageUrl: _currentImagePath,
-                  imagePicker: pickImageBytes,
+                  imagePicker: () => pickImage(context),
                   onUpload: _uploadImage,
                   apiClient: context.read<ApiClient>(),
                 ),

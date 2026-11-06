@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using eNote.API.Filters;
 using eNote.Application.Common.Localization;
 using eNote.Application.Validation;
@@ -22,6 +23,31 @@ public static class ValidationExtensions
             options.SuppressMapClientErrors = true;
             options.InvalidModelStateResponseFactory = context =>
             {
+                var request = context.HttpContext.Request;
+
+                if (request.ContentLength > context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()?.MaxRequestBodySize)
+                {
+                    return new ObjectResult(new ErrorResponse
+                    {
+                        Status = StatusCodes.Status413PayloadTooLarge,
+                        Code = "error.file_too_large",
+                        Message = Messages.FileTooLarge
+                    })
+                    {
+                        StatusCode = StatusCodes.Status413PayloadTooLarge
+                    };
+                }
+
+                if (request.HasFormContentType && context.ModelState.ContainsKey(string.Empty))
+                {
+                    return new BadRequestObjectResult(new ErrorResponse
+                    {
+                        Status = StatusCodes.Status400BadRequest,
+                        Code = "error.validation",
+                        Message = Messages.FileNotReadable
+                    });
+                }
+
                 var errors = context.ModelState
                     .Where(entry => entry.Value is { Errors.Count: > 0 })
                     .ToDictionary(

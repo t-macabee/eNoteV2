@@ -119,7 +119,7 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
               alignment: Alignment.centerLeft,
               child: ImageField(
                 imageUrl: _currentImagePath,
-                imagePicker: pickImageBytes,
+                imagePicker: () => pickImage(context),
                 onUpload: _uploadImage,
                 editable: true,
                 apiClient: context.read<ApiClient>(),

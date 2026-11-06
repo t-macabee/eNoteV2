@@ -104,14 +104,6 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     });
   }
 
-  static bool _isImage(String? filePath) {
-    if (filePath == null) return false;
-    final name = assignmentFileName(filePath).toLowerCase();
-    return name.endsWith('.jpg') ||
-        name.endsWith('.jpeg') ||
-        name.endsWith('.png');
-  }
-
   @override
   Widget build(BuildContext context) {
     final assignment = _assignment;
@@ -303,7 +295,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
   }
 
   Widget _fileRow(AssignmentSubmissionDto submission) {
-    final name = assignmentFileName(submission.filePath);
+    final name = assignmentFileLabel(submission.filePath);
     final fileName = Row(
       children: [
         const Icon(Icons.description_outlined),
@@ -311,7 +303,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
         Expanded(child: Text(name)),
       ],
     );
-    if (!_isImage(submission.filePath)) return fileName;
+    if (!isAssignmentImage(submission.filePath)) return fileName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

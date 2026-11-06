@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -12,7 +11,7 @@ class EditProfilePictureSection extends StatelessWidget {
   final ApiClient apiClient;
   final bool hasPicture;
   final String? pictureError;
-  final Future<Uint8List?> Function() imagePicker;
+  final Future<PickedImage?> Function() imagePicker;
   final ImageUploadCallback onUpload;
   final VoidCallback? onChangePicture;
   final VoidCallback? onRemovePicture;

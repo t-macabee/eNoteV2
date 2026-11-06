@@ -44,6 +44,7 @@ export 'widgets/status_banner.dart';
 export 'widgets/status_chip.dart';
 export 'widgets/status_filter_tabs.dart';
 export 'widgets/initials_avatar.dart';
+export 'files/upload_rules.dart';
 export 'widgets/image_field.dart';
 export 'widgets/image_thumbnail.dart';
 export 'widgets/network_image.dart';

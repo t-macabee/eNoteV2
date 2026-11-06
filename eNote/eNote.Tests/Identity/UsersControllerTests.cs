@@ -65,6 +65,17 @@ public sealed class UsersControllerTests
         Assert.Null(revocation.RevokedJti);
     }
 
+    [Fact]
+    public async Task GetPicture_ForbidsCaching()
+    {
+        var controller = CreateController(CreateSelfService(passwordIsValid: true), new RecordingTokenRevocationService());
+
+        var result = await controller.GetPicture(CancellationToken.None);
+
+        Assert.Equal("image/png", Assert.IsType<FileStreamResult>(result).ContentType);
+        Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
+    }
+
     private static UsersController CreateController(UserSelfService selfService, RecordingTokenRevocationService revocation) =>
         new(null!, selfService, revocation)
         {
@@ -145,7 +156,7 @@ public sealed class UsersControllerTests
         public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            Task.FromResult<(Stream?, string?)>((new MemoryStream([1, 2, 3]), "image/png"));
         public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>

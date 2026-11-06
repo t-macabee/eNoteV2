@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:enote_core/enote_core.dart';
 
 class SubmissionProvider extends CrudProvider<AssignmentSubmissionDto> {
@@ -19,6 +21,14 @@ class SubmissionProvider extends CrudProvider<AssignmentSubmissionDto> {
       params: pagedQuery(1, 1, '', filters: {'isGraded': false}),
     );
     return page.totalCount;
+  }
+
+  Future<Uint8List> downloadFile(String filePath) async {
+    final response = await apiClient.get(
+      'uploads/assignments/${filePath.split('/').last}',
+    );
+    throwIfError(response);
+    return response.bodyBytes;
   }
 
   Future<AssignmentSubmissionDto> grade(

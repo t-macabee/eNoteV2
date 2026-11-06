@@ -169,6 +169,8 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         title: 'eNote V2',
         theme: desktopTheme,
+        builder: (_, child) =>
+            Scaffold(backgroundColor: Colors.transparent, body: child),
         home: Consumer<AuthState>(
           builder: (context, authState, _) {
             if (!authState.isAuthenticated) {

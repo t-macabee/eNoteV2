@@ -27,6 +27,24 @@ class _NullBytesPicker extends FilePicker {
 }
 
 void main() {
+  test('assignmentFileLabel shows no raw file name', () {
+    expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.pdf'), 'PDF datoteka');
+    expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.PNG'), 'Slika');
+    expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.jpg'), 'Slika');
+    expect(assignmentFileLabel(null), 'Nema datoteke');
+  });
+
+  test('isAssignmentImage is true only for images', () {
+    expect(isAssignmentImage('/x/abc.jpeg'), isTrue);
+    expect(isAssignmentImage('/x/abc.pdf'), isFalse);
+    expect(isAssignmentImage(null), isFalse);
+  });
+
+  test('validateAssignmentFile keeps the 5 MiB limit at its boundary', () {
+    expect(validateAssignmentFile('a.pdf', 5242880), isNull);
+    expect(validateAssignmentFile('a.pdf', 5242881), isNotNull);
+  });
+
   FilePicker? realPicker;
   try {
     realPicker = FilePicker.platform;

@@ -3,13 +3,20 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-Future<Uint8List?> pickImageBytes() async {
+Future<PickedImage?> pickImage(BuildContext context) async {
   final result = await FilePicker.platform.pickFiles(
-    type: FileType.image,
+    type: FileType.custom,
+    allowedExtensions: allowedImageExtensions,
     withData: true,
   );
   if (result == null || result.files.isEmpty) return null;
-  return result.files.first.bytes;
+  final file = result.files.first;
+  final bytes = file.bytes;
+  final picked = bytes == null ? null : pickedImageOrNull(bytes, file.name);
+  if (picked == null && context.mounted) {
+    ErrorBanner.show(context, message: imageRulesMessage);
+  }
+  return picked;
 }
 
 Future<String?> uploadImageWith(

@@ -1,11 +1,11 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
+
+import 'file_save.dart';
 
 String reportFileName(String report) {
   final now = DateTime.now();
@@ -16,14 +16,12 @@ String reportFileName(String report) {
   return '$report-$stamp.pdf';
 }
 
-typedef PdfSaver = Future<String?> Function(Uint8List bytes, String fileName);
-
 class PdfReportButton extends StatefulWidget {
   final String label;
   final String fileName;
   final String endpoint;
 
-  final PdfSaver? savePdf;
+  final FileSaver? savePdf;
 
   const PdfReportButton({
     super.key,
@@ -57,18 +55,6 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     }
   }
 
-  static Future<String?> _save(Uint8List bytes, String fileName) async {
-    final path = await FilePicker.platform.saveFile(
-      dialogTitle: 'Sačuvaj izvještaj',
-      fileName: fileName,
-      type: FileType.custom,
-      allowedExtensions: const ['pdf'],
-    );
-    if (path == null) return null;
-    await File(path).writeAsBytes(bytes);
-    return path;
-  }
-
   Future<void> _print() async {
     try {
       final bytes = await _load();
@@ -86,7 +72,7 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     final bytes = await _load();
     if (bytes == null) return;
     try {
-      final path = await (widget.savePdf ?? _save)(bytes, widget.fileName);
+      final path = await (widget.savePdf ?? saveFileWithDialog)(bytes, widget.fileName);
       if (path == null || !mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Izvještaj sačuvan: $path')));

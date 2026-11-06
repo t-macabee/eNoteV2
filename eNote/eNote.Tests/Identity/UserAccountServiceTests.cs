@@ -317,6 +317,21 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task UpdatePictureAsync_RollsBackNewPicture_WhenUpdateThrows()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("userA", "a@example.com", "Password1!", null, null);
+        var user = (await harness.UserManager.FindByNameAsync("userA"))!;
+        harness.UserManager.UserValidators.Add(new ThrowingUserValidator());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UpdatePictureAsync(user.Id, PngStream(), "image/png"));
+
+        Assert.Contains(harness.FileStorage.DeletedPaths, p => p.Contains("profile-pictures"));
+    }
+
+    [Fact]
     public async Task DeletePictureAsync_ClearsPath_AndDeletesFile()
     {
         var harness = await CreateHarnessAsync();
@@ -486,6 +501,12 @@ public sealed class UserAccountServiceTests
 
     private static MemoryStream PngStream() =>
         new([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    private sealed class ThrowingUserValidator : IUserValidator<AppUser>
+    {
+        public Task<IdentityResult> ValidateAsync(UserManager<AppUser> manager, AppUser user) =>
+            throw new InvalidOperationException("Database failure.");
+    }
 
     private sealed class Harness(
         UserManager<AppUser> userManager,

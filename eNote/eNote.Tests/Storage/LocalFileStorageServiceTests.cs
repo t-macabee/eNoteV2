@@ -1,6 +1,7 @@
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Storage;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace eNote.Tests.Storage;
@@ -196,16 +197,6 @@ public sealed class LocalFileStorageServiceTests : IDisposable
         Assert.Equal(Messages.AssignmentFileTypeNotAllowed, ex.Message);
     }
 
-    [Fact]
-    public async Task SaveAsync_ThrowsArgumentException_WhenStreamIsNotSeekable()
-    {
-        var service = CreateService();
-        using var stream = new NonSeekableStream(new MemoryStream(PngBytes));
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            service.SaveAsync(stream, "image/png", "profile-pictures"));
-    }
-
     private static TheoryData<byte[], string, string> ToTheoryData((byte[] Data, string ContentType, string Extension)[] types)
     {
         var data = new TheoryData<byte[], string, string>();
@@ -220,41 +211,6 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
     private LocalFileStorageService CreateService()
     {
-        return new LocalFileStorageService(Options.Create(new StorageOptions { Root = _webRoot }));
-    }
-
-    private sealed class NonSeekableStream(Stream inner) : Stream
-    {
-        public override bool CanRead => true;
-        public override bool CanSeek => false;
-        public override bool CanWrite => false;
-        public override long Length => throw new NotSupportedException();
-        public override long Position
-        {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
-        }
-
-        public override void Flush()
-        {
-        }
-
-        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
-
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-
-        public override void SetLength(long value) => throw new NotSupportedException();
-
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                inner.Dispose();
-            }
-
-            base.Dispose(disposing);
-        }
+        return new LocalFileStorageService(Options.Create(new StorageOptions { Root = _webRoot }), NullLogger<LocalFileStorageService>.Instance);
     }
 }

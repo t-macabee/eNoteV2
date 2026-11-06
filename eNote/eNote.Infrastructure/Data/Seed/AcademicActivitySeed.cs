@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,6 +6,8 @@ namespace eNote.Infrastructure.Data.Seed;
 
 internal static class AcademicActivitySeed
 {
+    internal const string SeedSubmissionFilePath = $"{UploadPaths.RoutePrefix}/assignments/seed-submission.pdf";
+
     public static async Task SeedAttendance(ENoteContext context, IClock clock)
     {
         if (await context.Set<Attendance>().AnyAsync())
@@ -98,7 +101,7 @@ internal static class AcademicActivitySeed
         {
             var openAssignment = new Assignment(
                 "Praktični rad: Ritam i metrika",
-                "Snimiti audio zapis zadane ritmičke vježbe.",
+                "Zapisati zadanu ritmičku vježbu u notama i predati je kao PDF ili sliku.",
                 now.AddDays(7),
                 ritamLecture.Id);
             context.Set<Assignment>().Add(openAssignment);
@@ -113,7 +116,7 @@ internal static class AcademicActivitySeed
             {
                 var student = orderedStudents[studentIndex];
                 var submission = new AssignmentSubmission(assignment.Id, student.Id);
-                submission.Submit(null, assignment.DueAt.AddDays(-1));
+                submission.Submit(assignmentIndex == 0 && studentIndex == 0 ? SeedSubmissionFilePath : null, assignment.DueAt.AddDays(-1));
                 var grade = 55 + (studentIndex * 7 + assignmentIndex * 13) % 46;
                 var feedback = (studentIndex + assignmentIndex) % 2 == 0 ? "Dobar rad, obrati pažnju na ritam." : null;
                 submission.SetGrade(grade, feedback);

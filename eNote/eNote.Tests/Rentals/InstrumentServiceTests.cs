@@ -543,6 +543,79 @@ public sealed class InstrumentServiceTests
     }
 
     [Fact]
+    public async Task UploadImageAsync_DoesNotCountArchivedInstrumentImages()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var archived = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/archived.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        ctx.Set<Instrument>().AddRange(archived, target);
+        await ctx.SaveChangesAsync();
+        archived.SoftDelete();
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/archived.png"] = 524_288_000;
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(target.Id, stream, "image/png");
+
+        Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
+    }
+
+    [Theory]
+    [InlineData(524_287_997, true)]
+    [InlineData(524_287_998, false)]
+    public async Task UploadImageAsync_AppliesTheQuotaAtTheExactBoundary(long usedBytes, bool accepted)
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var existing = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        ctx.Set<Instrument>().AddRange(existing, target);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/existing.png"] = usedBytes;
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+
+        if (accepted)
+        {
+            await service.UploadImageAsync(target.Id, stream, "image/png");
+            Assert.Single(storage.SavedPaths);
+            return;
+        }
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.UploadImageAsync(target.Id, stream, "image/png"));
+        Assert.Equal(Messages.StorageQuotaExceeded, exception.Message);
+        Assert.Empty(storage.SavedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_DoesNotCountAnotherStoresImages()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var otherStore = await SeedStoreAsync(ctx, "Music Shop Mostar");
+        var foreign = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/foreign.png", type.Id, otherStore.Id);
+        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        ctx.Set<Instrument>().AddRange(foreign, target);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/foreign.png"] = 524_288_000;
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        await service.UploadImageAsync(target.Id, stream, "image/png");
+
+        Assert.Single(storage.SavedPaths);
+    }
+
+    [Fact]
     public async Task UpdateAsync_NullDescription_ClearsStoredDescription()
     {
         var ctx = CreateContext();

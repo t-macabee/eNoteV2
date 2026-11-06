@@ -6,5 +6,5 @@ public static class FileUploadLimits
 
     public const long MaxRequestBytes = MaxFileBytes + 1024 * 1024;
 
-    public const long MaxStoreUploadBytes = 50 * 1024 * 1024;
+    public const long MaxStoreUploadBytes = 500 * 1024 * 1024;
 }

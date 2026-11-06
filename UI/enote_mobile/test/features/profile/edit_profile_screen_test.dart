@@ -1,16 +1,20 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_mobile/features/profile/edit_profile_form.dart';
 import 'package:enote_mobile/features/profile/edit_profile_screen.dart';
 import 'package:enote_mobile/features/profile/profile_provider.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
+
+const _refusedMessage = 'Dozvoljeni formati su JPEG, PNG i WebP.';
 
 Map<String, dynamic> _bodyFor(String method, String path) {
   switch ('$method $path') {
@@ -26,15 +30,20 @@ Map<String, dynamic> _bodyFor(String method, String path) {
 }
 
 class _Harness {
-  final ScriptedClient client = ScriptedClient(
-    (request) => jsonResponse(
-      _bodyFor(request.method, request.url.path),
-      200,
-    ),
-  );
+  final bool refusePicture;
+  late final ScriptedClient client = ScriptedClient((request) {
+    if (refusePicture &&
+        request.method == 'PUT' &&
+        request.url.path == '/api/v1/users/me/picture') {
+      return jsonResponse({'message': _refusedMessage}, 400);
+    }
+    return jsonResponse(_bodyFor(request.method, request.url.path), 200);
+  });
   late final AuthState authState;
   late final ApiClient apiClient;
   late final SessionController session;
+
+  _Harness({this.refusePicture = false});
 
   Future<SessionController> bootstrap() async {
     authState = AuthState(
@@ -105,6 +114,19 @@ Future<void> _tapSave(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<String?> _uploadThroughTheForm(WidgetTester tester) async {
+  final section = tester.widget<EditProfilePictureSection>(
+    find.byType(EditProfilePictureSection),
+  );
+  final result = section.onUpload(
+    Uint8List.fromList([1, 2, 3]),
+    'a.png',
+    'image/png',
+  );
+  await tester.pumpAndSettle();
+  return result;
+}
+
 void main() {
   testWidgets('edit profile has no obscured password field', (tester) async {
     final harness = _Harness();
@@ -117,6 +139,33 @@ void main() {
     for (final field in fields) {
       expect(field.obscureText, isFalse, reason: 'no obscureText on S31');
     }
+  });
+
+  testWidgets('a refused picture gives no url and shows the server message', (
+    tester,
+  ) async {
+    final harness = _Harness(refusePicture: true);
+    await harness.bootstrap();
+    await tester.pumpWidget(harness.app(_host(const EditProfileScreen())));
+    await _openScreen(tester);
+
+    final url = await _uploadThroughTheForm(tester);
+
+    expect(url, isNull);
+    expect(find.text(_refusedMessage), findsOneWidget);
+  });
+
+  testWidgets('an accepted picture gives the url of the new picture', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap();
+    await tester.pumpWidget(harness.app(_host(const EditProfileScreen())));
+    await _openScreen(tester);
+
+    final url = await _uploadThroughTheForm(tester);
+
+    expect(url, contains('users/me/picture'));
   });
 
   testWidgets('an invalid email shows the message below the control and '

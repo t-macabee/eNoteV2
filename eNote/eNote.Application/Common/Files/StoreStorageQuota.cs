@@ -12,13 +12,13 @@ public static class StoreStorageQuota
     {
         var paths = await db.Set<Instrument>()
             .IgnoreQueryFilters()
-            .Where(x => x.MusicStoreId == musicStoreId && x.ImagePath != null)
+            .Where(x => x.MusicStoreId == musicStoreId && x.IsActive && x.ImagePath != null)
             .Select(x => x.ImagePath!)
             .ToListAsync(ct);
 
         paths.AddRange(await db.Set<Announcement>()
             .IgnoreQueryFilters()
-            .Where(x => x.MusicStoreId == musicStoreId && x.ImagePath != null)
+            .Where(x => x.MusicStoreId == musicStoreId && x.IsActive && x.ImagePath != null)
             .Select(x => x.ImagePath!)
             .ToListAsync(ct));
 

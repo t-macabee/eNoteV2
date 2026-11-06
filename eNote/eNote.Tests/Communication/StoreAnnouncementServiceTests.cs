@@ -64,6 +64,51 @@ public sealed class StoreAnnouncementServiceTests
     }
 
     [Fact]
+    public async Task UploadImageForStoreAsync_DoesNotCountDeletedAnnouncementImages()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        harness.Context.Set<MusicStore>().Add(store);
+        await harness.Context.SaveChangesAsync();
+        var deleted = new Announcement("Old", "Old text", null, store.Id, Now);
+        deleted.UpdateImagePath("/api/v1/uploads/announcements/deleted.webp");
+        var target = new Announcement("New", "New text", null, store.Id, Now);
+        harness.Context.Set<Announcement>().AddRange(deleted, target);
+        await harness.Context.SaveChangesAsync();
+        deleted.SoftDelete();
+        await harness.Context.SaveChangesAsync();
+        var fileStorage = new RecordingFileStorageService();
+        fileStorage.FileSizes["/api/v1/uploads/announcements/deleted.webp"] = 524_288_000;
+        var service = CreateService(harness.Context, storeId: store.Id, fileStorage: fileStorage);
+
+        await service.UploadImageForStoreAsync(target.Id, new MemoryStream([1, 2, 3]), "image/png");
+
+        Assert.Single(fileStorage.SavedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageForStoreAsync_DoesNotCountAnotherStoresImages()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        var otherStore = new MusicStore("Other Shop", "09-17");
+        harness.Context.Set<MusicStore>().AddRange(store, otherStore);
+        await harness.Context.SaveChangesAsync();
+        var foreign = new Announcement("Foreign", "Foreign text", null, otherStore.Id, Now);
+        foreign.UpdateImagePath("/api/v1/uploads/announcements/foreign.webp");
+        var target = new Announcement("New", "New text", null, store.Id, Now);
+        harness.Context.Set<Announcement>().AddRange(foreign, target);
+        await harness.Context.SaveChangesAsync();
+        var fileStorage = new RecordingFileStorageService();
+        fileStorage.FileSizes["/api/v1/uploads/announcements/foreign.webp"] = 524_288_000;
+        var service = CreateService(harness.Context, storeId: store.Id, fileStorage: fileStorage);
+
+        await service.UploadImageForStoreAsync(target.Id, new MemoryStream([1, 2, 3]), "image/png");
+
+        Assert.Single(fileStorage.SavedPaths);
+    }
+
+    [Fact]
     public async Task UploadImageForStoreAsync_Throws_WhenStoreQuotaExceeded()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
