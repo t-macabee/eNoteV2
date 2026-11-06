@@ -85,7 +85,7 @@ public sealed class LectureAttendanceService(
             .AsNoTracking()
             .Include(x => x.Student)
             .Where(x => x.LectureId == lectureId)
-            .Where(x => x.Lecture.StudentId == null || x.StudentId == x.Lecture.StudentId);
+            .ShownForLecture();
 
         return await query.ToPagedResultAsync(
             search,

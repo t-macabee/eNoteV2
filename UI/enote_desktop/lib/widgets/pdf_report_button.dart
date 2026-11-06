@@ -16,6 +16,9 @@ String reportFileName(String report) {
   return '$report-$stamp.pdf';
 }
 
+const _printFailedMessage =
+    'Ispis nije uspio. Provjerite štampač i pokušajte ponovo.';
+
 class PdfReportButton extends StatefulWidget {
   final String label;
   final String fileName;
@@ -56,15 +59,15 @@ class _PdfReportButtonState extends State<PdfReportButton> {
   }
 
   Future<void> _print() async {
+    final bytes = await _load();
+    if (bytes == null) return;
     try {
-      final bytes = await _load();
-      if (bytes == null) return;
       await Printing.layoutPdf(
         onLayout: (_) async => bytes,
         name: widget.fileName,
       );
-    } catch (e) {
-      _showError(e);
+    } on Exception {
+      _showError(ApiException(_printFailedMessage));
     }
   }
 

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -139,6 +141,112 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'a failed print shows the print message and not the server message',
+    (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('net.nfet.printing'),
+            (call) async =>
+                throw PlatformException(code: 'no_printer', message: 'x'),
+          );
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('net.nfet.printing'),
+              null,
+            ),
+      );
+      final client = ScriptedClient(
+        (_) => jsonResponse(
+          _pdfBody,
+          200,
+          headers: const {'content-type': 'application/pdf'},
+        ),
+      );
+      await pumpButton(tester, client);
+
+      await tester.tap(find.byIcon(Icons.print));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Ispis nije uspio. Provjerite štampač i pokušajte ponovo.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('povezati se sa serverom'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('a 404 on the print fetch shows the server message', (
+    tester,
+  ) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(const {
+        'status': 404,
+        'code': 'error.not_found',
+        'message': 'Kurs nije pronađen.',
+      }, 404),
+    );
+    await pumpButton(tester, client);
+
+    await tester.tap(find.byIcon(Icons.print));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kurs nije pronađen.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a 404 on the download fetch shows the server message', (
+    tester,
+  ) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(const {
+        'status': 404,
+        'code': 'error.not_found',
+        'message': 'Predavanje nije pronađeno.',
+      }, 404),
+    );
+    await pumpButton(tester, client);
+
+    await tester.tap(find.byIcon(Icons.download));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Predavanje nije pronađeno.'), findsOneWidget);
+    expect(picker.savedFileName, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('both icons are disabled while the report loads', (tester) async {
+    final gate = Completer<void>();
+    final client = ScriptedClient((_) async {
+      await gate.future;
+      return jsonResponse(
+        _pdfBody,
+        200,
+        headers: const {'content-type': 'application/pdf'},
+      );
+    });
+    await pumpButton(tester, client);
+
+    await tester.tap(find.byIcon(Icons.download));
+    await tester.pump();
+
+    for (final icon in [Icons.download, Icons.print]) {
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, icon))
+            .onPressed,
+        isNull,
+      );
+    }
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(client.getUrls, hasLength(1));
+  });
 
   testWidgets('reportFileName stamps the name with yyyyMMdd', (tester) async {
     final now = DateTime.now();

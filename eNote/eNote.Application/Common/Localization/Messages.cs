@@ -171,6 +171,10 @@ public static class Messages
     public const string ReportCourseFallback = "Kurs";
     public const string ReportStoreFallback = "Prodavnica";
     public const string ReportNoData = "Nema podataka za odabrane kriterije.";
+    public const string ReportColumnCity = "Grad";
+    public const string ReportColumnAddress = "Adresa";
+    public const string ReportPageLabel = "Stranica";
+    public const string ReportPageOf = "od";
 
     public const string ReportRentalStatusPending = "Na čekanju";
     public const string ReportRentalStatusApproved = "Odobreno";
@@ -183,6 +187,21 @@ public static class Messages
     public const string ReportAttendanceStatusPending = "Na čekanju";
     public const string ReportAttendanceStatusPresent = "Prisutan";
     public const string ReportAttendanceStatusAbsent = "Odsutan";
+
+    public static string ReportCurrencyNote(string currency) =>
+        $"Iznosi su u valuti: {currency}";
+
+    public static string ReportSummaryRanking(int students) =>
+        $"Ukupno ocijenjenih studenata: {students}";
+
+    public static string ReportSummaryAttendance(int present, int absent, int pending) =>
+        $"Prisutno: {present} · Odsutno: {absent} · Na čekanju: {pending} · Ukupno: {present + absent + pending}";
+
+    public static string ReportSummaryRentals(int rentals, string amount, string currency) =>
+        $"Ukupno iznajmljivanja: {rentals} · Obračunati iznos: {amount} {currency}";
+
+    public static string ReportSummaryStores(int stores) =>
+        $"Ukupno prodavnica: {stores}";
 
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";
