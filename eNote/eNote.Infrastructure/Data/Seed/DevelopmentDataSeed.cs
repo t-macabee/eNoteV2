@@ -268,19 +268,19 @@ internal static class StringInstruments
 {
     public static Instrument[] GetInstruments(int shopId, int typeId) =>
     [
-        new Instrument("Stratocaster", "Fender", "Klasična električna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.", $"{InstrumentSeed.SeedImagePathPrefix}strat.webp", typeId, shopId),
-        new Instrument("Les Paul", "Gibson", "Legendarna električna gitara omiljena zbog bogatog tona i održavanja.", $"{InstrumentSeed.SeedImagePathPrefix}les-paul.webp", typeId, shopId),
-        new Instrument("RG", "Ibanez", "Visokoperformansna električna gitara popularna među rok i metal sviračima.", $"{InstrumentSeed.SeedImagePathPrefix}rg.webp", typeId, shopId),
-        new Instrument("Custom 24", "PRS", "Visokokvalitetna električna gitara poznata po svojoj prelijepoj izradi i zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}prs.webp", typeId, shopId),
-        new Instrument("Pacifica", "Yamaha", "Svestrana električna gitara pogodna za različite žanrove.", $"{InstrumentSeed.SeedImagePathPrefix}pacifica.webp", typeId, shopId),
-        new Instrument("Dinky", "Jackson", "Električna gitara dizajnirana za brzo sviranje i snažan zvuk.", $"{InstrumentSeed.SeedImagePathPrefix}dinky.webp", typeId, shopId),
-        new Instrument("214ce", "Taylor", "Svestrana i lijepo izrađena akustična gitara, poznata po svom svijetlom i artikulisanom tonu.", $"{InstrumentSeed.SeedImagePathPrefix}214ce.webp", typeId, shopId),
-        new Instrument("D-28", "Martin", "Ikonična dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.", $"{InstrumentSeed.SeedImagePathPrefix}d-28.webp", typeId, shopId),
-        new Instrument("J-45", "Gibson", "Često nazivan \"radnim konjem\" među akustičnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruža topao, blag ton koji je savršen za kantautore.", $"{InstrumentSeed.SeedImagePathPrefix}j-45.webp", typeId, shopId),
-        new Instrument("S6", "Seagull", "S6 proizvodi topao, bogat zvuk sa blago rustičnim karakterom, što je čini omiljenom među muzičarima koji sviraju folk i roots muziku.", $"{InstrumentSeed.SeedImagePathPrefix}s6.webp", typeId, shopId),
-        new Instrument("Precision Bass", "Fender", "Industrijski standard bas gitara poznata po dubokom, udarnom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}precision.webp", typeId, shopId),
-        new Instrument("Thunderbird", "Gibson", "Ikonična bas gitara poznata po jedinstvenom dizajnu i snažnom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}thunderbird.webp", typeId, shopId),
-        new Instrument("StingRay", "Music Man", "Legendarna električna bas gitara, prepoznatljiva po svom moćnom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.", $"{InstrumentSeed.SeedImagePathPrefix}stingray.webp", typeId, shopId)
+        new Instrument("Stratocaster", ManufacturerSeed.Fender, "Klasična električna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.", $"{InstrumentSeed.SeedImagePathPrefix}strat.webp", typeId, shopId),
+        new Instrument("Les Paul", ManufacturerSeed.Gibson, "Legendarna električna gitara omiljena zbog bogatog tona i održavanja.", $"{InstrumentSeed.SeedImagePathPrefix}les-paul.webp", typeId, shopId),
+        new Instrument("RG", ManufacturerSeed.Ibanez, "Visokoperformansna električna gitara popularna među rok i metal sviračima.", $"{InstrumentSeed.SeedImagePathPrefix}rg.webp", typeId, shopId),
+        new Instrument("Custom 24", ManufacturerSeed.Prs, "Visokokvalitetna električna gitara poznata po svojoj prelijepoj izradi i zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}prs.webp", typeId, shopId),
+        new Instrument("Pacifica", ManufacturerSeed.Yamaha, "Svestrana električna gitara pogodna za različite žanrove.", $"{InstrumentSeed.SeedImagePathPrefix}pacifica.webp", typeId, shopId),
+        new Instrument("Dinky", ManufacturerSeed.Jackson, "Električna gitara dizajnirana za brzo sviranje i snažan zvuk.", $"{InstrumentSeed.SeedImagePathPrefix}dinky.webp", typeId, shopId),
+        new Instrument("214ce", ManufacturerSeed.Taylor, "Svestrana i lijepo izrađena akustična gitara, poznata po svom svijetlom i artikulisanom tonu.", $"{InstrumentSeed.SeedImagePathPrefix}214ce.webp", typeId, shopId),
+        new Instrument("D-28", ManufacturerSeed.Martin, "Ikonična dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.", $"{InstrumentSeed.SeedImagePathPrefix}d-28.webp", typeId, shopId),
+        new Instrument("J-45", ManufacturerSeed.Gibson, "Često nazivan \"radnim konjem\" među akustičnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruža topao, blag ton koji je savršen za kantautore.", $"{InstrumentSeed.SeedImagePathPrefix}j-45.webp", typeId, shopId),
+        new Instrument("S6", ManufacturerSeed.Seagull, "S6 proizvodi topao, bogat zvuk sa blago rustičnim karakterom, što je čini omiljenom među muzičarima koji sviraju folk i roots muziku.", $"{InstrumentSeed.SeedImagePathPrefix}s6.webp", typeId, shopId),
+        new Instrument("Precision Bass", ManufacturerSeed.Fender, "Industrijski standard bas gitara poznata po dubokom, udarnom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}precision.webp", typeId, shopId),
+        new Instrument("Thunderbird", ManufacturerSeed.Gibson, "Ikonična bas gitara poznata po jedinstvenom dizajnu i snažnom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}thunderbird.webp", typeId, shopId),
+        new Instrument("StingRay", ManufacturerSeed.MusicMan, "Legendarna električna bas gitara, prepoznatljiva po svom moćnom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.", $"{InstrumentSeed.SeedImagePathPrefix}stingray.webp", typeId, shopId)
     ];
 }
 
@@ -288,9 +288,9 @@ internal static class PercussionInstruments
 {
     public static Instrument[] GetInstruments(int shopId, int typeId) =>
     [
-        new Instrument("Export", "Pearl", "Pristupačan bubanj set savršen za početnike i srednje napredne bubnjare.", $"{InstrumentSeed.SeedImagePathPrefix}export.webp", typeId, shopId),
-        new Instrument("Imperialstar", "Tama", "Svestran bubanj set sa izvrsnom izradom i zvukom.", $"{InstrumentSeed.SeedImagePathPrefix}imperialstar.webp", typeId, shopId),
-        new Instrument("Breakbeats", "Ludwig", "Kompaktni bubanj set dizajniran za prenosivost i odličan ton.", $"{InstrumentSeed.SeedImagePathPrefix}breakbeats.webp", typeId, shopId)
+        new Instrument("Export", ManufacturerSeed.Pearl, "Pristupačan bubanj set savršen za početnike i srednje napredne bubnjare.", $"{InstrumentSeed.SeedImagePathPrefix}export.webp", typeId, shopId),
+        new Instrument("Imperialstar", ManufacturerSeed.Tama, "Svestran bubanj set sa izvrsnom izradom i zvukom.", $"{InstrumentSeed.SeedImagePathPrefix}imperialstar.webp", typeId, shopId),
+        new Instrument("Breakbeats", ManufacturerSeed.Ludwig, "Kompaktni bubanj set dizajniran za prenosivost i odličan ton.", $"{InstrumentSeed.SeedImagePathPrefix}breakbeats.webp", typeId, shopId)
     ];
 }
 
@@ -298,8 +298,8 @@ internal static class BrassInstruments
 {
     public static Instrument[] GetInstruments(int shopId, int typeId) =>
     [
-        new Instrument("YAS-280", "Yamaha", "Popularni saksofon među studentima i srednje naprednim sviračima.", $"{InstrumentSeed.SeedImagePathPrefix}yas.webp", typeId, shopId),
-        new Instrument("Stradivarius", "Bach", "Profesionalni trombon poznat po bogatom tonu i preciznoj intonaciji.", $"{InstrumentSeed.SeedImagePathPrefix}stradivarius.webp", typeId, shopId)
+        new Instrument("YAS-280", ManufacturerSeed.Yamaha, "Popularni saksofon među studentima i srednje naprednim sviračima.", $"{InstrumentSeed.SeedImagePathPrefix}yas.webp", typeId, shopId),
+        new Instrument("Stradivarius", ManufacturerSeed.Bach, "Profesionalni trombon poznat po bogatom tonu i preciznoj intonaciji.", $"{InstrumentSeed.SeedImagePathPrefix}stradivarius.webp", typeId, shopId)
     ];
 }
 
@@ -307,8 +307,8 @@ internal static class KeysInstruments
 {
     public static Instrument[] GetInstruments(int shopId, int typeId) =>
     [
-        new Instrument("Minilogue", "Korg", "Analogni sintisajzer poznat po svom bogatom, toplom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}minilogue.webp", typeId, shopId),
-        new Instrument("Juno-DS", "Roland", "Svestrani sintisajzer popularan za žive nastupe i studijsku upotrebu.", $"{InstrumentSeed.SeedImagePathPrefix}juno-ds.webp", typeId, shopId)
+        new Instrument("Minilogue", ManufacturerSeed.Korg, "Analogni sintisajzer poznat po svom bogatom, toplom zvuku.", $"{InstrumentSeed.SeedImagePathPrefix}minilogue.webp", typeId, shopId),
+        new Instrument("Juno-DS", ManufacturerSeed.Roland, "Svestrani sintisajzer popularan za žive nastupe i studijsku upotrebu.", $"{InstrumentSeed.SeedImagePathPrefix}juno-ds.webp", typeId, shopId)
     ];
 }
 
@@ -316,11 +316,11 @@ internal static class AccessoriesInstruments
 {
     public static Instrument[] GetInstruments(int shopId, int typeId) =>
     [
-        new Instrument("Blues Junior IV", "Fender", "Kompaktno, ali snažno cijevno pojačalo koje pruža klasičan Fender ton sa dodanom modernom svestranošću.", $"{InstrumentSeed.SeedImagePathPrefix}blues-junior.webp", typeId, shopId),
-        new Instrument("DSL40CR-DS", "Marshall", "Vrlo svestrano cijevno pojačalo koje nudi sve, od klasične rock distorzije do žestokih solaža.", $"{InstrumentSeed.SeedImagePathPrefix}dsl40cr.webp", typeId, shopId),
-        new Instrument("AC15C1", "Vox", "Poznato po svojim svijetlim čistim tonovima i karakterističnom \"Top Boost\" overdrive efektu, savršeno je za one koji traže vintage britanski zvuk.", $"{InstrumentSeed.SeedImagePathPrefix}ac15c1.webp", typeId, shopId),
-        new Instrument("Rocker 15", "Orange", "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.", $"{InstrumentSeed.SeedImagePathPrefix}rocker-15.webp", typeId, shopId),
-        new Instrument("Katana-100 MkII", "Boss", "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.", $"{InstrumentSeed.SeedImagePathPrefix}katana-100.webp", typeId, shopId)
+        new Instrument("Blues Junior IV", ManufacturerSeed.Fender, "Kompaktno, ali snažno cijevno pojačalo koje pruža klasičan Fender ton sa dodanom modernom svestranošću.", $"{InstrumentSeed.SeedImagePathPrefix}blues-junior.webp", typeId, shopId),
+        new Instrument("DSL40CR-DS", ManufacturerSeed.Marshall, "Vrlo svestrano cijevno pojačalo koje nudi sve, od klasične rock distorzije do žestokih solaža.", $"{InstrumentSeed.SeedImagePathPrefix}dsl40cr.webp", typeId, shopId),
+        new Instrument("AC15C1", ManufacturerSeed.Vox, "Poznato po svojim svijetlim čistim tonovima i karakterističnom \"Top Boost\" overdrive efektu, savršeno je za one koji traže vintage britanski zvuk.", $"{InstrumentSeed.SeedImagePathPrefix}ac15c1.webp", typeId, shopId),
+        new Instrument("Rocker 15", ManufacturerSeed.Orange, "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.", $"{InstrumentSeed.SeedImagePathPrefix}rocker-15.webp", typeId, shopId),
+        new Instrument("Katana-100 MkII", ManufacturerSeed.Boss, "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.", $"{InstrumentSeed.SeedImagePathPrefix}katana-100.webp", typeId, shopId)
     ];
 }
 

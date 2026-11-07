@@ -103,13 +103,13 @@ public sealed class UserSelfServiceTests
         public int? PictureGetUserId { get; private set; }
         public int? PictureDeleteUserId { get; private set; }
 
-        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
+        public Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default) =>
             Task.FromResult(1);
 
         public Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
-        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
+        public Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
         {
             UpdatedUserId = userId;
             UpdatedEmail = email;

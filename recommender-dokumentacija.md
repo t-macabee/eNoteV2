@@ -24,12 +24,14 @@ Ukupni skor je zbir četiri signala sa fiksnim težinama. Konstante su na vrhu
 |---|---|---|
 | Najam | 0.40 | Vrste instrumenata koje je student već najmio, plus instrumenti koje biraju slični studenti |
 | Pregledi | 0.30 | `InstrumentView` za tog korisnika, podijeljeno najvećim brojem pregleda među instrumentima koji se mogu preporučiti |
-| Sličnost | 0.20 | Proizvođač kojeg je student već najmio daje 1.0, vrsta koju je već najmio daje 0.6 |
+| Sličnost | 0.20 | Proizvođač iz tabele `Manufacturer` kojeg je student već najmio daje 1.0, vrsta koju je već najmio daje 0.6 |
 | Popularnost | 0.10 | Broj najmova instrumenta (odobreni, aktivni, završeni i vraćeni prije roka), podijeljen brojem najmova najnajmljenijeg instrumenta koji se može preporučiti |
 
 ```
 total = najam * 0.40 + pregledi * 0.30 + sličnost * 0.20 + popularnost * 0.10
 ```
+
+Signal sličnosti poredi `ManufacturerId` instrumenta sa skupom `ManufacturerId` vrijednosti iz historije najma studenta. Naziv proizvođača se ne poredi kao tekst, nego preko stranog ključa prema tabeli `Manufacturer`.
 
 Signal najma se računa kao `najam = vlastita historija * 0.60 + kolaborativni dio * 0.40`.
 Vlastita historija je broj najmova te vrste podijeljen brojem najmova najčešće vrste
@@ -94,7 +96,7 @@ Endpoint vraća 5 preporuka po podrazumijevanju (`DefaultCount`) i najviše 20
 
 ```json
 {
-  "instrument": { "id": 8, "model": "D-28", "manufacturer": "Martin" },
+  "instrument": { "id": 8, "model": "D-28", "manufacturerId": 10, "manufacturerName": "Martin" },
   "score": 0.7033,
   "reasons": [
     "Na osnovu vaše historije najma (Žičani).",

@@ -41,7 +41,13 @@ Future<ScriptedClient> _pumpDialog(
         ),
       ],
       child: const MaterialApp(
-        home: Scaffold(body: EditProfileDialog(initialEmail: 'a@b.com')),
+        home: Scaffold(
+          body: EditProfileDialog(
+            initialEmail: 'a@b.com',
+            initialFirstName: 'Jane',
+            initialLastName: 'Doe',
+          ),
+        ),
       ),
     ),
   );

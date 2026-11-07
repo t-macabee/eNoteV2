@@ -29,8 +29,8 @@ class UserProfileResponse {
 
 class UserProfile {
   final int? id;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final String? username;
   final String? email;
   final DateTime? dateOfBirth;
@@ -43,8 +43,8 @@ class UserProfile {
 
   UserProfile({
     this.id,
-    this.firstName,
-    this.lastName,
+    this.firstName = '',
+    this.lastName = '',
     this.username,
     this.email,
     this.dateOfBirth,
@@ -60,8 +60,8 @@ class UserProfile {
     final data = json['profile'] as Map<String, dynamic>? ?? json;
     return UserProfile(
       id: data['id'] as int?,
-      firstName: data['firstName'] as String?,
-      lastName: data['lastName'] as String?,
+      firstName: data['firstName'] as String? ?? '',
+      lastName: data['lastName'] as String? ?? '',
       username: data['username'] as String?,
       email: data['email'] as String?,
       dateOfBirth: parseDate(data['dateOfBirth']),
@@ -78,16 +78,16 @@ class UserProfile {
 class UserSummaryDto {
   final int id;
   final int appUserId;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final String? username;
   final bool isActive;
 
   UserSummaryDto({
     required this.id,
     required this.appUserId,
-    this.firstName,
-    this.lastName,
+    this.firstName = '',
+    this.lastName = '',
     this.username,
     this.isActive = true,
   });
@@ -95,16 +95,16 @@ class UserSummaryDto {
   UserSummaryDto.fromJson(Map<String, dynamic> json)
     : id = json['id'] as int? ?? 0,
       appUserId = json['appUserId'] as int? ?? 0,
-      firstName = json['firstName'] as String?,
-      lastName = json['lastName'] as String?,
+      firstName = json['firstName'] as String? ?? '',
+      lastName = json['lastName'] as String? ?? '',
       username = json['username'] as String?,
       isActive = json['isActive'] as bool? ?? true;
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'appUserId': appUserId,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
+    'firstName': firstName,
+    'lastName': lastName,
     if (username != null) 'username': username,
     'isActive': isActive,
   };
@@ -158,8 +158,8 @@ class ShopEmployeeDto {
   final int appUserId;
   final int musicStoreId;
   final String? storeName;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final String? username;
   final bool isManager;
   final bool isActive;
@@ -169,8 +169,8 @@ class ShopEmployeeDto {
     required this.appUserId,
     required this.musicStoreId,
     this.storeName,
-    this.firstName,
-    this.lastName,
+    this.firstName = '',
+    this.lastName = '',
     this.username,
     required this.isManager,
     required this.isActive,
@@ -182,8 +182,8 @@ class ShopEmployeeDto {
       appUserId: json['appUserId'] as int? ?? 0,
       musicStoreId: json['musicStoreId'] as int? ?? 0,
       storeName: json['storeName'] as String?,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
+      firstName: json['firstName'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? '',
       username: json['username'] as String?,
       isManager: json['isManager'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? true,
@@ -195,8 +195,8 @@ class ShopEmployeeDto {
     'appUserId': appUserId,
     'musicStoreId': musicStoreId,
     if (storeName != null) 'storeName': storeName,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
+    'firstName': firstName,
+    'lastName': lastName,
     if (username != null) 'username': username,
     'isManager': isManager,
     'isActive': isActive,
@@ -206,8 +206,8 @@ class ShopEmployeeDto {
 class AdminUserListItemDto {
   final int appUserId;
   final String? username;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final UserRole? role;
   final bool isActive;
   final int? studentId;
@@ -219,8 +219,8 @@ class AdminUserListItemDto {
   AdminUserListItemDto({
     required this.appUserId,
     this.username,
-    this.firstName,
-    this.lastName,
+    this.firstName = '',
+    this.lastName = '',
     this.role,
     this.isActive = true,
     this.studentId,
@@ -234,8 +234,8 @@ class AdminUserListItemDto {
     return AdminUserListItemDto(
       appUserId: json['appUserId'] as int? ?? 0,
       username: json['username'] as String?,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
+      firstName: json['firstName'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? '',
       role: UserRole.fromString(json['role'] as String?),
       isActive: json['isActive'] as bool? ?? true,
       studentId: json['studentId'] as int?,

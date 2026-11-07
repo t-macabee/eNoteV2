@@ -14,11 +14,9 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class UserAccountService(UserManager<AppUser> userManager, IFileStorageService fileStorage, IUserSessionStateCache sessionCache) : IUserAccountService
 {
-    private const string ClosedAccountFirstName = "Obrisani";
-    private const string ClosedAccountLastName = "korisnik";
     private const string ClosedAccountEmailDomain = "enote.invalid";
 
-    public async Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
+    public async Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default)
     {
         var normalizedUsername = username.Trim();
         var normalizedEmail = email.Trim();
@@ -39,8 +37,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
             Email = normalizedEmail,
             EmailConfirmed = true,
             IsActive = true,
-            FirstName = firstName?.Trim(),
-            LastName = lastName?.Trim()
+            FirstName = firstName.Trim(),
+            LastName = lastName.Trim()
         };
 
         var createResult = await RefusingDuplicatesAsync(() => userManager.CreateAsync(user, password));
@@ -129,8 +127,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         var previousPicturePath = user.PicturePath;
         var anonymousUserName = $"obrisan-{Guid.NewGuid():N}";
 
-        user.FirstName = ClosedAccountFirstName;
-        user.LastName = ClosedAccountLastName;
+        user.FirstName = Messages.ClosedAccountFirstName;
+        user.LastName = Messages.ClosedAccountLastName;
         user.UserName = anonymousUserName;
         user.Email = $"{anonymousUserName}@{ClosedAccountEmailDomain}";
         user.PhoneNumber = null;
@@ -152,7 +150,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return previousPicturePath;
     }
 
-    public async Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
+    public async Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
     {
         var user = await FindUserOrThrowAsync(userId);
 
@@ -288,10 +286,10 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         user.Email = normalizedEmail;
     }
 
-    private static void ApplyProfileFields(AppUser user, string? firstName, string? lastName, DateTime? dateOfBirth)
+    private static void ApplyProfileFields(AppUser user, string firstName, string lastName, DateTime? dateOfBirth)
     {
-        user.FirstName = firstName?.Trim() ?? user.FirstName;
-        user.LastName = lastName?.Trim() ?? user.LastName;
+        user.FirstName = firstName.Trim();
+        user.LastName = lastName.Trim();
 
         if (dateOfBirth.HasValue)
         {

@@ -433,7 +433,7 @@ public sealed class ReportServiceTests
 
     private static async Task<Instrument> AddInstrumentAsync(ENoteContext context, MusicStore store, InstrumentType type, string model)
     {
-        var instrument = new Instrument(model, "Yamaha", null, null, type.Id, store.Id);
+        var instrument = new Instrument(model, TestManufacturers.Id("Yamaha"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
         return instrument;

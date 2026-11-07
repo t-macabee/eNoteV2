@@ -47,7 +47,7 @@ ScriptedClient _client() => ScriptedClient((request) {
         {
           'id': 101,
           'model': 'Stratocaster Player',
-          'manufacturer': 'Fender',
+          'manufacturerId': 1, 'manufacturerName': 'Fender',
           'description': 'Solid body electric guitar',
           'imagePath': null,
           'instrumentTypeId': 1,
@@ -58,7 +58,7 @@ ScriptedClient _client() => ScriptedClient((request) {
         {
           'id': 102,
           'model': 'U1 Upright Piano',
-          'manufacturer': 'Yamaha',
+          'manufacturerId': 1, 'manufacturerName': 'Yamaha',
           'description': 'Acoustic piano',
           'imagePath': null,
           'instrumentTypeId': 2,

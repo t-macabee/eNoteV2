@@ -117,7 +117,7 @@ public sealed class PictureAccessServiceTests
     {
         var seed = await SeedAsync();
         var type = await seed.Context.Set<InstrumentType>().SingleAsync();
-        var instrument = new Instrument("Cello", "Yamaha", null, null, type.Id, seed.Store2.Id);
+        var instrument = new Instrument("Cello", TestManufacturers.Id("Yamaha"), null, null, type.Id, seed.Store2.Id);
         seed.Context.Set<Instrument>().Add(instrument);
         await seed.Context.SaveChangesAsync();
         seed.Context.Set<InstrumentRental>().Add(new InstrumentRental(instrument.Id, seed.StudentB.Id, seed.Store2.Id, Now, null));
@@ -276,11 +276,11 @@ public sealed class PictureAccessServiceTests
 
     private sealed class PictureFixed((Stream? Data, string? ContentType) picture) : IUserAccountService
     {
-        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
+        public Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
+        public Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
@@ -340,7 +340,7 @@ public sealed class PictureAccessServiceTests
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store1.Id);
+        var instrument = new Instrument("Stradivarius", TestManufacturers.Id("Yamaha"), null, null, type.Id, store1.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 

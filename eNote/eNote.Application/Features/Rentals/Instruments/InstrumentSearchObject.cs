@@ -6,7 +6,7 @@ public class InstrumentSearchObject : BaseSearchObject
 {
     public string? Search { get; set; }
     public string? Model { get; set; }
-    public string? Manufacturer { get; set; }
+    public int? ManufacturerId { get; set; }
     public int? InstrumentTypeId { get; set; }
     public int? MusicStoreId { get; set; }
 

@@ -5,6 +5,7 @@ name: enote
 x-docker-overrides: &docker-overrides
   ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=${DB_NAME:?Set DB_NAME in .env};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
   RabbitMQ__Host: rabbitmq
+  RabbitMQ__Port: "5672"
   Smtp__Host: mailhog
 
 services:
@@ -31,7 +32,7 @@ services:
     image: rabbitmq:3.13.7-management
     container_name: enote-rabbit
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RabbitMQ__Port:?Set RabbitMQ__Port in .env}:5672"
       - "${RABBITMQ_MGMT_PORT:-15672}:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]

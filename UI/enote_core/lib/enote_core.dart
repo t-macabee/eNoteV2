@@ -16,6 +16,7 @@ export 'models/academic/assignment_models.dart';
 export 'models/communication/communication_models.dart';
 export 'models/rentals/instrument_models.dart';
 export 'models/rentals/instrument_type_models.dart';
+export 'models/rentals/manufacturer_models.dart';
 export 'models/rentals/music_store_models.dart';
 export 'models/rentals/address_models.dart';
 export 'models/rentals/city_models.dart';

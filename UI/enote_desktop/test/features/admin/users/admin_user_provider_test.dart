@@ -69,6 +69,8 @@ void main() {
       email: 'l@example.com',
       password: 'Lozinka123!',
       role: 'Student',
+      firstName: 'Ludwig',
+      lastName: 'Beethoven',
     );
 
     test('201 completes and posts the request body', () async {

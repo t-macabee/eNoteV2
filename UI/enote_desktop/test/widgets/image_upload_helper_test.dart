@@ -32,7 +32,7 @@ class _FakeCrud extends CrudProvider<InstrumentDto> {
     return InstrumentDto.fromJson({
       'id': id,
       'model': 'M',
-      'manufacturer': 'M',
+      'manufacturerId': 1, 'manufacturerName': 'M',
       'instrumentTypeId': 1,
       'instrumentType': 'Gitara',
       'musicStore': 'Shop',

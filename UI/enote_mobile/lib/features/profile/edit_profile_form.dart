@@ -109,13 +109,15 @@ class EditProfileFields extends StatelessWidget {
         children: [
           AppTextField(
             controller: firstNameController,
-            label: 'Ime',
+            label: 'Ime *',
+            validator: Validators.firstName,
             maxLength: 256,
           ),
           const SizedBox(height: AppSpacing.lg),
           AppTextField(
             controller: lastNameController,
-            label: 'Prezime',
+            label: 'Prezime *',
+            validator: Validators.lastName,
             maxLength: 256,
           ),
           const SizedBox(height: AppSpacing.lg),

@@ -2,9 +2,9 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserAccountService
 {
-    Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default);
+    Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default);
     Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default);
-    Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default);
+    Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default);
     Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default);
     Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default);
     Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default);

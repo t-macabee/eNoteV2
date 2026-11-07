@@ -16,7 +16,7 @@ import '../../helpers.dart';
 final _instrument = InstrumentDto(
   id: 3,
   model: 'Stratocaster',
-  manufacturer: 'Fender',
+  manufacturerId: 1, manufacturerName: 'Fender',
   instrumentTypeId: 1,
   instrumentType: 'Električna gitara',
   monthlyFee: 45,

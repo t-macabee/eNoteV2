@@ -193,6 +193,14 @@ void main() {
       find.widgetWithText(TextFormField, 'Lozinka'),
       'Lozinka123!',
     );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Ime *'),
+      'Ime',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Prezime *'),
+      'Prezime',
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));

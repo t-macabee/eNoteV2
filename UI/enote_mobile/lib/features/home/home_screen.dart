@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _greeting(SessionController session) {
     final profile = session.profile;
-    final firstName = profile?.profile.firstName?.trim();
+    final firstName = profile?.profile.firstName.trim();
     final name = firstName != null && firstName.isNotEmpty
         ? firstName
         : profile?.username;

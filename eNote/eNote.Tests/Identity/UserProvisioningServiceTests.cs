@@ -23,7 +23,9 @@ public sealed class UserProvisioningServiceTests
         {
             Username = "  newstudent  ",
             Email = "new@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         });
 
         Assert.Equal("newstudent", registration.Username);
@@ -35,7 +37,7 @@ public sealed class UserProvisioningServiceTests
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
-        var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!" };
+        var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!", FirstName = "Test", LastName = "User" };
 
         var registration = await service.RegisterStudentAsync(request);
 
@@ -55,7 +57,9 @@ public sealed class UserProvisioningServiceTests
         {
             Username = "newstudent",
             Email = "new@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         }));
 
         Assert.Equal("creation failed", exception.Message);
@@ -73,7 +77,9 @@ public sealed class UserProvisioningServiceTests
             Username = "newinstructor",
             Email = "inst@example.com",
             Password = "Password1!",
-            Role = AppRoles.Instructor
+            Role = AppRoles.Instructor,
+            FirstName = "Test",
+            LastName = "User"
         });
 
         Assert.Equal(7, userId);
@@ -92,7 +98,9 @@ public sealed class UserProvisioningServiceTests
             Username = "emp",
             Email = "emp@example.com",
             Password = "Password1!",
-            Role = AppRoles.StoreEmployee
+            Role = AppRoles.StoreEmployee,
+            FirstName = "Test",
+            LastName = "User"
         }));
 
         Assert.Equal(Messages.MusicStoreRequiredForEmployee, exception.Message);
@@ -112,7 +120,9 @@ public sealed class UserProvisioningServiceTests
             Email = "emp@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee,
-            MusicStoreId = 99999
+            MusicStoreId = 99999,
+            FirstName = "Test",
+            LastName = "User"
         }));
 
         Assert.Equal("Radnja nije pronađena.", exception.Message);
@@ -134,7 +144,9 @@ public sealed class UserProvisioningServiceTests
             Username = "newuser",
             Email = "new@example.com",
             Password = "Password1!",
-            Role = AppRoles.Instructor
+            Role = AppRoles.Instructor,
+            FirstName = "Test",
+            LastName = "User"
         }));
 
         Assert.Equal("role assignment failed", exception.Message);
@@ -159,7 +171,9 @@ public sealed class UserProvisioningServiceTests
             Email = "emp1@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee,
-            MusicStoreId = store.Id
+            MusicStoreId = store.Id,
+            FirstName = "Test",
+            LastName = "User"
         });
 
         var firstEmp = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == firstId);
@@ -172,7 +186,9 @@ public sealed class UserProvisioningServiceTests
             Email = "emp2@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee,
-            MusicStoreId = store.Id
+            MusicStoreId = store.Id,
+            FirstName = "Test",
+            LastName = "User"
         });
 
         var secondEmp = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == secondId);
@@ -203,7 +219,9 @@ public sealed class UserProvisioningServiceTests
             Password = "Password1!",
             Role = AppRoles.StoreEmployee,
             MusicStoreId = store.Id,
-            IsManager = requestedManager
+            IsManager = requestedManager,
+            FirstName = "Test",
+            LastName = "User"
         });
 
         var employee = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == 10);
@@ -229,7 +247,9 @@ public sealed class UserProvisioningServiceTests
             Email = "emp@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee,
-            MusicStoreId = newStore.Id
+            MusicStoreId = newStore.Id,
+            FirstName = "Test",
+            LastName = "User"
         });
 
         var employee = await context.Set<MusicStoreEmployee>().IgnoreQueryFilters().SingleAsync(e => e.AppUserId == 10);
@@ -309,7 +329,9 @@ public sealed class UserProvisioningServiceTests
             {
                 Username = "newhire2",
                 Email = "newhire2@example.com",
-                Password = "Password1!"
+                Password = "Password1!",
+                FirstName = "Test",
+                LastName = "User"
             }));
 
         Assert.Equal(Messages.ManagerRoleRequired, ex.Message);
@@ -455,7 +477,7 @@ public sealed class UserProvisioningServiceTests
         public string? AddRoleError { get; set; }
         public (int UserId, string Role)? AddRoleCall { get; private set; }
 
-        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
+        public Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default)
         {
             return CreateUserId is null
                 ? throw new BusinessException("creation failed")
@@ -471,7 +493,7 @@ public sealed class UserProvisioningServiceTests
                 : throw new BusinessException(AddRoleError);
         }
 
-        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
+        public Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
         public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>

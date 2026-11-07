@@ -116,8 +116,8 @@ public sealed class RentalNotificationDispatcherTests
         await context.SaveChangesAsync();
 
         context.Set<AppUser>().AddRange(
-            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
-            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false, FirstName = "Test", LastName = "User" },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true, FirstName = "Test", LastName = "User" });
         context.Set<MusicStoreEmployee>().AddRange(
             new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
             new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
@@ -191,8 +191,8 @@ public sealed class RentalNotificationDispatcherTests
         await context.SaveChangesAsync();
 
         context.Set<AppUser>().AddRange(
-            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
-            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false, FirstName = "Test", LastName = "User" },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true, FirstName = "Test", LastName = "User" });
         context.Set<MusicStoreEmployee>().AddRange(
             new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
             new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
@@ -242,8 +242,8 @@ public sealed class RentalNotificationDispatcherTests
         await context.SaveChangesAsync();
 
         context.Set<AppUser>().AddRange(
-            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
-            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false, FirstName = "Test", LastName = "User" },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true, FirstName = "Test", LastName = "User" });
         context.Set<MusicStoreEmployee>().AddRange(
             new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
             new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
@@ -276,8 +276,8 @@ public sealed class RentalNotificationDispatcherTests
         await context.SaveChangesAsync();
 
         context.Set<AppUser>().AddRange(
-            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
-            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false, FirstName = "Test", LastName = "User" },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true, FirstName = "Test", LastName = "User" });
         context.Set<MusicStoreEmployee>().AddRange(
             new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
             new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
@@ -316,7 +316,7 @@ public sealed class RentalNotificationDispatcherTests
         context.Set<MusicStore>().Add(store);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 

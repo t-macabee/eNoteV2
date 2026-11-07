@@ -14,7 +14,7 @@ const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 const _instrument = {
   'id': 3,
   'model': 'Stratocaster',
-  'manufacturer': 'Fender',
+  'manufacturerId': 1, 'manufacturerName': 'Fender',
   'instrumentTypeId': 1,
   'instrumentType': 'Električna gitara',
   'monthlyFee': 45.0,
@@ -67,7 +67,7 @@ void main() {
         'search.Search': 'Fender',
         'search.IsAvailable': 'true',
       });
-      expect(result.items.single.manufacturer, 'Fender');
+      expect(result.items.single.manufacturerName, 'Fender');
       expect(result.totalCount, 25);
     },
   );

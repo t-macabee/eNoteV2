@@ -39,8 +39,8 @@ void main() {
       'Korisničko ime',
       'Email',
       'Lozinka',
-      'Ime',
-      'Prezime',
+      'Ime *',
+      'Prezime *',
     ]) {
       expect(find.text(label), findsOneWidget);
     }
@@ -72,6 +72,8 @@ void main() {
     expect(find.text('Korisničko ime je obavezan.'), findsOneWidget);
     expect(find.text('Email adresa je obavezna.'), findsOneWidget);
     expect(find.text('Lozinka je obavezna.'), findsOneWidget);
+    expect(find.text('Ime je obavezno.'), findsOneWidget);
+    expect(find.text('Prezime je obavezno.'), findsOneWidget);
   });
 
   testWidgets('username and email share one row on wide surface', (

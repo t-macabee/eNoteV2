@@ -8,6 +8,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_form_screen.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'package:enote_desktop/features/store_employee/instrument/shop_manufacturer_provider.dart';
 
 import '../../../helpers.dart';
 
@@ -61,12 +62,23 @@ void main() {
           'totalCount': 1,
         }, 200);
       }
+      if (request.method == 'GET' && url.contains('shop/manufacturers')) {
+        return jsonResponse(const {
+          'items': [
+            {'id': 3, 'name': 'Fender'},
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
+        }, 200);
+      }
       if (request.method == 'PUT') {
         putBodies.add(request.body);
         return jsonResponse(const {
           'id': 1,
           'model': 'Stratocaster',
-          'manufacturer': 'Fender',
+          'manufacturerId': 3,
+          'manufacturerName': 'Fender',
           'description': null,
           'instrumentTypeId': 1,
           'instrumentType': 'Gitara',
@@ -90,7 +102,8 @@ void main() {
     final instrument = InstrumentDto(
       id: 1,
       model: 'Stratocaster',
-      manufacturer: 'Fender',
+      manufacturerId: 3,
+      manufacturerName: 'Fender',
       description: 'Stari opis',
       instrumentTypeId: 1,
       instrumentType: 'Gitara',
@@ -105,6 +118,9 @@ void main() {
           Provider<ApiClient>.value(value: apiClient),
           ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
             value: ShopInstrumentTypeProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider<ShopManufacturerProvider>.value(
+            value: ShopManufacturerProvider(apiClient: apiClient),
           ),
           ChangeNotifierProvider<InstrumentProvider>.value(
             value: InstrumentProvider(apiClient: apiClient),
@@ -126,7 +142,7 @@ void main() {
 
     expect(body.keys.toSet(), {
       'model',
-      'manufacturer',
+      'manufacturerId',
       'description',
       'instrumentTypeId',
     });

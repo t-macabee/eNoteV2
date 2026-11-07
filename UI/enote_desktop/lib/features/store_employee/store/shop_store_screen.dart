@@ -13,6 +13,7 @@ import '../instrument/instrument_detail_dialog.dart';
 import '../instrument/instrument_form_screen.dart';
 import '../instrument/instrument_provider.dart';
 import '../instrument/shop_instrument_type_provider.dart';
+import '../instrument/shop_manufacturer_provider.dart';
 import 'shop_store_provider.dart';
 
 class ShopStoreScreen extends StatefulWidget {
@@ -83,6 +84,17 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
         message: 'Nema tipova instrumenata. Administrator mora prvo dodati tip instrumenta.',
       );
       if (!hasTypes) return;
+      if (!mounted) return;
+
+      final hasManufacturers = await ensureReferenceData(
+        context,
+        fetchFirstPage: () => context
+            .read<ShopManufacturerProvider>()
+            .search(pagedQuery(1, 1, '')),
+        message:
+            'Nema proizvođača. Administrator mora prvo dodati proizvođača.',
+      );
+      if (!hasManufacturers) return;
     }
     if (!mounted) return;
     await EntityFormScaffold.showAsDialog(
@@ -138,7 +150,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
           searchHint: 'Pretraži instrumente...',
           placeholderIcon: Icons.music_note,
           titleOf: (i) => i.model,
-          subtitleOf: (i) => i.manufacturer,
+          subtitleOf: (i) => i.manufacturerName,
           imageUrlOf: (i) => i.imagePath,
           showAddButton: true,
           addLabel: 'Dodaj instrument',

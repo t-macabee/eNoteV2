@@ -7,6 +7,20 @@ class Validators {
         return null;
       };
 
+  static String? firstName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Ime je obavezno.';
+    }
+    return null;
+  }
+
+  static String? lastName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Prezime je obavezno.';
+    }
+    return null;
+  }
+
   static final RegExp _emailRegex = RegExp(
     r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@"
     r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"

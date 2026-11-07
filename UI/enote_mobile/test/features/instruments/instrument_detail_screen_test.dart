@@ -38,7 +38,7 @@ ScriptedClient _client({
       body = {
         'id': _instrumentId,
         'model': 'C40',
-        'manufacturer': 'Yamaha',
+        'manufacturerId': 1, 'manufacturerName': 'Yamaha',
         'description': 'Klasična gitara za početnike.',
         'instrumentTypeId': 1,
         'instrumentType': 'Klasična gitara',

@@ -61,8 +61,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       await provider.updateMe(
         UpdateProfileRequest(
           email: _emailController.text.trim(),
-          firstName: firstName.isEmpty ? null : firstName,
-          lastName: lastName.isEmpty ? null : lastName,
+          firstName: firstName,
+          lastName: lastName,
           dateOfBirth: _dateOfBirth,
         ),
       );

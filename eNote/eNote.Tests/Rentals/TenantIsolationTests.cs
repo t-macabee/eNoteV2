@@ -97,7 +97,7 @@ public sealed class TenantIsolationTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(instr2.Id, new InstrumentRequest
         {
             Model = "Stratocaster",
-            Manufacturer = "Fender",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             InstrumentTypeId = 1
         }));
     }
@@ -167,7 +167,15 @@ public sealed class TenantIsolationTests
     }
 
     private static ENoteContext CreateContext(int storeId, string? dbName = null) =>
-        new(TestDbContextFactory.CreateOptions(dbName), new FixedClock(Now), new StubCurrentActor(storeId: storeId)) { ExplicitStoreId = storeId };
+        CreateSeededContext(storeId, dbName);
+
+    private static ENoteContext CreateSeededContext(int storeId, string? dbName)
+    {
+        var context = new ENoteContext(TestDbContextFactory.CreateOptions(dbName), new FixedClock(Now), new StubCurrentActor(storeId: storeId)) { ExplicitStoreId = storeId };
+        TestManufacturers.Seed(context);
+
+        return context;
+    }
 
     private static async Task<(int Store1Id, int Store2Id, int Rental1Id, int Rental2Id)> SeedTwoStoresWithRentalsAsync(ENoteContext context)
     {
@@ -208,7 +216,7 @@ public sealed class TenantIsolationTests
             context.Set<InstrumentType>().Add(new InstrumentType { Type = "Guitar", MonthlyFee = 50m });
             await context.SaveChangesAsync();
         }
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, 1, storeId);
+        var instrument = new Instrument("Stradivarius", TestManufacturers.Id("Yamaha"), null, null, 1, storeId);
 
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();

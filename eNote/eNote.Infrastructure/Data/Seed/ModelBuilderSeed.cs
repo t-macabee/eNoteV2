@@ -9,6 +9,7 @@ internal static class ModelBuilderSeed
         SeedCities(modelBuilder);
         SeedAddresses(modelBuilder);
         SeedInstrumentTypes(modelBuilder);
+        SeedManufacturers(modelBuilder);
     }
 
     private static void SeedCities(ModelBuilder modelBuilder)
@@ -43,6 +44,13 @@ internal static class ModelBuilderSeed
             new InstrumentType { Id = 3, Type = "Limeni", MonthlyFee = 55m },
             new InstrumentType { Id = 4, Type = "Tipke", MonthlyFee = 65m },
             new InstrumentType { Id = 5, Type = "Dodatna oprema", MonthlyFee = 30m }
+        );
+    }
+
+    private static void SeedManufacturers(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Manufacturer>().HasData(
+            ManufacturerSeed.All.Select(x => new Manufacturer { Id = x.Id, Name = x.Name }).ToArray()
         );
     }
 }

@@ -150,11 +150,11 @@ public sealed class UsersControllerTests
 
     private sealed class PasswordCheckingAccountService(bool passwordIsValid) : IUserAccountService
     {
-        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
+        public Task<int> CreateUserAsync(string username, string email, string password, string firstName, string lastName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
+        public Task UpdateExistingUserAsync(int userId, string email, string firstName, string lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

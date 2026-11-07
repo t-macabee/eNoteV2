@@ -246,7 +246,7 @@ public sealed class StudentHomeServiceTests
 
     private static async Task<Instrument> AddInstrumentAsync(ENoteContext context, Instrument template, string model)
     {
-        var instrument = new Instrument(model, "Second Manufacturer", null, null, template.InstrumentTypeId, template.MusicStoreId);
+        var instrument = new Instrument(model, TestManufacturers.Id("Second Manufacturer"), null, null, template.InstrumentTypeId, template.MusicStoreId);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
         return instrument;

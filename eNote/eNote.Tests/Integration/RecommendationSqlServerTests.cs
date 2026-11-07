@@ -16,8 +16,8 @@ public sealed class RecommendationSqlServerTests(SqlServerFixture fixture)
         var database = await fixture.CreateDatabaseAsync();
         await using var context = database.CreateContext();
 
-        var studentUser = new AppUser { UserName = "student", Email = "student@example.com", IsActive = true };
-        var otherUser = new AppUser { UserName = "other", Email = "other@example.com", IsActive = true };
+        var studentUser = new AppUser { UserName = "student", Email = "student@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
+        var otherUser = new AppUser { UserName = "other", Email = "other@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         context.Set<AppUser>().AddRange(studentUser, otherUser);
         await context.SaveChangesAsync();
 
@@ -32,11 +32,11 @@ public sealed class RecommendationSqlServerTests(SqlServerFixture fixture)
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
 
-        var instrumentX = new Instrument("X", "XM", null, null, type.Id, store.Id);
-        var instrumentY = new Instrument("Y", "YM", null, null, type.Id, store.Id);
-        var instrumentZ = new Instrument("Z", "ZM", null, null, type.Id, store.Id);
-        var instrumentW = new Instrument("W", "WM", null, null, type.Id, store.Id);
-        var instrumentV = new Instrument("V", "VM", null, null, type.Id, store.Id);
+        var instrumentX = new Instrument("X", TestManufacturers.Id("XM"), null, null, type.Id, store.Id);
+        var instrumentY = new Instrument("Y", TestManufacturers.Id("YM"), null, null, type.Id, store.Id);
+        var instrumentZ = new Instrument("Z", TestManufacturers.Id("ZM"), null, null, type.Id, store.Id);
+        var instrumentW = new Instrument("W", TestManufacturers.Id("WM"), null, null, type.Id, store.Id);
+        var instrumentV = new Instrument("V", TestManufacturers.Id("VM"), null, null, type.Id, store.Id);
         context.Set<Instrument>().AddRange(instrumentX, instrumentY, instrumentZ, instrumentW, instrumentV);
         await context.SaveChangesAsync();
 

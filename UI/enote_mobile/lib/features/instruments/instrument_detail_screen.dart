@@ -151,7 +151,7 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
             ),
           ),
           DetailHeader(
-            title: '${instrument.manufacturer} ${instrument.model}',
+            title: '${instrument.manufacturerName} ${instrument.model}',
             subtitle: '${instrument.instrumentType} · ${instrument.musicStore}',
             chips: [instrumentAvailabilityChip(instrument.isAvailable)],
           ),

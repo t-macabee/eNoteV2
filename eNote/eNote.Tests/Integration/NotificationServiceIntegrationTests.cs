@@ -62,7 +62,9 @@ public sealed class NotificationServiceIntegrationTests(SqlServerFixture fixture
             NormalizedUserName = userName.ToUpperInvariant(),
             Email = $"{userName}@example.com",
             NormalizedEmail = $"{userName}@example.com".ToUpperInvariant(),
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
 
         context.Set<AppUser>().Add(user);

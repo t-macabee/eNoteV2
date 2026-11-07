@@ -2,8 +2,13 @@ namespace eNote.Tests.TestUtils;
 
 public static class RentalTestData
 {
-    public static ENoteContext CreateContext(DateTime now) =>
-        new(TestDbContextFactory.CreateOptions(), new FixedClock(now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
+    public static ENoteContext CreateContext(DateTime now)
+    {
+        var context = new ENoteContext(TestDbContextFactory.CreateOptions(), new FixedClock(now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
+        TestManufacturers.Seed(context);
+
+        return context;
+    }
 
     public static async Task<Student> SeedStudentAsync(ENoteContext context, DateTime now)
     {
@@ -24,7 +29,7 @@ public static class RentalTestData
         context.Set<MusicStore>().Add(store);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Stradivarius", TestManufacturers.Id("Yamaha"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
         return instrument;

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'package:enote_desktop/features/store_employee/instrument/shop_manufacturer_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_form_screen.dart';
 
 import '../../../helpers.dart';
@@ -20,6 +21,17 @@ void main() {
     final postedBodies = <String?>[];
     var nextId = 1;
     final httpClient = ScriptedClient((request) {
+      final url = request.url.toString();
+      if (request.method == 'GET' && url.contains('shop/manufacturers')) {
+        return jsonResponse(const {
+          'items': [
+            {'id': 1, 'name': 'Test proizvođač'},
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
+        }, 200);
+      }
       if (request.method == 'GET') {
         return jsonResponse(const {
           'items': [
@@ -35,7 +47,8 @@ void main() {
       return jsonResponse({
         'id': nextId++,
         'model': 'Test model',
-        'manufacturer': 'Test proizvođač',
+        'manufacturerId': 1,
+        'manufacturerName': 'Test proizvođač',
         'description': 'Test opis',
         'instrumentTypeId': 1,
         'instrumentType': 'Gitara',
@@ -52,30 +65,40 @@ void main() {
     final instrumentTypeProvider = ShopInstrumentTypeProvider(
       apiClient: apiClient,
     );
+    final manufacturerProvider = ShopManufacturerProvider(apiClient: apiClient);
 
     await tester.pumpWidget(
-      ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
-        value: instrumentTypeProvider,
-        child: ChangeNotifierProvider<InstrumentProvider>.value(
-          value: instrumentProvider,
-          child: const MaterialApp(home: InstrumentFormScreen()),
+      ChangeNotifierProvider<ShopManufacturerProvider>.value(
+        value: manufacturerProvider,
+        child: ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
+          value: instrumentTypeProvider,
+          child: ChangeNotifierProvider<InstrumentProvider>.value(
+            value: instrumentProvider,
+            child: const MaterialApp(home: InstrumentFormScreen()),
+          ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
-    Future<void> fillBasicFields() async {
+    final dropdowns = find.byType(DropdownButtonFormField<Object>);
+
+    Future<void> fillModel() async {
       await tester.enterText(
         find.widgetWithText(TextFormField, 'Model'),
         'Test model',
       );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Proizvođač'),
-        'Test proizvođač',
-      );
+    }
+
+    Future<void> pickManufacturer(String name) async {
+      await tester.tap(dropdowns.at(0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(name).last);
+      await tester.pumpAndSettle();
     }
 
     Future<void> pickInstrumentType(String typeName) async {
-      await tester.tap(find.byType(DropdownButtonFormField<Object>));
+      await tester.tap(dropdowns.at(1));
       await tester.pumpAndSettle();
       await tester.tap(find.text(typeName).last);
       await tester.pumpAndSettle();
@@ -86,17 +109,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    await fillBasicFields();
+    await fillModel();
+    await pickManufacturer('Test proizvođač');
     await pickInstrumentType('Gitara');
     await save();
 
     expect(postedBodies, hasLength(1));
     final firstBody = jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
     expect(firstBody['instrumentTypeId'], equals(1));
+    expect(firstBody['manufacturerId'], equals(1));
     expect(firstBody['model'], equals('Test model'));
-    expect(firstBody['manufacturer'], equals('Test proizvođač'));
 
-    await fillBasicFields();
+    await fillModel();
     await save();
 
     expect(

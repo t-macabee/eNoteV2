@@ -44,7 +44,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .Where(x => x.StudentProfileId == studentId && CountedRentalStatuses.Contains(x.RentalStatus))
-            .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.Manufacturer))
+            .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.ManufacturerId))
             .ToListAsync(cancellationToken);
 
         HashSet<int> rentedInstrumentIds = [.. userRentals.Select(x => x.InstrumentId)];
@@ -71,7 +71,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var maxTypeCount = userTypeCounts.Values.DefaultIfEmpty(0).Max();
 
-        HashSet<string> rentedManufacturers = new(userRentals.Select(x => x.Manufacturer), StringComparer.OrdinalIgnoreCase);
+        HashSet<int> rentedManufacturers = [.. userRentals.Select(x => x.ManufacturerId)];
 
         var collaborativeInstrumentIds = await BuildCollaborativeInstrumentIdsAsync(studentId, rentedInstrumentIds, recommendable, cancellationToken);
 
@@ -246,9 +246,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         return Math.Max(directScore, fallbackScore);
     }
 
-    private static double ComputeSimilarityScore(Instrument instrument, HashSet<string> rentedManufacturers, Dictionary<int, int> userTypeCounts)
+    private static double ComputeSimilarityScore(Instrument instrument, HashSet<int> rentedManufacturers, Dictionary<int, int> userTypeCounts)
     {
-        if (rentedManufacturers.Contains(instrument.Manufacturer))
+        if (rentedManufacturers.Contains(instrument.ManufacturerId))
         {
             return 1;
         }
@@ -300,7 +300,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
     private static int NormalizeCount(int count) => Math.Clamp(count, 1, MaxCount);
 
-    private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, string Manufacturer);
+    private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, int ManufacturerId);
 
     private sealed record ScoredRecommendation(Instrument Instrument, double Score, List<string> Reasons);
 }

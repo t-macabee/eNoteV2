@@ -1161,10 +1161,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Manufacturer")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("ManufacturerId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Model")
                         .IsRequired()
@@ -1185,6 +1183,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("InstrumentTypeId");
+
+                    b.HasIndex("ManufacturerId");
 
                     b.HasIndex("MusicStoreId");
 
@@ -1397,6 +1397,130 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasDatabaseName("IX_InstrumentView_UserId_InstrumentId");
 
                     b.ToTable("InstrumentView");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.Manufacturer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Manufacturer_Name");
+
+                    b.ToTable("Manufacturer");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Bach"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Boss"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Fender"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Gibson"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Ibanez"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Jackson"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Korg"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Ludwig"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "Marshall"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "Martin"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "Music Man"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "Orange"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Name = "Pearl"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Name = "PRS"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Name = "Roland"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Name = "Seagull"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Name = "Tama"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Name = "Taylor"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Name = "Vox"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Name = "Yamaha"
+                        });
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.MusicStore", b =>
@@ -1822,6 +1946,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("FirstName")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -1829,6 +1954,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("LastName")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -2351,6 +2477,12 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Domain.Entities.Rentals.Manufacturer", "Manufacturer")
+                        .WithMany()
+                        .HasForeignKey("ManufacturerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("eNote.Domain.Entities.Rentals.MusicStore", "MusicStore")
                         .WithMany("Instruments")
                         .HasForeignKey("MusicStoreId")
@@ -2363,6 +2495,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("InstrumentType");
+
+                    b.Navigation("Manufacturer");
 
                     b.Navigation("MusicStore");
                 });

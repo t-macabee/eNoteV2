@@ -23,7 +23,7 @@ public sealed class StudentDisplayNameServiceTests
     }
 
     [Fact]
-    public async Task GetStudentDisplayNameAsync_FallsBackToUsername_WhenNoName()
+    public async Task GetStudentDisplayNameAsync_DoesNotFallBackToUsername_WhenNoName()
     {
         var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
         {
@@ -31,7 +31,7 @@ public sealed class StudentDisplayNameServiceTests
         });
         var service = new StudentDisplayNameService(identity);
 
-        Assert.Equal("jdoe", await service.GetStudentDisplayNameAsync(new Student(5, Now)));
+        Assert.Equal(string.Empty, await service.GetStudentDisplayNameAsync(new Student(5, Now)));
     }
 
     [Fact]
@@ -59,14 +59,14 @@ public sealed class StudentDisplayNameServiceTests
         var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
         {
             [5] = StubUserIdentityService.User(5, "jdoe", "Jane", "Doe"),
-            [6] = StubUserIdentityService.User(6, "asmith")
+            [6] = StubUserIdentityService.User(6, "asmith", "Alice", "Smith")
         });
         var service = new StudentDisplayNameService(identity);
 
         var names = await service.GetStudentDisplayNamesAsync(students);
 
         Assert.Equal("Jane Doe", names[students[0].Id]);
-        Assert.Equal("asmith", names[students[1].Id]);
+        Assert.Equal("Alice Smith", names[students[1].Id]);
         Assert.Equal("Nepoznat korisnik", names[students[2].Id]);
     }
 }

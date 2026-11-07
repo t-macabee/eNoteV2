@@ -15,6 +15,7 @@ import 'features/admin/student/student_provider.dart';
 import 'features/admin/users/admin_user_provider.dart';
 import 'features/admin/users/store_employee_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
+import 'features/admin/manufacturer/manufacturer_provider.dart';
 import 'features/profile/profile_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/course/course_catalog_provider.dart';
@@ -29,6 +30,7 @@ import 'features/shared/announcement/store_announcement_provider.dart';
 import 'features/store_employee/employee/shop_employee_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'features/store_employee/instrument/shop_manufacturer_provider.dart';
 import 'features/store_employee/rental/rental_provider.dart';
 import 'features/store_employee/store/shop_store_provider.dart';
 import 'shell/login_screen.dart';
@@ -104,6 +106,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<InstrumentTypeProvider>(
           create: (_) => InstrumentTypeProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<ManufacturerProvider>(
+          create: (_) => ManufacturerProvider(apiClient: apiClient),
+        ),
         ChangeNotifierProvider<InstructorProvider>(
           create: (_) => InstructorProvider(apiClient: apiClient),
         ),
@@ -142,6 +147,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<ShopInstrumentTypeProvider>(
           create: (_) => ShopInstrumentTypeProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<ShopManufacturerProvider>(
+          create: (_) => ShopManufacturerProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<RentalProvider>(
           create: (_) => RentalProvider(apiClient: apiClient),

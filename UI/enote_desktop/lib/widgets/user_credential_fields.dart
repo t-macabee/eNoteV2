@@ -15,12 +15,8 @@ class UserCredentialFieldsController {
       username: usernameController.text.trim(),
       email: emailController.text.trim(),
       password: passwordController.text,
-      firstName: firstNameController.text.trim().isEmpty
-          ? null
-          : firstNameController.text.trim(),
-      lastName: lastNameController.text.trim().isEmpty
-          ? null
-          : lastNameController.text.trim(),
+      firstName: firstNameController.text.trim(),
+      lastName: lastNameController.text.trim(),
     );
   }
 
@@ -97,12 +93,14 @@ class UserCredentialFields extends StatelessWidget {
               children: [
                 TextFormField(
                   controller: controller.firstNameController,
-                  decoration: const InputDecoration(labelText: 'Ime'),
+                  decoration: const InputDecoration(labelText: 'Ime *'),
+                  validator: Validators.firstName,
                   maxLength: 256,
                 ),
                 TextFormField(
                   controller: controller.lastNameController,
-                  decoration: const InputDecoration(labelText: 'Prezime'),
+                  decoration: const InputDecoration(labelText: 'Prezime *'),
+                  validator: Validators.lastName,
                   maxLength: 256,
                 ),
               ],

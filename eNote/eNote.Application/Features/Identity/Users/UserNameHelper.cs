@@ -10,6 +10,6 @@ public static class UserNameHelper
         }
 
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
+        return fullName;
     }
 }

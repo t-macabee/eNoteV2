@@ -6,7 +6,7 @@ public static class InstrumentSearchExtensions
     {
         if (!string.IsNullOrWhiteSpace(search.Search))
         {
-            query = query.Where(x => x.Model.Contains(search.Search!) || x.Manufacturer.Contains(search.Search!));
+            query = query.Where(x => x.Model.Contains(search.Search!) || x.Manufacturer.Name.Contains(search.Search!));
         }
 
         if (!string.IsNullOrWhiteSpace(search.Model))
@@ -14,9 +14,9 @@ public static class InstrumentSearchExtensions
             query = query.Where(x => x.Model.Contains(search.Model!));
         }
 
-        if (!string.IsNullOrWhiteSpace(search.Manufacturer))
+        if (search.ManufacturerId.HasValue)
         {
-            query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer!));
+            query = query.Where(x => x.ManufacturerId == search.ManufacturerId.Value);
         }
 
         if (search.InstrumentTypeId.HasValue)

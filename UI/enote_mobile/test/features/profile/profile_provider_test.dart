@@ -92,14 +92,24 @@ void main() {
     },
   );
 
-  test('updateMe omits null optional members from the JSON body', () async {
+  test('updateMe sends the required names and omits an absent date', () async {
     final client = RecordingHttpClient(body: _meBody);
     final provider = _provider(client);
-    await provider.updateMe(UpdateProfileRequest(email: 'e@enote.com'));
+    await provider.updateMe(
+      UpdateProfileRequest(
+        email: 'e@enote.com',
+        firstName: 'Novo',
+        lastName: 'Prezime',
+      ),
+    );
 
     final sent = client.requests.single;
     final body = jsonDecode(sent.body) as Map<String, dynamic>;
-    expect(body, {'email': 'e@enote.com'});
+    expect(body, {
+      'email': 'e@enote.com',
+      'firstName': 'Novo',
+      'lastName': 'Prezime',
+    });
   });
 
   test(

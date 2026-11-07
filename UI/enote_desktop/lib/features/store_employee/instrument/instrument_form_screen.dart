@@ -11,6 +11,7 @@ import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
 import 'instrument_provider.dart';
 import 'shop_instrument_type_provider.dart';
+import 'shop_manufacturer_provider.dart';
 
 class InstrumentFormScreen extends StatefulWidget {
   final InstrumentDto? existing;
@@ -30,10 +31,10 @@ class InstrumentFormScreen extends StatefulWidget {
 class _InstrumentFormScreenState extends State<InstrumentFormScreen>
     with FormControllerLifecycle {
   late final _modelController = textController();
-  late final _manufacturerController = textController();
   late final _descriptionController = textController();
 
   int? _selectedInstrumentTypeId;
+  int? _selectedManufacturerId;
   String? _currentImagePath;
 
   bool get _isEditMode => widget.existing != null;
@@ -44,9 +45,9 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
     final existing = widget.existing;
     if (existing != null) {
       _modelController.text = existing.model;
-      _manufacturerController.text = existing.manufacturer;
       _descriptionController.text = existing.description ?? '';
       _selectedInstrumentTypeId = existing.instrumentTypeId;
+      _selectedManufacturerId = existing.manufacturerId;
       _currentImagePath = existing.imagePath;
     }
   }
@@ -80,7 +81,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
     final desc = _descriptionController.text.trim();
     final request = InstrumentRequest(
       model: _modelController.text.trim(),
-      manufacturer: _manufacturerController.text.trim(),
+      manufacturerId: _selectedManufacturerId!,
       description: desc.isEmpty ? null : desc,
       instrumentTypeId: _selectedInstrumentTypeId!,
     );
@@ -111,10 +112,24 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
                   label: 'Model',
                   maxLength: 100,
                 ),
-                EntityTextField(
-                  controller: _manufacturerController,
+                AsyncDropdown<ManufacturerDto>(
                   label: 'Proizvođač',
-                  maxLength: 100,
+                  value: _selectedManufacturerId,
+                  fetcher: () => fetchAllPages(
+                    (query) =>
+                        context.read<ShopManufacturerProvider>().search(query),
+                  ),
+                  itemLabel: (item) => item.name,
+                  itemId: (item) => item.id,
+                  onChanged: (id, item) {
+                    setState(() {
+                      _selectedManufacturerId = id as int?;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null) return 'Proizvođač je obavezan';
+                    return null;
+                  },
                 ),
               ],
             ),
@@ -169,6 +184,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
         clearTextControllers();
         setState(() {
           _selectedInstrumentTypeId = null;
+          _selectedManufacturerId = null;
           _currentImagePath = null;
         });
       },

@@ -41,7 +41,7 @@ public sealed class IdentityPolicyTests
     {
         var validator = new RegisterRequestValidator();
 
-        var result = validator.Validate(new RegisterRequest { Username = "jdoe", Email = "jdoe@example.com", Password = password });
+        var result = validator.Validate(new RegisterRequest { Username = "jdoe", Email = "jdoe@example.com", Password = password, FirstName = "Test", LastName = "User" });
 
         var passwordErrors = result.Errors.Where(e => e.PropertyName == nameof(RegisterRequest.Password)).ToList();
         Assert.Equal(expectedPasswordErrorCount, passwordErrors.Count);

@@ -21,7 +21,7 @@ public sealed class StoreBoundarySqlServerTests(SqlServerFixture fixture)
         var storeA = new MusicStore("Store A", "09:00-17:00");
         var storeB = new MusicStore("Store B", "09:00-17:00");
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
-        var user = new AppUser { UserName = "employee", Email = "employee@example.com", IsActive = true };
+        var user = new AppUser { UserName = "employee", Email = "employee@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         context.Set<MusicStore>().AddRange(storeA, storeB);
         context.Set<InstrumentType>().Add(type);
         context.Set<AppUser>().Add(user);
@@ -30,8 +30,8 @@ public sealed class StoreBoundarySqlServerTests(SqlServerFixture fixture)
         var employee = new MusicStoreEmployee(appUserId: user.Id, musicStoreId: storeA.Id, isManager: true);
         context.Set<MusicStoreEmployee>().Add(employee);
         context.Set<Instrument>().AddRange(
-            new Instrument("Store A Model", "Maker A", null, null, type.Id, storeA.Id),
-            new Instrument("Store B Model", "Maker B", null, null, type.Id, storeB.Id));
+            new Instrument("Store A Model", TestManufacturers.Id("Maker A"), null, null, type.Id, storeA.Id),
+            new Instrument("Store B Model", TestManufacturers.Id("Maker B"), null, null, type.Id, storeB.Id));
         await context.SaveChangesAsync();
 
         var storeId = await context.GetCurrentStoreIdAsync();

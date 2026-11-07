@@ -112,6 +112,8 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'badstudent');
     await tester.enterText(find.byType(TextFormField).at(1), 'bad@example.com');
     await tester.enterText(find.byType(TextFormField).at(2), 'Pass123!');
+    await tester.enterText(find.byType(TextFormField).at(3), 'Bad');
+    await tester.enterText(find.byType(TextFormField).at(4), 'Student');
 
     await tester.tap(find.text('Kreiraj'));
     await tester.pumpAndSettle();

@@ -47,8 +47,8 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       email: _credentialController.emailController.text.trim(),
       password: _credentialController.passwordController.text,
       role: _role!.label,
-      firstName: firstName.isEmpty ? null : firstName,
-      lastName: lastName.isEmpty ? null : lastName,
+      firstName: firstName,
+      lastName: lastName,
       musicStoreId: _role == UserRole.storeEmployee ? _musicStoreId : null,
       isManager: _role == UserRole.storeEmployee ? _isManager : null,
     );

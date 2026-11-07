@@ -50,7 +50,9 @@ public sealed class AdminUsersControllerTests
             Username = "new",
             Email = "new@example.com",
             Password = "Password1!",
-            Role = AppRoles.Student
+            Role = AppRoles.Student,
+            FirstName = "Test",
+            LastName = "User"
         }, CancellationToken.None);
 
         var created = Assert.IsType<CreatedAtActionResult>(result);

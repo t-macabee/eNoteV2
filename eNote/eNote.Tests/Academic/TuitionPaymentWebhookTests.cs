@@ -704,7 +704,7 @@ public sealed class TuitionPaymentWebhookTests
         context.Set<MusicStore>().Add(store);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Stradivarius", TestManufacturers.Id("Yamaha"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 

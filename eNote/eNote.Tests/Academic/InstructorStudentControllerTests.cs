@@ -92,7 +92,9 @@ public sealed class InstructorStudentControllerTests
         {
             Username = "newstudent",
             Email = "student@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         }, CancellationToken.None);
 
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
@@ -110,7 +112,9 @@ public sealed class InstructorStudentControllerTests
         {
             Username = "existingstudent",
             Email = "student@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         }, CancellationToken.None));
 
         Assert.Equal("Korisničko ime je već zauzeto.", exception.Message);

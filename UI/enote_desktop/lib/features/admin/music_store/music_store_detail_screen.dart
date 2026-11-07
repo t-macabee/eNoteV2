@@ -173,7 +173,7 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                 searchHint: 'Pretraži instrumente...',
                 placeholderIcon: Icons.music_note,
                 titleOf: (i) => i.model,
-                subtitleOf: (i) => i.manufacturer,
+                subtitleOf: (i) => i.manufacturerName,
                 imageUrlOf: (i) => i.imagePath,
                 showAddButton: false,
                 filterBar: AsyncDropdown<InstrumentTypeDto>(

@@ -1,7 +1,8 @@
 class InstrumentDto {
   final int id;
   final String model;
-  final String manufacturer;
+  final int manufacturerId;
+  final String manufacturerName;
   final String? description;
   final String? imagePath;
   final int instrumentTypeId;
@@ -13,7 +14,8 @@ class InstrumentDto {
   InstrumentDto({
     required this.id,
     required this.model,
-    required this.manufacturer,
+    required this.manufacturerId,
+    required this.manufacturerName,
     this.description,
     this.imagePath,
     required this.instrumentTypeId,
@@ -27,7 +29,8 @@ class InstrumentDto {
     return InstrumentDto(
       id: json['id'] as int? ?? 0,
       model: json['model'] as String? ?? '',
-      manufacturer: json['manufacturer'] as String? ?? '',
+      manufacturerId: json['manufacturerId'] as int? ?? 0,
+      manufacturerName: json['manufacturerName'] as String? ?? '',
       description: json['description'] as String?,
       imagePath: json['imagePath'] as String?,
       instrumentTypeId: json['instrumentTypeId'] as int? ?? 0,
@@ -41,7 +44,8 @@ class InstrumentDto {
   Map<String, dynamic> toJson() => {
     'id': id,
     'model': model,
-    'manufacturer': manufacturer,
+    'manufacturerId': manufacturerId,
+    'manufacturerName': manufacturerName,
     if (description != null) 'description': description,
     if (imagePath != null) 'imagePath': imagePath,
     'instrumentTypeId': instrumentTypeId,
@@ -54,13 +58,13 @@ class InstrumentDto {
 
 class InstrumentRequest {
   final String model;
-  final String manufacturer;
+  final int manufacturerId;
   final String? description;
   final int instrumentTypeId;
 
   InstrumentRequest({
     required this.model,
-    required this.manufacturer,
+    required this.manufacturerId,
     this.description,
     required this.instrumentTypeId,
   });
@@ -69,7 +73,7 @@ class InstrumentRequest {
     final normalizedDescription = description?.trim();
     return {
       'model': model,
-      'manufacturer': manufacturer,
+      'manufacturerId': manufacturerId,
       'description':
           normalizedDescription == null || normalizedDescription.isEmpty
           ? null

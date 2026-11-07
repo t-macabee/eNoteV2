@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -142,7 +140,7 @@ void main() {
   );
 
   testWidgets(
-    'save the profile dialog with a blanked first name -> request body has no firstName key',
+    'a blank first name shows the required message and sends no request',
     (tester) async {
       final client = _client({
         'role': 'Administrator',
@@ -179,14 +177,13 @@ void main() {
       await tester.tap(find.text('Uredi'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.widgetWithText(TextFormField, 'Ime'), '');
+      await tester.enterText(find.widgetWithText(TextFormField, 'Ime *'), '');
       await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
       await tester.pumpAndSettle();
 
-      expect(client.putBodies, isNotEmpty);
-      final putBody = jsonDecode(client.putBodies.last) as Map<String, dynamic>;
-      expect(putBody.containsKey('firstName'), isFalse);
-      expect(putBody['email'], 'admin@enote.com');
+      expect(find.text('Ime je obavezno.'), findsOneWidget);
+      expect(client.putBodies, isEmpty);
+      expect(find.text('Uredi profil'), findsOneWidget);
     },
   );
 }

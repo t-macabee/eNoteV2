@@ -206,7 +206,7 @@ void main() {
               {
                 'id': page * 1000 + i,
                 'model': 'Instrument ${page * 1000 + i}',
-                'manufacturer': 'Fender',
+                'manufacturerId': 1, 'manufacturerName': 'Fender',
                 'instrumentTypeId': 1,
                 'instrumentType': 'Gitara',
                 'musicStore': 'Shop',
@@ -311,7 +311,7 @@ void main() {
         {
           'id': 1,
           'model': 'Stratocaster',
-          'manufacturer': 'Fender',
+          'manufacturerId': 1, 'manufacturerName': 'Fender',
           'instrumentTypeId': 1,
           'instrumentType': 'Gitara',
           'musicStore': 'Shop',

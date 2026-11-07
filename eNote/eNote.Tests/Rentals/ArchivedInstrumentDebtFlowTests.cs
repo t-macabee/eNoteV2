@@ -51,7 +51,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
         Assert.True(paidRental.IsPaid);
         Assert.False((await queryService.GetDebtForStudentAsync()).HasUnpaidDebt);
 
-        var newInstrument = new Instrument("Second Model", "Second Manufacturer", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        var newInstrument = new Instrument("Second Model", TestManufacturers.Id("Second Manufacturer"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
         context.Set<Instrument>().Add(newInstrument);
         await context.SaveChangesAsync();
 

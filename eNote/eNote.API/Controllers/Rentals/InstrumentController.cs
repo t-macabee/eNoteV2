@@ -8,6 +8,7 @@ using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+using eNote.Application.Features.Rentals.ReferenceData.Manufacturers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -17,7 +18,8 @@ namespace eNote.API.Controllers.Rentals;
 public sealed class InstrumentController(
     InstrumentService instrumentService,
     RecommendationService recommendationService,
-    InstrumentTypeService instrumentTypeService) : CoreController
+    InstrumentTypeService instrumentTypeService,
+    ManufacturerService manufacturerService) : CoreController
 {
     [HttpGet("~/api/v{version:apiVersion}/instruments/public")]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
@@ -96,6 +98,15 @@ public sealed class InstrumentController(
         [FromQuery] InstrumentTypeSearchObject search, CancellationToken cancellationToken)
     {
         return Ok(await instrumentTypeService.GetPagedAsync(search, cancellationToken));
+    }
+
+    [Authorize(Roles = AppRoles.StoreEmployee)]
+    [HttpGet("~/api/v{version:apiVersion}/shop/manufacturers")]
+    [ProducesResponseType(typeof(PagedResult<ManufacturerDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<ManufacturerDto>>> GetManufacturers(
+        [FromQuery] ManufacturerSearchObject search, CancellationToken cancellationToken)
+    {
+        return Ok(await manufacturerService.GetPagedAsync(search, cancellationToken));
     }
 
     [Authorize(Roles = AppRoles.Student)]

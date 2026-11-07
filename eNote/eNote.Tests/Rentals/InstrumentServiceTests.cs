@@ -92,7 +92,7 @@ public sealed class InstrumentServiceTests
         });
         Assert.Single(mfrMatch.Items);
         Assert.Equal("Pacifica 112V", mfrMatch.Items[0].Model);
-        Assert.Equal("Yamaha", mfrMatch.Items[0].Manufacturer);
+        Assert.Equal("Yamaha", mfrMatch.Items[0].ManufacturerName);
     }
 
 
@@ -110,7 +110,7 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        var byManufacturer = await service.GetPagedAsync(new InstrumentSearchObject { Manufacturer = "Fender" });
+        var byManufacturer = await service.GetPagedAsync(new InstrumentSearchObject { ManufacturerId = TestManufacturers.Id("Fender") });
         var manufacturerItem = Assert.Single(byManufacturer.Items);
         Assert.Equal("Stratocaster", manufacturerItem.Model);
 
@@ -166,21 +166,39 @@ public sealed class InstrumentServiceTests
         var dto = await service.CreateAsync(new InstrumentRequest
         {
             Model = "  Stratocaster  ",
-            Manufacturer = "  Fender  ",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             Description = "  First guitar  ",
             InstrumentTypeId = type.Id
         });
 
         Assert.Equal("Music Shop Sarajevo", dto.MusicStore);
         Assert.Equal("Stratocaster", dto.Model);
-        Assert.Equal("Fender", dto.Manufacturer);
+        Assert.Equal("Fender", dto.ManufacturerName);
         Assert.Equal("First guitar", dto.Description);
 
         var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == dto.Id);
         Assert.Equal(store.Id, stored.MusicStoreId);
         Assert.Equal("Stratocaster", stored.Model);
-        Assert.Equal("Fender", stored.Manufacturer);
+        Assert.Equal(TestManufacturers.Id("Fender"), stored.ManufacturerId);
         Assert.Equal("First guitar", stored.Description);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UnknownManufacturer_ThrowsBusinessException()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            ManufacturerId = 9999,
+            InstrumentTypeId = type.Id
+        }));
+
+        Assert.Equal(Messages.ManufacturerNotFound, ex.Message);
     }
 
     [Fact]
@@ -194,7 +212,7 @@ public sealed class InstrumentServiceTests
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new InstrumentRequest
         {
             Model = "Stratocaster",
-            Manufacturer = "Fender",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             InstrumentTypeId = type.Id + 1000
         }));
 
@@ -215,7 +233,7 @@ public sealed class InstrumentServiceTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(instrument.Id, new InstrumentRequest
         {
             Model = "Les Paul",
-            Manufacturer = "Gibson",
+            ManufacturerId = TestManufacturers.Id("Gibson"),
             InstrumentTypeId = type.Id
         }));
     }
@@ -257,7 +275,7 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var instrument = new Instrument("Stratocaster", "Fender", null, "/old/instrument.png", type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, "/old/instrument.png", type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
@@ -473,7 +491,7 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var instrument = new Instrument("Stratocaster", "Fender", null, "/api/v1/uploads/instruments/old.png", type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, "/api/v1/uploads/instruments/old.png", type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
@@ -507,8 +525,8 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var existing = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
-        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var existing = new Instrument("Pacifica", TestManufacturers.Id("Yamaha"), null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         ctx.Set<Instrument>().AddRange(existing, target);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
@@ -529,7 +547,7 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var instrument = new Instrument("Stratocaster", "Fender", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
@@ -548,8 +566,8 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var archived = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/archived.png", type.Id, store.Id);
-        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var archived = new Instrument("Pacifica", TestManufacturers.Id("Yamaha"), null, "/api/v1/uploads/instruments/archived.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         ctx.Set<Instrument>().AddRange(archived, target);
         await ctx.SaveChangesAsync();
         archived.SoftDelete();
@@ -572,8 +590,8 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var existing = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
-        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var existing = new Instrument("Pacifica", TestManufacturers.Id("Yamaha"), null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         ctx.Set<Instrument>().AddRange(existing, target);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
@@ -601,8 +619,8 @@ public sealed class InstrumentServiceTests
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
         var otherStore = await SeedStoreAsync(ctx, "Music Shop Mostar");
-        var foreign = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/foreign.png", type.Id, otherStore.Id);
-        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var foreign = new Instrument("Pacifica", TestManufacturers.Id("Yamaha"), null, "/api/v1/uploads/instruments/foreign.png", type.Id, otherStore.Id);
+        var target = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         ctx.Set<Instrument>().AddRange(foreign, target);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
@@ -621,7 +639,7 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var instrument = new Instrument("Stratocaster", "Fender", "Old text", null, type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), "Old text", null, type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
@@ -629,7 +647,7 @@ public sealed class InstrumentServiceTests
         var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
         {
             Model = "Stratocaster",
-            Manufacturer = "Fender",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             Description = null,
             InstrumentTypeId = type.Id
         });
@@ -645,7 +663,7 @@ public sealed class InstrumentServiceTests
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
         var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
-        var instrument = new Instrument("Stratocaster", "Fender", "Old text", null, type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), "Old text", null, type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
@@ -653,7 +671,7 @@ public sealed class InstrumentServiceTests
         var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
         {
             Model = "Stratocaster",
-            Manufacturer = "Fender",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             Description = "   ",
             InstrumentTypeId = type.Id
         });
@@ -664,7 +682,7 @@ public sealed class InstrumentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_TrimsModelAndManufacturer()
+    public async Task UpdateAsync_TrimsModelAndChangesManufacturer()
     {
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
@@ -675,15 +693,15 @@ public sealed class InstrumentServiceTests
         var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
         {
             Model = "  Les Paul  ",
-            Manufacturer = "  Gibson  ",
+            ManufacturerId = TestManufacturers.Id("Gibson"),
             InstrumentTypeId = type.Id
         });
 
         Assert.Equal("Les Paul", updated.Model);
-        Assert.Equal("Gibson", updated.Manufacturer);
+        Assert.Equal("Gibson", updated.ManufacturerName);
         var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == instrument.Id);
         Assert.Equal("Les Paul", stored.Model);
-        Assert.Equal("Gibson", stored.Manufacturer);
+        Assert.Equal(TestManufacturers.Id("Gibson"), stored.ManufacturerId);
     }
 
     [Fact]
@@ -698,15 +716,20 @@ public sealed class InstrumentServiceTests
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateAsync(instrument.Id, new InstrumentRequest
         {
             Model = "Stratocaster",
-            Manufacturer = "Fender",
+            ManufacturerId = TestManufacturers.Id("Fender"),
             InstrumentTypeId = type.Id + 1000
         }));
 
         Assert.Equal(Messages.InstrumentTypeNotFound, ex.Message);
     }
 
-    private static ENoteContext CreateContext() =>
-        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor());
+    private static ENoteContext CreateContext()
+    {
+        var context = new ENoteContext(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor());
+        TestManufacturers.Seed(context);
+
+        return context;
+    }
 
     private static InstrumentService CreateInstrumentService(ENoteContext context)
     {
@@ -741,7 +764,7 @@ public sealed class InstrumentServiceTests
 
     private static async Task<Instrument> SeedInstrumentAsync(ENoteContext ctx, int storeId, int typeId, string model, string manufacturer)
     {
-        var instrument = new Instrument(model, manufacturer, null, null, typeId, storeId);
+        var instrument = new Instrument(model, TestManufacturers.Id(manufacturer), null, null, typeId, storeId);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         return instrument;

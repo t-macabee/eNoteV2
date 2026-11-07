@@ -149,6 +149,8 @@ void main() {
       username: 'lbeethoven',
       email: 'l@example.com',
       password: 'Lozinka123!',
+      firstName: 'Ludwig',
+      lastName: 'Beethoven',
     );
 
     _TestDelegatedUserProvider buildProvider(ScriptedClient client) {

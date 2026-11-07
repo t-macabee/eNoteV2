@@ -6,6 +6,7 @@ import '../../../widgets/entity_list_screen.dart';
 import '../address/address_list_screen.dart';
 import '../city/city_list_screen.dart';
 import '../instrument_type/instrument_type_list_screen.dart';
+import '../manufacturer/manufacturer_list_screen.dart';
 
 class ReferenceDataDialog extends StatelessWidget {
   const ReferenceDataDialog({super.key});
@@ -19,7 +20,7 @@ class ReferenceDataDialog extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 960, maxHeight: 720),
         child: DefaultTabController(
-          length: 3,
+          length: 4,
           child: Column(
             children: [
               Container(
@@ -39,6 +40,7 @@ class ReferenceDataDialog extends StatelessWidget {
                           Tab(text: 'Gradovi'),
                           Tab(text: 'Adrese'),
                           Tab(text: 'Tipovi instrumenata'),
+                          Tab(text: 'Proizvođači'),
                         ],
                       ),
                     ),
@@ -62,6 +64,10 @@ class ReferenceDataDialog extends StatelessWidget {
                       listStyle: EntityListStyle.tiles,
                     ),
                     InstrumentTypeListScreen(
+                      presentation: EntityListPresentation.embedded,
+                      listStyle: EntityListStyle.tiles,
+                    ),
+                    ManufacturerListScreen(
                       presentation: EntityListPresentation.embedded,
                       listStyle: EntityListStyle.tiles,
                     ),

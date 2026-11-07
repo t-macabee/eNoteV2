@@ -8,7 +8,7 @@ void main() {
         'instrument': {
           'id': 1,
           'model': 'Stratocaster',
-          'manufacturer': 'Fender',
+          'manufacturerId': 1, 'manufacturerName': 'Fender',
           'instrumentTypeId': 2,
           'instrumentType': 'Gitara',
           'musicStore': 'Muzika d.o.o.',
@@ -27,7 +27,7 @@ void main() {
 
     test('fromJson defaults missing score and reasons', () {
       final dto = InstrumentRecommendationDto.fromJson({
-        'instrument': {'id': 2, 'model': 'C40', 'manufacturer': 'Yamaha'},
+        'instrument': {'id': 2, 'model': 'C40', 'manufacturerId': 1, 'manufacturerName': 'Yamaha'},
       });
       expect(dto.score, 0.0);
       expect(dto.reasons, isEmpty);

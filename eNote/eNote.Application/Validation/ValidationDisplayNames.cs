@@ -34,6 +34,7 @@ public static class ValidationDisplayNames
         ["LectureType"] = "Vrsta predavanja",
         ["Location"] = "Lokacija",
         ["Manufacturer"] = "Proizvođač",
+        ["ManufacturerId"] = "Proizvođač",
         ["Message"] = "Poruka",
         ["Model"] = "Model",
         ["MonthlyFee"] = "Mjesečna naknada",

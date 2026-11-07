@@ -22,7 +22,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         harness.Context.Set<InstrumentType>().Add(type);
         await harness.Context.SaveChangesAsync();
-        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
         var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
@@ -59,7 +59,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         var storeB = new MusicStore("Store B", "09-17");
         harness.Context.Set<MusicStore>().Add(storeB);
         await harness.Context.SaveChangesAsync();
-        var instrumentB = new Instrument("Strat B", "Fender", null, null, type.Id, storeB.Id);
+        var instrumentB = new Instrument("Strat B", TestManufacturers.Id("Fender"), null, null, type.Id, storeB.Id);
         harness.Context.Set<Instrument>().Add(instrumentB);
         await harness.Context.SaveChangesAsync();
         var completedRental = new InstrumentRental(instrumentB.Id, secondStudent.Student.Id, storeB.Id, Now, null);
@@ -79,7 +79,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         var storeD = new MusicStore("Store D", "09-17");
         harness.Context.Set<MusicStore>().Add(storeD);
         await harness.Context.SaveChangesAsync();
-        var instrumentD = new Instrument("Strat D", "Fender", null, null, type.Id, storeD.Id);
+        var instrumentD = new Instrument("Strat D", TestManufacturers.Id("Fender"), null, null, type.Id, storeD.Id);
         harness.Context.Set<Instrument>().Add(instrumentD);
         await harness.Context.SaveChangesAsync();
         var pendingRental = new InstrumentRental(instrumentD.Id, harness.Student.Id, storeD.Id, Now, null);
@@ -115,7 +115,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         harness.Context.Set<InstrumentType>().Add(type);
         await harness.Context.SaveChangesAsync();
-        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
         var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
@@ -347,7 +347,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<InstrumentType>().Add(type);
         await harness.Context.SaveChangesAsync();
 
-        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
 

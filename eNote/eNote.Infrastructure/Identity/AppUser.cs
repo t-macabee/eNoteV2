@@ -6,10 +6,12 @@ namespace eNote.Infrastructure.Identity;
 
 public class AppUser : IdentityUser<int>, IEntity
 {
+    [Required]
     [MaxLength(IdentityPolicy.PersonNameMaxLength)]
-    public string? FirstName { get; set; }
+    public string FirstName { get; set; } = null!;
+    [Required]
     [MaxLength(IdentityPolicy.PersonNameMaxLength)]
-    public string? LastName { get; set; }
+    public string LastName { get; set; } = null!;
     public DateTime? DateOfBirth { get; set; }
     [MaxLength(512)]
     public string? PicturePath { get; set; }

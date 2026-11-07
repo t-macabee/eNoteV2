@@ -80,7 +80,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
             var term = name.Trim().ToLower();
             query = query.Where(u =>
                 (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
-                (((u.FirstName ?? "") + " " + (u.LastName ?? "")).ToLower().Contains(term)));
+                ((u.FirstName + " " + u.LastName).ToLower().Contains(term)));
         }
 
         if (isActive.HasValue)

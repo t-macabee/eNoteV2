@@ -73,30 +73,17 @@ public sealed class InstrumentRequestValidatorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void Validate_RejectsManufacturerThatIsNullOrBlank(string? manufacturer)
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_RejectsNonPositiveManufacturerId(int manufacturerId)
     {
         var request = ValidRequest();
-        request.Manufacturer = manufacturer!;
+        request.ManufacturerId = manufacturerId;
 
         var result = _validator.Validate(request);
 
         Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(InstrumentRequest.Manufacturer));
-    }
-
-    [Fact]
-    public void Validate_RejectsManufacturerLongerThanMaximum()
-    {
-        var request = ValidRequest();
-        request.Manufacturer = new string('a', Instrument.ManufacturerMaxLength + 1);
-
-        var result = _validator.Validate(request);
-
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e => e.PropertyName == nameof(InstrumentRequest.Manufacturer));
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(InstrumentRequest.ManufacturerId));
     }
 
     [Fact]
@@ -128,7 +115,7 @@ public sealed class InstrumentRequestValidatorTests
     private static InstrumentRequest ValidRequest() => new()
     {
         Model = "Stratocaster",
-        Manufacturer = "Fender",
+        ManufacturerId = 1,
         Description = "Električna gitara",
         InstrumentTypeId = 1
     };

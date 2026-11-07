@@ -51,7 +51,7 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
   }
 
   String get _instrumentName =>
-      '${widget.instrument.manufacturer} ${widget.instrument.model}';
+      '${widget.instrument.manufacturerName} ${widget.instrument.model}';
 
   Future<void> _submit() async {
     final rentals = context.read<RentalProvider>();

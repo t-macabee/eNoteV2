@@ -52,7 +52,9 @@ public sealed class ShopEmployeeControllerTests
         {
             Username = "newemployee",
             Email = "emp@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         }, CancellationToken.None);
 
         var statusCodeResult = Assert.IsType<ObjectResult>(result);
@@ -72,7 +74,9 @@ public sealed class ShopEmployeeControllerTests
         {
             Username = "existingemployee",
             Email = "emp@example.com",
-            Password = "Password1!"
+            Password = "Password1!",
+            FirstName = "Test",
+            LastName = "User"
         }, CancellationToken.None));
 
         Assert.Equal("Creation error", exception.Message);

@@ -27,7 +27,7 @@ public sealed class StoreBoundaryPipelineTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(seeded.StoreBInstrument.Id, new InstrumentRequest
         {
             Model = "Changed",
-            Manufacturer = "Changed",
+            ManufacturerId = TestManufacturers.Id("Maker B"),
             InstrumentTypeId = seeded.InstrumentTypeId
         }));
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(seeded.StoreBInstrument.Id));
@@ -63,8 +63,13 @@ public sealed class StoreBoundaryPipelineTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStoreAsync(seeded.StoreBRentalId));
     }
 
-    private static ENoteContext CreateContext() =>
-        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(userId: 10));
+    private static ENoteContext CreateContext()
+    {
+        var context = new ENoteContext(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(userId: 10));
+        TestManufacturers.Seed(context);
+
+        return context;
+    }
 
     private static async Task<SeededStoreBoundary> SeedAsync(ENoteContext context)
     {
@@ -78,8 +83,8 @@ public sealed class StoreBoundaryPipelineTests
         var employee = new MusicStoreEmployee(appUserId: 10, musicStoreId: storeA.Id, isManager: true);
         var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
         student.UpdateMembership(Now.AddDays(1));
-        var instrumentA = new Instrument("Store A Model", "Maker A", null, null, type.Id, storeA.Id);
-        var instrumentB = new Instrument("Store B Model", "Maker B", null, null, type.Id, storeB.Id);
+        var instrumentA = new Instrument("Store A Model", TestManufacturers.Id("Maker A"), null, null, type.Id, storeA.Id);
+        var instrumentB = new Instrument("Store B Model", TestManufacturers.Id("Maker B"), null, null, type.Id, storeB.Id);
         context.Set<MusicStoreEmployee>().Add(employee);
         context.Set<Student>().Add(student);
         context.Set<Instrument>().AddRange(instrumentA, instrumentB);

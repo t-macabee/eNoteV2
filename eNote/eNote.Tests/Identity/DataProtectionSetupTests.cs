@@ -46,7 +46,7 @@ public sealed class DataProtectionSetupTests
         using (var scope = worker.CreateScope())
         {
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-            user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true };
+            user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
             var created = await userManager.CreateAsync(user, "Password1!");
             Assert.True(created.Succeeded, string.Join("; ", created.Errors.Select(error => error.Description)));
         }

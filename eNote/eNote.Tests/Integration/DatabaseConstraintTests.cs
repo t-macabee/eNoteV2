@@ -337,7 +337,9 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             NormalizedUserName = "OTHER-RENTER",
             Email = "other-renter@example.com",
             NormalizedEmail = "OTHER-RENTER@EXAMPLE.COM",
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
         context.Set<AppUser>().Add(otherUser);
         await context.SaveChangesAsync();
@@ -553,7 +555,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             start.Wait();
             try
             {
-                await service.CreateUserAsync(userName, email, "Password1!", null, null);
+                await service.CreateUserAsync(userName, email, "Password1!", "Jane", "Doe");
                 return null;
             }
             catch (Exception exception)
@@ -574,7 +576,9 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             NormalizedUserName = "RENTER",
             Email = "renter@example.com",
             NormalizedEmail = "RENTER@EXAMPLE.COM",
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
         context.Set<AppUser>().Add(user);
         await context.SaveChangesAsync();
@@ -590,7 +594,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Model", "Manufacturer", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Model", TestManufacturers.Id("Manufacturer"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 
@@ -606,7 +610,9 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             NormalizedUserName = "STUDENT",
             Email = "student@example.com",
             NormalizedEmail = "STUDENT@EXAMPLE.COM",
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
         var instructorUser = new AppUser
         {
@@ -614,7 +620,9 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             NormalizedUserName = "INSTRUCTOR",
             Email = "instructor@example.com",
             NormalizedEmail = "INSTRUCTOR@EXAMPLE.COM",
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
         context.Set<AppUser>().AddRange(studentUser, instructorUser);
         await context.SaveChangesAsync();

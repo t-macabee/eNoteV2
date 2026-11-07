@@ -83,8 +83,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
     }
 
     final profile = _profileResponse!;
-    final firstName = profile.profile.firstName ?? ' - ';
-    final lastName = profile.profile.lastName ?? ' - ';
+    final firstName = profile.profile.firstName;
+    final lastName = profile.profile.lastName;
     final email = profile.email ?? ' - ';
     final dateOfBirthValue = profile.profile.dateOfBirth;
     final dateOfBirth = dateOfBirthValue != null

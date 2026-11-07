@@ -290,7 +290,7 @@ public sealed class AuthServiceTests
         var harness = await CreateHarnessAsync(withRole: "Student");
         var provisioning = new StubUserProvisioningService { UserId = harness.User.Id };
         var auth = harness.CreateAuthService(provisioning: provisioning);
-        var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!" };
+        var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!", FirstName = "Test", LastName = "User" };
 
         var response = await auth.RegisterAsync(request);
 
@@ -442,7 +442,7 @@ public sealed class AuthServiceTests
         var auth = harness.CreateAuthService(provisioning: provisioning);
 
         var exception = await Assert.ThrowsAsync<ConflictException>(() =>
-            auth.RegisterAsync(new RegisterRequest { Username = "newstudent", Email = "taken@example.com", Password = "Password1!" }));
+            auth.RegisterAsync(new RegisterRequest { Username = "newstudent", Email = "taken@example.com", Password = "Password1!", FirstName = "Test", LastName = "User" }));
 
         Assert.Equal(Messages.EmailTaken, exception.Message);
         Assert.NotEqual(Messages.UsernameTaken, exception.Message);
@@ -454,10 +454,10 @@ public sealed class AuthServiceTests
         var identity = IdentityTestHarness.Create(context);
 
         await identity.UserManager.CreateAsync(
-            new AppUser { UserName = "seed", Email = "seed@example.com", IsActive = true },
+            new AppUser { UserName = "seed", Email = "seed@example.com", IsActive = true, FirstName = "Test", LastName = "User" },
             "Password1!");
 
-        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true };
+        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await identity.UserManager.CreateAsync(user, "Password1!");
 
         if (withRole is not null)

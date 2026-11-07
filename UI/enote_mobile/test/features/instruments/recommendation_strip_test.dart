@@ -24,7 +24,7 @@ InstrumentRecommendationDto _recommendation({
     instrument: InstrumentDto.fromJson({
       'id': id,
       'model': model,
-      'manufacturer': manufacturer,
+      'manufacturerId': 1, 'manufacturerName': manufacturer,
       'instrumentTypeId': 1,
       'instrumentType': 'Klasična gitara',
       'monthlyFee': 45.0,

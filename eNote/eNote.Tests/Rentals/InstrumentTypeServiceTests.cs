@@ -50,7 +50,7 @@ public sealed class InstrumentTypeServiceTests
         var store = new MusicStore("Music Shop", "09-17");
         ctx.Set<MusicStore>().Add(store);
         await ctx.SaveChangesAsync();
-        var instrument = new Instrument("Strat", "Fender", null, null, created.Id, store.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, created.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
 
@@ -135,7 +135,7 @@ public sealed class InstrumentTypeServiceTests
         var store = new MusicStore("Music Shop", "09-17");
         ctx.Set<MusicStore>().Add(store);
         await ctx.SaveChangesAsync();
-        ctx.Set<Instrument>().Add(new Instrument("Strat", "Fender", null, null, created.Id, store.Id));
+        ctx.Set<Instrument>().Add(new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, created.Id, store.Id));
         await ctx.SaveChangesAsync();
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(created.Id));

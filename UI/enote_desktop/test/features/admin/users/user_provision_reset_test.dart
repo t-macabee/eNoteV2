@@ -67,6 +67,14 @@ void main() {
         find.widgetWithText(TextFormField, 'Lozinka'),
         'Lozinka123!',
       );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Ime *'),
+        'Ime',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Prezime *'),
+        'Prezime',
+      );
     }
 
     Future<void> pickRole(UserRole role) async {

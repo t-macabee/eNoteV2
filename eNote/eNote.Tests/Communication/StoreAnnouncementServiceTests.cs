@@ -254,7 +254,7 @@ public sealed class StoreAnnouncementServiceTests
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument(model, "Fender", null, null, type.Id, storeId);
+        var instrument = new Instrument(model, TestManufacturers.Id("Fender"), null, null, type.Id, storeId);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 

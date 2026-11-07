@@ -76,7 +76,7 @@ Map<String, Object?> _record(int index) => {
   'number': '15',
   'city': 'Sarajevo',
   'model': 'Stratocaster $index',
-  'manufacturer': 'Fender',
+  'manufacturerId': 1, 'manufacturerName': 'Fender',
   'instrumentModel': 'Stratocaster $index',
   'instrumentType': 'Gitara',
   'musicStore': 'Muzička prodavnica $index',

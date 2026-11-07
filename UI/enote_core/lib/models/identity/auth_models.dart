@@ -43,23 +43,23 @@ class RegisterRequest {
   final String username;
   final String email;
   final String password;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
 
   RegisterRequest({
     required this.username,
     required this.email,
     required this.password,
-    this.firstName,
-    this.lastName,
+    required this.firstName,
+    required this.lastName,
   });
 
   Map<String, dynamic> toJson() => {
     'username': username,
     'email': email,
     'password': password,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
+    'firstName': firstName,
+    'lastName': lastName,
   };
 }
 
@@ -117,21 +117,21 @@ class DeleteProfileRequest {
 
 class UpdateProfileRequest {
   final String email;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final DateTime? dateOfBirth;
 
   UpdateProfileRequest({
     required this.email,
-    this.firstName,
-    this.lastName,
+    required this.firstName,
+    required this.lastName,
     this.dateOfBirth,
   });
 
   Map<String, dynamic> toJson() => {
     'email': email,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
+    'firstName': firstName,
+    'lastName': lastName,
     if (dateOfBirth != null) 'dateOfBirth': dateOfBirth!.toIso8601String(),
   };
 }
@@ -141,8 +141,8 @@ class UserProvisionRequest {
   final String email;
   final String password;
   final String role;
-  final String? firstName;
-  final String? lastName;
+  final String firstName;
+  final String lastName;
   final int? musicStoreId;
   final bool? isManager;
 
@@ -151,8 +151,8 @@ class UserProvisionRequest {
     required this.email,
     required this.password,
     required this.role,
-    this.firstName,
-    this.lastName,
+    required this.firstName,
+    required this.lastName,
     this.musicStoreId,
     this.isManager,
   });
@@ -162,8 +162,8 @@ class UserProvisionRequest {
     'email': email,
     'password': password,
     'role': role,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
+    'firstName': firstName,
+    'lastName': lastName,
     if (musicStoreId != null) 'musicStoreId': musicStoreId,
     if (isManager != null) 'isManager': isManager,
   };

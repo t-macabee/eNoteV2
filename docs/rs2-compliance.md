@@ -14,6 +14,7 @@ Administrator ima CRUD ekrane za sve referentne tabele u domenu:
 | Adrese | `admin/addresses` |
 | Muzičke radnje | `admin/music-stores` |
 | Vrste instrumenata | `admin/instrument-types` |
+| Proizvođači | `admin/manufacturers` |
 
 `Address.CityId` je strani ključ prema tabeli gradova i bira se kroz dropdown, ne
 kao slobodan tekst.

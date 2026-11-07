@@ -106,7 +106,9 @@ public sealed class RentalPaymentOrderingTests(SqlServerFixture fixture)
             NormalizedUserName = "RENTER",
             Email = "renter@example.com",
             NormalizedEmail = "RENTER@EXAMPLE.COM",
-            IsActive = true
+            IsActive = true,
+            FirstName = "Test",
+            LastName = "User"
         };
         context.Set<AppUser>().Add(user);
         await context.SaveChangesAsync();
@@ -122,7 +124,7 @@ public sealed class RentalPaymentOrderingTests(SqlServerFixture fixture)
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
 
-        var instrument = new Instrument("Model", "Manufacturer", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Model", TestManufacturers.Id("Manufacturer"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 

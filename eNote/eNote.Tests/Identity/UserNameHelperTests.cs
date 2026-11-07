@@ -16,11 +16,11 @@ public sealed class UserNameHelperTests
     [Theory]
     [InlineData(null, null)]
     [InlineData("", "")]
-    public void FormatName_FallsBackToUsername_WhenNameMissing(string? firstName, string? lastName)
+    public void FormatName_DoesNotFallBackToUsername_WhenNameMissing(string? firstName, string? lastName)
     {
         var user = new UserIdentityDto { Username = "jdoe", FirstName = firstName, LastName = lastName };
 
-        Assert.Equal("jdoe", UserNameHelper.FormatName(user));
+        Assert.Equal(string.Empty, UserNameHelper.FormatName(user));
     }
 
     [Fact]

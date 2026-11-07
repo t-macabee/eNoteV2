@@ -25,7 +25,7 @@ class InstrumentTile extends StatelessWidget {
         size: AppSize.listThumbnail,
         borderRadius: AppRadius.md,
       ),
-      title: Text('${instrument.manufacturer} ${instrument.model}'),
+      title: Text('${instrument.manufacturerName} ${instrument.model}'),
       subtitle: Text('${instrument.instrumentType} · ${instrument.musicStore}'),
       trailing: instrumentAvailabilityChip(instrument.isAvailable),
     );

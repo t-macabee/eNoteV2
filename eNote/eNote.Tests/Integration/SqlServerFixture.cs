@@ -29,7 +29,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
     {
         var database = new SqlServerDatabase(BuildOptions($"enote_test_{Guid.NewGuid():N}"));
 
-        await using var context = database.CreateContext();
+        await using var context = database.CreateMigrationContext();
         await context.Database.MigrateAsync();
 
         return database;
@@ -50,6 +50,14 @@ public sealed class SqlServerDatabase(DbContextOptions<ENoteContext> options)
 {
     private static readonly DateTime Now = new(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc);
 
-    public ENoteContext CreateContext() =>
+    public ENoteContext CreateContext()
+    {
+        var context = CreateMigrationContext();
+        TestManufacturers.Seed(context);
+
+        return context;
+    }
+
+    public ENoteContext CreateMigrationContext() =>
         new(options, new FixedClock(Now), new StubCurrentActor(isAuthenticated: false));
 }

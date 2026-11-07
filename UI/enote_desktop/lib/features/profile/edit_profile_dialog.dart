@@ -62,8 +62,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     await profileProvider.updateProfile(
       UpdateProfileRequest(
         email: _emailController.text.trim(),
-        firstName: firstName.isEmpty ? null : firstName,
-        lastName: lastName.isEmpty ? null : lastName,
+        firstName: firstName,
+        lastName: lastName,
         dateOfBirth: _dateOfBirth,
       ),
     );
@@ -142,12 +142,14 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           ),
         TextFormField(
           controller: _firstNameController,
-          decoration: const InputDecoration(labelText: 'Ime'),
+          decoration: const InputDecoration(labelText: 'Ime *'),
+          validator: Validators.firstName,
           maxLength: 256,
         ),
         TextFormField(
           controller: _lastNameController,
-          decoration: const InputDecoration(labelText: 'Prezime'),
+          decoration: const InputDecoration(labelText: 'Prezime *'),
+          validator: Validators.lastName,
           maxLength: 256,
         ),
         TextFormField(

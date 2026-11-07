@@ -22,7 +22,7 @@ public sealed class UserIdentityServiceTests
             LastName = "Doe",
             IsActive = true
         };
-        var other = new AppUser { UserName = "other", Email = "other@example.com", IsActive = true };
+        var other = new AppUser { UserName = "other", Email = "other@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(other, "Password1!");
         await userManager.CreateAsync(user, "Password1!");
         var service = new UserIdentityService(userManager, context);
@@ -51,10 +51,10 @@ public sealed class UserIdentityServiceTests
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var userManager = IdentityTestHarness.Create(context).UserManager;
-        var first = new AppUser { UserName = "first", Email = "first@example.com", IsActive = true };
-        var second = new AppUser { UserName = "second", Email = "second@example.com", IsActive = true };
+        var first = new AppUser { UserName = "first", Email = "first@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
+        var second = new AppUser { UserName = "second", Email = "second@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(first, "Password1!");
-        var notRequested = new AppUser { UserName = "third", Email = "third@example.com", IsActive = true };
+        var notRequested = new AppUser { UserName = "third", Email = "third@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(second, "Password1!");
         await userManager.CreateAsync(notRequested, "Password1!");
         var service = new UserIdentityService(userManager, context);
@@ -74,7 +74,7 @@ public sealed class UserIdentityServiceTests
         var userManager = identity.UserManager;
         var roleManager = identity.RoleManager;
         await roleManager.CreateAsync(new AppRole { Name = "Student" });
-        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true };
+        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(user, "Password1!");
         await userManager.AddToRoleAsync(user, "Student");
         var service = new UserIdentityService(userManager, context);
@@ -102,12 +102,10 @@ public sealed class UserIdentityServiceTests
         var jane = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", FirstName = "Jane", LastName = "Doe", IsActive = true };
         var alice = new AppUser { UserName = "asmith", Email = "asmith@example.com", FirstName = "Alice", LastName = "Smith", IsActive = false };
         var bob = new AppUser { UserName = "bbrown", Email = "bbrown@example.com", FirstName = "Bob", LastName = "Brown", IsActive = true };
-        var nullName = new AppUser { UserName = "noname", Email = "noname@example.com", FirstName = null, LastName = null, IsActive = true };
 
         await userManager.CreateAsync(jane, "Password1!");
         await userManager.CreateAsync(alice, "Password1!");
         await userManager.CreateAsync(bob, "Password1!");
-        await userManager.CreateAsync(nullName, "Password1!");
 
         var service = new UserIdentityService(userManager, context);
 
@@ -129,7 +127,6 @@ public sealed class UserIdentityServiceTests
         var activeOnly = await service.FindUserIdsAsync(null, true);
         Assert.Contains(jane.Id, activeOnly);
         Assert.Contains(bob.Id, activeOnly);
-        Assert.Contains(nullName.Id, activeOnly);
         Assert.DoesNotContain(alice.Id, activeOnly);
 
         var inactiveOnly = await service.FindUserIdsAsync(null, false);
@@ -184,7 +181,7 @@ public sealed class UserIdentityServiceTests
 
         foreach (var role in roles)
         {
-            var user = new AppUser { UserName = role.ToLower(), Email = $"{role.ToLower()}@example.com", IsActive = true };
+            var user = new AppUser { UserName = role.ToLower(), Email = $"{role.ToLower()}@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
             await userManager.CreateAsync(user, "Password1!");
             await userManager.AddToRoleAsync(user, role);
             userIds[role] = user.Id;
@@ -260,8 +257,8 @@ public sealed class UserIdentityServiceTests
         await using var context = TestDbContextFactory.CreateContext(Now);
         var userManager = IdentityTestHarness.Create(context).UserManager;
 
-        var studentUser = new AppUser { UserName = "student", Email = "student@example.com", IsActive = true };
-        var employeeUser = new AppUser { UserName = "employee", Email = "employee@example.com", IsActive = true };
+        var studentUser = new AppUser { UserName = "student", Email = "student@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
+        var employeeUser = new AppUser { UserName = "employee", Email = "employee@example.com", IsActive = true, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(studentUser, "Password1!");
         await userManager.CreateAsync(employeeUser, "Password1!");
 

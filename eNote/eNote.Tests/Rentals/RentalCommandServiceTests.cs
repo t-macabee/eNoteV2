@@ -539,7 +539,7 @@ public sealed class RentalCommandServiceTests
 
     private static async Task<Instrument> SeedExtraInstrumentAsync(ENoteContext context, Instrument reference)
     {
-        var instrument = new Instrument("Second Model", "Second Manufacturer", null, null, reference.InstrumentTypeId, reference.MusicStoreId);
+        var instrument = new Instrument("Second Model", TestManufacturers.Id("Second Manufacturer"), null, null, reference.InstrumentTypeId, reference.MusicStoreId);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
         return instrument;

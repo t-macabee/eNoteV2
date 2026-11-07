@@ -19,7 +19,7 @@ Map<String, dynamic> _recommendationJson({int id = 3}) => {
   'instrument': {
     'id': id,
     'model': 'C40',
-    'manufacturer': 'Yamaha',
+    'manufacturerId': 1, 'manufacturerName': 'Yamaha',
     'description': 'Klasična gitara za početnike.',
     'instrumentTypeId': 1,
     'instrumentType': 'Klasična gitara',

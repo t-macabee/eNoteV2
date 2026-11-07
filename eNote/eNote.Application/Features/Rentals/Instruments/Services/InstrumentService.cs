@@ -14,7 +14,8 @@ public sealed class InstrumentService(
     {
         Id = x.Id,
         Model = x.Model,
-        Manufacturer = x.Manufacturer,
+        ManufacturerId = x.ManufacturerId,
+        ManufacturerName = x.Manufacturer.Name,
         Description = x.Description,
         ImagePath = x.ImagePath,
         InstrumentTypeId = x.InstrumentTypeId,
@@ -69,10 +70,11 @@ public sealed class InstrumentService(
     {
         var employee = await EnsureStoreAccessAsync(cancellationToken);
         await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
+        await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
 
         var entity = new Instrument(
             request.Model.Trim(),
-            request.Manufacturer.Trim(),
+            request.ManufacturerId,
             NormalizeDescription(request.Description),
             null,
             request.InstrumentTypeId,
@@ -94,10 +96,11 @@ public sealed class InstrumentService(
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
         await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
+        await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
 
         entity.UpdateDetails(
             request.Model.Trim(),
-            request.Manufacturer.Trim(),
+            request.ManufacturerId,
             NormalizeDescription(request.Description),
             entity.ImagePath,
             request.InstrumentTypeId);
@@ -120,7 +123,7 @@ public sealed class InstrumentService(
 
         var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, contentType, "instruments", ct);
-        entity.UpdateDetails(entity.Model, entity.Manufacturer, entity.Description, path, entity.InstrumentTypeId);
+        entity.UpdateDetails(entity.Model, entity.ManufacturerId, entity.Description, path, entity.InstrumentTypeId);
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
@@ -161,6 +164,14 @@ public sealed class InstrumentService(
         if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId, cancellationToken))
         {
             throw new BusinessException(Messages.InstrumentTypeNotFound);
+        }
+    }
+
+    private async Task EnsureManufacturerExistsAsync(int manufacturerId, CancellationToken cancellationToken)
+    {
+        if (!await context.Set<Manufacturer>().AnyAsync(x => x.Id == manufacturerId, cancellationToken))
+        {
+            throw new BusinessException(Messages.ManufacturerNotFound);
         }
     }
 

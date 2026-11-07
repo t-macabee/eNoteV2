@@ -183,7 +183,7 @@ public sealed class TokenValidationTests
 
         var provider = services.BuildServiceProvider();
         var userManager = provider.GetRequiredService<UserManager<AppUser>>();
-        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = isActive };
+        var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = isActive, FirstName = "Test", LastName = "User" };
         await userManager.CreateAsync(user, "Password1!");
 
         return new Harness(provider, user, context);

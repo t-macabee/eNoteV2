@@ -7,6 +7,7 @@ import 'package:enote_desktop/features/shared/announcement/store_announcement_pr
 import 'package:enote_desktop/features/store_employee/employee/shop_employee_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'package:enote_desktop/features/store_employee/instrument/shop_manufacturer_provider.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_provider.dart';
 import 'package:enote_desktop/shell/master_screen.dart';
@@ -38,7 +39,7 @@ ScriptedClient storeEmployeeShellClient() => ScriptedClient((request) {
           {
             'id': 1,
             'model': 'Stratocaster',
-            'manufacturer': 'Fender',
+            'manufacturerId': 1, 'manufacturerName': 'Fender',
             'instrumentTypeId': 1,
             'instrumentType': 'Gitara',
             'musicStore': 'Muzička Prodavnica',
@@ -54,6 +55,16 @@ ScriptedClient storeEmployeeShellClient() => ScriptedClient((request) {
       return jsonResponse(const {
         'items': [
           {'id': 1, 'type': 'Gitara', 'monthlyFee': 50.0},
+        ],
+        'page': 1,
+        'pageSize': 100,
+        'totalCount': 1,
+      }, 200);
+    }
+    if (url.contains('shop/manufacturers')) {
+      return jsonResponse(const {
+        'items': [
+          {'id': 1, 'name': 'Fender'},
         ],
         'page': 1,
         'pageSize': 100,
@@ -131,6 +142,7 @@ Widget buildStoreEmployeeShell({
   final instrumentTypeProvider = ShopInstrumentTypeProvider(
     apiClient: apiClient,
   );
+  final manufacturerProvider = ShopManufacturerProvider(apiClient: apiClient);
   final notificationController = NotificationController(
     apiClient: apiClient,
     endpoint: 'notifications',
@@ -153,6 +165,9 @@ Widget buildStoreEmployeeShell({
       ),
       ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
         value: instrumentTypeProvider,
+      ),
+      ChangeNotifierProvider<ShopManufacturerProvider>.value(
+        value: manufacturerProvider,
       ),
       ChangeNotifierProvider<ShopEmployeeProvider>.value(
         value: employeeProvider,

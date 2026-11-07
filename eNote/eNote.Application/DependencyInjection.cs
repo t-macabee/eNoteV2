@@ -21,6 +21,7 @@ using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.ReferenceData.Addresses;
 using eNote.Application.Features.ReferenceData.Cities;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+using eNote.Application.Features.Rentals.ReferenceData.Manufacturers;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Mapster;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IFileAccessService, FileAccessService>();
         services.AddScoped<IPictureAccessService, PictureAccessService>();
         services.AddScoped<InstrumentTypeService>();
+        services.AddScoped<ManufacturerService>();
         services.AddScoped<MusicStoreService>();
         services.AddScoped<IStudentDisplayNameService, StudentDisplayNameService>();
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();

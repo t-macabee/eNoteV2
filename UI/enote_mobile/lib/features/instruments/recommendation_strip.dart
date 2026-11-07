@@ -89,7 +89,7 @@ class _Card extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${instrument.manufacturer} ${instrument.model}',
+                        '${instrument.manufacturerName} ${instrument.model}',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall,
@@ -135,7 +135,7 @@ class _Card extends StatelessWidget {
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => AppSheetBody(
-        title: '${instrument.manufacturer} ${instrument.model}',
+        title: '${instrument.manufacturerName} ${instrument.model}',
         children: [
           for (final reason in recommendation.reasons)
             Padding(

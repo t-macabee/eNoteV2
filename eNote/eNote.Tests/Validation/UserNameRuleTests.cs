@@ -9,13 +9,13 @@ public sealed class UserNameRuleTests
     private const string ExpectedMessage = "Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +";
 
     private static RegisterRequest Register(string username) =>
-        new() { Username = username, Email = "a@example.com", Password = "Password1!" };
+        new() { Username = username, Email = "a@example.com", Password = "Password1!", FirstName = "Test", LastName = "User" };
 
     private static DelegatedUserCreateRequest Delegated(string username) =>
-        new() { Username = username, Email = "a@example.com", Password = "Password1!" };
+        new() { Username = username, Email = "a@example.com", Password = "Password1!", FirstName = "Test", LastName = "User" };
 
     private static UserProvisionRequest Provision(string username) =>
-        new() { Username = username, Email = "a@example.com", Password = "Password1!", Role = "Student" };
+        new() { Username = username, Email = "a@example.com", Password = "Password1!", Role = "Student", FirstName = "Test", LastName = "User" };
 
     [Theory]
     [InlineData("ime prezime")]

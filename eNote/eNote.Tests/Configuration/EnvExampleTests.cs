@@ -72,13 +72,27 @@ public sealed class EnvExampleTests
             .ToHashSet(StringComparer.Ordinal);
 
         var compose = File.ReadAllText(Path.Combine(RepositoryRoot.Find(), ComposeFileName));
-        var usedKeys = Regex.Matches(compose, @"\$\{([A-Z_][A-Z0-9_]*)")
+        var usedKeys = Regex.Matches(compose, @"\$\{([A-Za-z_][A-Za-z0-9_]*)")
             .Select(match => match.Groups[1].Value)
             .Distinct();
 
         var missing = usedKeys.Where(key => !declaredKeys.Contains(key)).ToList();
 
         Assert.True(missing.Count == 0, $"Variables used by {ComposeFileName} but missing from {ExampleFileName}: {string.Join(", ", missing)}");
+    }
+
+    [Fact]
+    public void RabbitMqPort_IsSetOnlyThroughTheOptionKey()
+    {
+        var compose = File.ReadAllText(Path.Combine(RepositoryRoot.Find(), ComposeFileName));
+        var declaredKeys = ReadActiveKeys(ExamplePath())
+            .Concat(ReadCommentedKeys(ExamplePath()))
+            .ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains("${RabbitMQ__Port:?", compose);
+        Assert.Matches(@"(?m)^\s+RabbitMQ__Port:\s*""?5672""?\s*$", compose);
+        Assert.DoesNotContain("RABBITMQ_PORT", compose);
+        Assert.DoesNotContain("RABBITMQ_PORT", declaredKeys);
     }
 
     private static string ExamplePath() => Path.Combine(RepositoryRoot.Find(), ExampleFileName);
@@ -111,7 +125,7 @@ public sealed class EnvExampleTests
 
     private static List<string> ReadCommentedKeys(string path) =>
         [.. File.ReadLines(path)
-            .Select(line => Regex.Match(line, @"^#\s*([A-Z_][A-Z0-9_]*)="))
+            .Select(line => Regex.Match(line, @"^#\s*([A-Za-z_][A-Za-z0-9_]*)="))
             .Where(match => match.Success)
             .Select(match => match.Groups[1].Value)];
 

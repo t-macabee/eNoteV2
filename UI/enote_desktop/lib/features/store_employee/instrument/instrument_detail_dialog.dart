@@ -146,7 +146,7 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
               DetailRow(
                 icon: Icons.business_outlined,
                 label: 'Proizvođač',
-                value: _instrument.manufacturer,
+                value: _instrument.manufacturerName,
               ),
               DetailRow(
                 icon: Icons.category_outlined,

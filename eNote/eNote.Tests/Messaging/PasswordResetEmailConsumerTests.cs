@@ -85,7 +85,7 @@ public sealed class PasswordResetEmailConsumerTests
         foreach (var (id, mail, active) in users)
         {
             var result = await userManager.CreateAsync(
-                new AppUser { Id = id, UserName = $"user{id}", Email = mail, IsActive = active },
+                new AppUser { Id = id, UserName = $"user{id}", Email = mail, IsActive = active, FirstName = "Test", LastName = "User" },
                 "Password1!");
 
             Assert.True(result.Succeeded, string.Join("; ", result.Errors.Select(e => e.Description)));

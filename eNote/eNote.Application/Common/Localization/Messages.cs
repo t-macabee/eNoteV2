@@ -1,3 +1,5 @@
+using eNote.Application.Validation.Identity;
+
 namespace eNote.Application.Common.Localization;
 
 public static class Messages
@@ -25,6 +27,12 @@ public static class Messages
     public const string ProfileDeleteBlockedByUnpaidRental = "Profil se ne može obrisati jer imate neizmireno dugovanje za iznajmljivanje. Izmirite dug pa pokušajte ponovo.";
     public const string ProfileDeleteBlockedByOpenRental = "Profil se ne može obrisati jer imate odobreno ili aktivno iznajmljivanje. Vratite instrument pa pokušajte ponovo.";
     public const string ProfileDeletedRentalCancelNote = "Zahtjev je otkazan jer je student obrisao profil.";
+    public const string FirstNameRequired = "Ime je obavezno.";
+    public const string LastNameRequired = "Prezime je obavezno.";
+    public const string ClosedAccountFirstName = "Obrisani";
+    public const string ClosedAccountLastName = "korisnik";
+    public static readonly string FirstNameTooLong = $"Ime može imati najviše {IdentityPolicy.PersonNameMaxLength} znakova.";
+    public static readonly string LastNameTooLong = $"Prezime može imati najviše {IdentityPolicy.PersonNameMaxLength} znakova.";
     public const string UnknownRole = "Nepoznata uloga.";
     public const string UnknownUserName = "Nepoznat korisnik";
     public const string StoreNotFound = "Radnja nije pronađena.";
@@ -72,6 +80,11 @@ public static class Messages
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentTypeAlreadyExists = "Tip instrumenta s tim nazivom već postoji.";
+    public const string ManufacturerNotFound = "Proizvođač nije pronađen.";
+    public const string ManufacturerAlreadyExists = "Proizvođač s tim nazivom već postoji.";
+    public const string ManufacturerDeleteBlocked = "Proizvođač se ne može obrisati jer je u upotrebi.";
+    public const string ManufacturerNameRequired = "Naziv proizvođača je obavezan.";
+    public static readonly string ManufacturerNameTooLong = $"Naziv proizvođača može imati najviše {Manufacturer.NameMaxLength} znakova.";
     public const string CityAlreadyExists = "Grad s tim nazivom već postoji.";
     public const string DateOfBirthInFuture = "Datum rođenja ne smije biti u budućnosti.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";

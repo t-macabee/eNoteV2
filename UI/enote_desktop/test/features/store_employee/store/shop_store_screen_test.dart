@@ -10,6 +10,7 @@ import 'package:enote_desktop/features/store_employee/instrument/instrument_deta
 import 'package:enote_desktop/features/store_employee/instrument/instrument_form_screen.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'package:enote_desktop/features/store_employee/instrument/shop_manufacturer_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_form_screen.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_screen.dart';
@@ -38,6 +39,7 @@ Widget _buildTestApp({
   final instrumentTypeProvider = ShopInstrumentTypeProvider(
     apiClient: apiClient,
   );
+  final manufacturerProvider = ShopManufacturerProvider(apiClient: apiClient);
 
   return MultiProvider(
     providers: [
@@ -50,6 +52,9 @@ Widget _buildTestApp({
       ),
       ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
         value: instrumentTypeProvider,
+      ),
+      ChangeNotifierProvider<ShopManufacturerProvider>.value(
+        value: manufacturerProvider,
       ),
     ],
     child: const MaterialApp(home: Scaffold(body: ShopStoreScreen())),
@@ -81,6 +86,16 @@ ScriptedClient _clientWithInstrumentTypes(List<Map<String, dynamic>> types) =>
           'page': 1,
           'pageSize': 24,
           'totalCount': 0,
+        }, 200);
+      }
+      if (request.method == 'GET' && url.contains('shop/manufacturers')) {
+        return jsonResponse(const {
+          'items': [
+            {'id': 1, 'name': 'Fender'},
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
         }, 200);
       }
       return jsonResponse(const {
@@ -318,7 +333,7 @@ void main() {
         {
           'id': id,
           'model': 'Instrument $id',
-          'manufacturer': 'Proizvođač $id',
+          'manufacturerId': 1, 'manufacturerName': 'Proizvođač $id',
           'instrumentTypeId': 1,
           'instrumentType': 'Gitara',
           'musicStore': 'Muzička Prodavnica',
@@ -335,7 +350,8 @@ void main() {
         final created = {
           'id': nextId++,
           'model': body['model'],
-          'manufacturer': body['manufacturer'],
+          'manufacturerId': body['manufacturerId'],
+          'manufacturerName': body['manufacturerId'] == 1 ? 'Fender' : '',
           'instrumentTypeId': body['instrumentTypeId'],
           'instrumentType': 'Gitara',
           'musicStore': 'Muzička Prodavnica',
@@ -376,6 +392,17 @@ void main() {
         }, 200);
       }
 
+      if (url.contains('shop/manufacturers')) {
+        return jsonResponse(const {
+          'items': [
+            {'id': 1, 'name': 'Fender'},
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
+        }, 200);
+      }
+
       return jsonResponse(const {
         'items': [],
         'page': 1,
@@ -396,16 +423,15 @@ void main() {
       find.widgetWithText(TextFormField, 'Model'),
       'Nova gitara',
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'Proizvođač'),
-      'Novi proizvođač',
+    final dropdowns = find.descendant(
+      of: find.byType(Dialog),
+      matching: find.byType(DropdownButtonFormField<Object>),
     );
-    await tester.tap(
-      find.descendant(
-        of: find.byType(Dialog),
-        matching: find.byType(DropdownButtonFormField<Object>),
-      ),
-    );
+    await tester.tap(dropdowns.at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fender').last);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdowns.at(1));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gitara').last);
     await tester.pumpAndSettle();

@@ -149,7 +149,7 @@ public sealed class RentalQueryServiceTests
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var approved = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, new DateTime(2026, 6, 13, 10, 0, 0, DateTimeKind.Utc), null);
         RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now, approvedAt: new DateTime(2026, 6, 14, 10, 0, 0, DateTimeKind.Utc));
-        var activeInstrument = new Instrument("Second Model", "Second Manufacturer", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        var activeInstrument = new Instrument("Second Model", TestManufacturers.Id("Second Manufacturer"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
         context.Set<Instrument>().Add(activeInstrument);
         await context.SaveChangesAsync();
         var active = new InstrumentRental(activeInstrument.Id, student.Id, activeInstrument.MusicStoreId, new DateTime(2026, 6, 13, 10, 0, 0, DateTimeKind.Utc), null);
@@ -171,7 +171,7 @@ public sealed class RentalQueryServiceTests
         await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context, appUserId: 100);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var secondInstrument = new Instrument("Second Model", "Second Maker", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        var secondInstrument = new Instrument("Second Model", TestManufacturers.Id("Second Maker"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
         context.Set<Instrument>().Add(secondInstrument);
         await context.SaveChangesAsync();
 
@@ -307,7 +307,7 @@ public sealed class RentalQueryServiceTests
         await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context, appUserId: 100);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var secondInstrument = new Instrument("Second Model", "Second Maker", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        var secondInstrument = new Instrument("Second Model", TestManufacturers.Id("Second Maker"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
         context.Set<Instrument>().Add(secondInstrument);
         await context.SaveChangesAsync();
 

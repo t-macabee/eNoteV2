@@ -8,6 +8,8 @@ public static class DbConstraintNames
 
     public const string InstrumentTypeTypeUniqueIndex = "UX_InstrumentType_Type";
 
+    public const string ManufacturerNameUniqueIndex = "UX_Manufacturer_Name";
+
     public const string CityNameUniqueIndex = "UX_City_Name";
 
     public const string AddressCityStreetNumberUniqueIndex = "UX_Address_CityId_Street_Number";

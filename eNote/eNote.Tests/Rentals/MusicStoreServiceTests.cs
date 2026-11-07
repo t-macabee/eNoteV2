@@ -378,7 +378,7 @@ public sealed class MusicStoreServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         ctx.Set<InstrumentType>().Add(type);
         await ctx.SaveChangesAsync();
-        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, created.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, created.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
 
@@ -417,7 +417,7 @@ public sealed class MusicStoreServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         ctx.Set<InstrumentType>().Add(type);
         await ctx.SaveChangesAsync();
-        ctx.Set<Instrument>().Add(new Instrument("Strat", "Fender", null, null, type.Id, store.Id));
+        ctx.Set<Instrument>().Add(new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id));
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
         var service = CreateService(ctx, storage);
@@ -498,7 +498,7 @@ public sealed class MusicStoreServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         ctx.Set<InstrumentType>().Add(type);
         await ctx.SaveChangesAsync();
-        var instrument = new Instrument("Strat", "Fender", null, "/api/v1/uploads/instruments/big.png", type.Id, store.Id);
+        var instrument = new Instrument("Strat", TestManufacturers.Id("Fender"), null, "/api/v1/uploads/instruments/big.png", type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();

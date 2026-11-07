@@ -67,8 +67,8 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var instrumentA = new Instrument("InstrA", "YAM", null, null, typeA.Id, store.Id);
-        var instrumentB = new Instrument("InstrB", "ROL", null, null, typeB.Id, store.Id);
+        var instrumentA = new Instrument("InstrA", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var instrumentB = new Instrument("InstrB", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(instrumentA, instrumentB);
         await context.SaveChangesAsync();
 
@@ -93,8 +93,8 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var instrumentA = new Instrument("InstrA", "YAM", null, null, typeA.Id, store.Id);
-        var instrumentB = new Instrument("InstrB", "ROL", null, null, typeA.Id, store.Id);
+        var instrumentA = new Instrument("InstrA", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var instrumentB = new Instrument("InstrB", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(instrumentA, instrumentB);
         await context.SaveChangesAsync();
 
@@ -139,7 +139,7 @@ public sealed class RecommendationServiceTests
         var instruments = new List<Instrument>();
         for (var i = 0; i < 22; i++)
         {
-            instruments.Add(new Instrument($"I{i}", "YAM", null, null, typeA.Id, store.Id));
+            instruments.Add(new Instrument($"I{i}", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id));
         }
 
         context.Set<Instrument>().AddRange(instruments);
@@ -163,7 +163,7 @@ public sealed class RecommendationServiceTests
         var instruments = new List<Instrument>();
         for (var i = 0; i < 8; i++)
         {
-            instruments.Add(new Instrument($"D{i}", "YAM", null, null, typeA.Id, store.Id));
+            instruments.Add(new Instrument($"D{i}", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id));
         }
 
         context.Set<Instrument>().AddRange(instruments);
@@ -184,14 +184,14 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rented = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
+        var rented = new Instrument("Rented", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(rented);
         await context.SaveChangesAsync();
 
         var rolInstruments = new List<Instrument>();
         for (var i = 0; i < 40; i++)
         {
-            rolInstruments.Add(new Instrument($"R{i}", "ROL", null, null, typeA.Id, store.Id));
+            rolInstruments.Add(new Instrument($"R{i}", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id));
         }
 
         context.Set<Instrument>().AddRange(rolInstruments);
@@ -200,7 +200,7 @@ public sealed class RecommendationServiceTests
         var lateYamaha = new List<Instrument>();
         for (var i = 0; i < 10; i++)
         {
-            lateYamaha.Add(new Instrument($"Y{i}", "YAM", null, null, typeA.Id, store.Id));
+            lateYamaha.Add(new Instrument($"Y{i}", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id));
         }
 
         context.Set<Instrument>().AddRange(lateYamaha);
@@ -226,8 +226,8 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var instrumentRecent = new Instrument("Recent", "YAM", null, null, typeA.Id, store.Id);
-        var instrumentOld = new Instrument("Old", "ROL", null, null, typeB.Id, store.Id);
+        var instrumentRecent = new Instrument("Recent", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var instrumentOld = new Instrument("Old", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(instrumentRecent, instrumentOld);
         await context.SaveChangesAsync();
 
@@ -259,9 +259,9 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var commonInstrument = new Instrument("Common", "YAM", null, null, typeA.Id, store.Id);
-        var collabFrequent = new Instrument("CollabFrequent", "YAM", null, null, typeA.Id, store.Id);
-        var collabLessFrequent = new Instrument("CollabLessFrequent", "YAM", null, null, typeA.Id, store.Id);
+        var commonInstrument = new Instrument("Common", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var collabFrequent = new Instrument("CollabFrequent", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var collabLessFrequent = new Instrument("CollabLessFrequent", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(commonInstrument, collabFrequent, collabLessFrequent);
         await context.SaveChangesAsync();
 
@@ -309,7 +309,7 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var commonInstrument = new Instrument("Common", "YAM", null, null, typeA.Id, store.Id);
+        var commonInstrument = new Instrument("Common", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(commonInstrument);
         await context.SaveChangesAsync();
 
@@ -319,13 +319,13 @@ public sealed class RecommendationServiceTests
         var fillers = new List<Instrument>();
         for (var i = 0; i < fillerCount; i++)
         {
-            fillers.Add(new Instrument($"Filler{i}", "ROL", null, null, typeB.Id, store.Id));
+            fillers.Add(new Instrument($"Filler{i}", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(fillers);
         await context.SaveChangesAsync();
 
-        var lowCountInstrument = new Instrument("LowCount", "YAM", null, null, typeB.Id, store.Id);
-        var highCountInstrument = new Instrument("HighCount", "YAM", null, null, typeB.Id, store.Id);
+        var lowCountInstrument = new Instrument("LowCount", TestManufacturers.Id("YAM"), null, null, typeB.Id, store.Id);
+        var highCountInstrument = new Instrument("HighCount", TestManufacturers.Id("YAM"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(lowCountInstrument, highCountInstrument);
         await context.SaveChangesAsync();
 
@@ -369,7 +369,7 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var ownInstrument = new Instrument("Own", "YAM", null, null, typeA.Id, store.Id);
+        var ownInstrument = new Instrument("Own", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(ownInstrument);
         await context.SaveChangesAsync();
 
@@ -378,7 +378,7 @@ public sealed class RecommendationServiceTests
         var rentedByOthers = new List<Instrument>();
         for (var i = 0; i < 40; i++)
         {
-            rentedByOthers.Add(new Instrument($"Other{i}", "ROL", null, null, typeB.Id, store.Id));
+            rentedByOthers.Add(new Instrument($"Other{i}", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id));
         }
 
         context.Set<Instrument>().AddRange(rentedByOthers);
@@ -391,7 +391,7 @@ public sealed class RecommendationServiceTests
             similarStudentId++;
         }
 
-        var viewedInstrument = new Instrument("Viewed", "ROL", null, null, typeB.Id, store.Id);
+        var viewedInstrument = new Instrument("Viewed", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().Add(viewedInstrument);
         await context.SaveChangesAsync();
 
@@ -420,8 +420,8 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var archived = new Instrument("Archived", "YAM", null, null, typeA.Id, store.Id);
-        var active = new Instrument("Active", "YAM", null, null, typeB.Id, store.Id);
+        var archived = new Instrument("Archived", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var active = new Instrument("Active", TestManufacturers.Id("YAM"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(archived, active);
         await context.SaveChangesAsync();
 
@@ -453,7 +453,7 @@ public sealed class RecommendationServiceTests
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 45m };
         context.Set<InstrumentType>().Add(type);
         await context.SaveChangesAsync();
-        var instrument = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        var instrument = new Instrument("Stratocaster", TestManufacturers.Id("Fender"), null, null, type.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 
@@ -567,8 +567,8 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var heldInstrument = new Instrument("Held", "YAM", null, null, typeA.Id, store.Id);
-        var freeInstrument = new Instrument("Free", "YAM", null, null, typeA.Id, store.Id);
+        var heldInstrument = new Instrument("Held", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var freeInstrument = new Instrument("Free", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(heldInstrument, freeInstrument);
         await context.SaveChangesAsync();
 
@@ -594,7 +594,7 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var instrument = new Instrument("Held", "YAM", null, null, typeA.Id, store.Id);
+        var instrument = new Instrument("Held", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 
@@ -618,8 +618,8 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var ownPendingInstrument = new Instrument("OwnPending", "YAM", null, null, typeA.Id, store.Id);
-        var otherPendingInstrument = new Instrument("OtherPending", "ROL", null, null, typeA.Id, store.Id);
+        var ownPendingInstrument = new Instrument("OwnPending", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var otherPendingInstrument = new Instrument("OtherPending", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(ownPendingInstrument, otherPendingInstrument);
         await context.SaveChangesAsync();
 
@@ -647,7 +647,7 @@ public sealed class RecommendationServiceTests
         var archivedInstruments = new List<Instrument>();
         for (var i = 0; i < 20; i++)
         {
-            archivedInstruments.Add(new Instrument($"Archived{i}", "YAM", null, null, typeA.Id, store.Id));
+            archivedInstruments.Add(new Instrument($"Archived{i}", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(archivedInstruments);
         await context.SaveChangesAsync();
@@ -661,11 +661,11 @@ public sealed class RecommendationServiceTests
         }
         await context.SaveChangesAsync();
 
-        var viewedInstrument = new Instrument("Viewed", "ROL", null, null, typeB.Id, store.Id);
+        var viewedInstrument = new Instrument("Viewed", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         var rentedInstruments = new List<Instrument>();
         for (var i = 0; i < 6; i++)
         {
-            rentedInstruments.Add(new Instrument($"Rented{i}", "KOR", null, null, typeB.Id, store.Id));
+            rentedInstruments.Add(new Instrument($"Rented{i}", TestManufacturers.Id("KOR"), null, null, typeB.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(rentedInstruments);
         context.Set<Instrument>().Add(viewedInstrument);
@@ -696,8 +696,8 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var archivedInstrument = new Instrument("Archived", "YAM", null, null, typeA.Id, store.Id);
-        var activeInstrument = new Instrument("Active", "ROL", null, null, typeB.Id, store.Id);
+        var archivedInstrument = new Instrument("Archived", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var activeInstrument = new Instrument("Active", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(archivedInstrument, activeInstrument);
         await context.SaveChangesAsync();
 
@@ -727,8 +727,8 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var archivedInstrument = new Instrument("Archived", "YAM", null, null, typeA.Id, store.Id);
-        var activeInstrument = new Instrument("Active", "ROL", null, null, typeB.Id, store.Id);
+        var archivedInstrument = new Instrument("Archived", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var activeInstrument = new Instrument("Active", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(archivedInstrument, activeInstrument);
         await context.SaveChangesAsync();
 
@@ -762,12 +762,12 @@ public sealed class RecommendationServiceTests
         var typeAInstruments = new List<Instrument>();
         for (var i = 0; i < 5; i++)
         {
-            typeAInstruments.Add(new Instrument($"Guitar{i}", "YAM", null, null, typeA.Id, store.Id));
+            typeAInstruments.Add(new Instrument($"Guitar{i}", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id));
         }
         var typeBInstruments = new List<Instrument>();
         for (var i = 0; i < 5; i++)
         {
-            typeBInstruments.Add(new Instrument($"Piano{i}", "ROL", null, null, typeB.Id, store.Id));
+            typeBInstruments.Add(new Instrument($"Piano{i}", TestManufacturers.Id("ROL"), null, null, typeB.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(typeAInstruments);
         context.Set<Instrument>().AddRange(typeBInstruments);
@@ -798,12 +798,12 @@ public sealed class RecommendationServiceTests
         var guitarInstruments = new List<Instrument>();
         for (var i = 0; i < 3; i++)
         {
-            guitarInstruments.Add(new Instrument($"Guitar{i}", "AAA", null, null, typeA.Id, store.Id));
+            guitarInstruments.Add(new Instrument($"Guitar{i}", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id));
         }
         var pianoInstruments = new List<Instrument>();
         for (var i = 0; i < 2; i++)
         {
-            pianoInstruments.Add(new Instrument($"Piano{i}", "BBB", null, null, typeB.Id, store.Id));
+            pianoInstruments.Add(new Instrument($"Piano{i}", TestManufacturers.Id("BBB"), null, null, typeB.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(guitarInstruments);
         context.Set<Instrument>().AddRange(pianoInstruments);
@@ -817,7 +817,7 @@ public sealed class RecommendationServiceTests
         context.Set<InstrumentRental>().AddRange(rentals);
         await context.SaveChangesAsync();
 
-        var targetInstrument = new Instrument("NewPiano", "TGT", null, null, typeB.Id, store.Id);
+        var targetInstrument = new Instrument("NewPiano", TestManufacturers.Id("TGT"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().Add(targetInstrument);
         await context.SaveChangesAsync();
 
@@ -843,9 +843,9 @@ public sealed class RecommendationServiceTests
         var guitarInstruments = new List<Instrument>();
         for (var i = 0; i < 5; i++)
         {
-            guitarInstruments.Add(new Instrument($"Guitar{i}", "AAA", null, null, typeA.Id, store.Id));
+            guitarInstruments.Add(new Instrument($"Guitar{i}", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id));
         }
-        var studentPianoInstrument = new Instrument("StudentPiano", "AAA", null, null, typeB.Id, store.Id);
+        var studentPianoInstrument = new Instrument("StudentPiano", TestManufacturers.Id("AAA"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(guitarInstruments);
         context.Set<Instrument>().Add(studentPianoInstrument);
         await context.SaveChangesAsync();
@@ -858,8 +858,8 @@ public sealed class RecommendationServiceTests
         context.Set<InstrumentRental>().AddRange(studentRentals);
         await context.SaveChangesAsync();
 
-        var collaborativeTypeB = new Instrument("X", "XXX", null, null, typeB.Id, store.Id);
-        var collaborativeTypeC = new Instrument("Y", "YYY", null, null, typeC.Id, store.Id);
+        var collaborativeTypeB = new Instrument("X", TestManufacturers.Id("XXX"), null, null, typeB.Id, store.Id);
+        var collaborativeTypeC = new Instrument("Y", TestManufacturers.Id("YYY"), null, null, typeC.Id, store.Id);
         context.Set<Instrument>().AddRange(collaborativeTypeB, collaborativeTypeC);
         await context.SaveChangesAsync();
 
@@ -888,12 +888,12 @@ public sealed class RecommendationServiceTests
 
         var rentedInstruments = new List<Instrument>
         {
-            new("FenderOne", "Fender", null, null, typeA.Id, store.Id),
-            new("FenderTwo", "Fender", null, null, typeA.Id, store.Id),
-            new("GibsonRented", "Gibson", null, null, typeA.Id, store.Id)
+            new("FenderOne", TestManufacturers.Id("Fender"), null, null, typeA.Id, store.Id),
+            new("FenderTwo", TestManufacturers.Id("Fender"), null, null, typeA.Id, store.Id),
+            new("GibsonRented", TestManufacturers.Id("Gibson"), null, null, typeA.Id, store.Id)
         };
-        var gibsonTarget = new Instrument("GibsonTarget", "Gibson", null, null, typeB.Id, store.Id);
-        var fenderTarget = new Instrument("FenderTarget", "Fender", null, null, typeB.Id, store.Id);
+        var gibsonTarget = new Instrument("GibsonTarget", TestManufacturers.Id("Gibson"), null, null, typeB.Id, store.Id);
+        var fenderTarget = new Instrument("FenderTarget", TestManufacturers.Id("Fender"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(rentedInstruments);
         context.Set<Instrument>().AddRange(gibsonTarget, fenderTarget);
         await context.SaveChangesAsync();
@@ -925,9 +925,9 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var commonInstrument = new Instrument("Common", "YAM", null, null, typeA.Id, store.Id);
-        var typeAInstrument = new Instrument("X", "ROL", null, null, typeA.Id, store.Id);
-        var typeBInstrument = new Instrument("Y", "KOR", null, null, typeB.Id, store.Id);
+        var commonInstrument = new Instrument("Common", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var typeAInstrument = new Instrument("X", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
+        var typeBInstrument = new Instrument("Y", TestManufacturers.Id("KOR"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(commonInstrument, typeAInstrument, typeBInstrument);
         await context.SaveChangesAsync();
 
@@ -980,9 +980,9 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var mostViewed = new Instrument("A", "AAA", null, null, typeA.Id, store.Id);
-        var twiceViewed = new Instrument("B", "BBB", null, null, typeA.Id, store.Id);
-        var onceViewed = new Instrument("C", "CCC", null, null, typeA.Id, store.Id);
+        var mostViewed = new Instrument("A", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id);
+        var twiceViewed = new Instrument("B", TestManufacturers.Id("BBB"), null, null, typeA.Id, store.Id);
+        var onceViewed = new Instrument("C", TestManufacturers.Id("CCC"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(mostViewed, twiceViewed, onceViewed);
         await context.SaveChangesAsync();
 
@@ -1036,8 +1036,8 @@ public sealed class RecommendationServiceTests
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rentedInstrument = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
-        var targetInstrument = new Instrument("Target", "ROL", null, null, typeA.Id, store.Id);
+        var rentedInstrument = new Instrument("Rented", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var targetInstrument = new Instrument("Target", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(rentedInstrument, targetInstrument);
         await context.SaveChangesAsync();
 
@@ -1060,7 +1060,7 @@ public sealed class RecommendationServiceTests
         await using var context = RentalTestData.CreateContext(Now);
         var student = await RentalTestData.SeedStudentAsync(context, Now);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var secondInstrument = new Instrument("Second", "Yamaha", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        var secondInstrument = new Instrument("Second", TestManufacturers.Id("Yamaha"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
         context.Set<Instrument>().Add(secondInstrument);
         await context.SaveChangesAsync();
 
@@ -1082,10 +1082,10 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var firstGuitar = new Instrument("FirstGuitar", "AAA", null, null, typeA.Id, store.Id);
-        var secondGuitar = new Instrument("SecondGuitar", "AAA", null, null, typeA.Id, store.Id);
-        var rentedPiano = new Instrument("RentedPiano", "BBB", null, null, typeB.Id, store.Id);
-        var targetInstrument = new Instrument("Target", "TGT", null, null, typeB.Id, store.Id);
+        var firstGuitar = new Instrument("FirstGuitar", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id);
+        var secondGuitar = new Instrument("SecondGuitar", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id);
+        var rentedPiano = new Instrument("RentedPiano", TestManufacturers.Id("BBB"), null, null, typeB.Id, store.Id);
+        var targetInstrument = new Instrument("Target", TestManufacturers.Id("TGT"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(firstGuitar, secondGuitar, rentedPiano, targetInstrument);
         await context.SaveChangesAsync();
 
@@ -1110,15 +1110,15 @@ public sealed class RecommendationServiceTests
     }
 
     [Fact]
-    public async Task GetRecommendedInstrumentsAsync_Similarity_IgnoresManufacturerCase()
+    public async Task GetRecommendedInstrumentsAsync_Similarity_MatchesTheSameManufacturerId()
     {
         await using var context = RentalTestData.CreateContext(Now);
         var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rentedInstrument = new Instrument("Rented", "Fender", null, null, typeA.Id, store.Id);
-        var targetInstrument = new Instrument("Target", "FENDER", null, null, typeB.Id, store.Id);
+        var rentedInstrument = new Instrument("Rented", TestManufacturers.Id("Fender"), null, null, typeA.Id, store.Id);
+        var targetInstrument = new Instrument("Target", TestManufacturers.Id("Fender"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(rentedInstrument, targetInstrument);
         await context.SaveChangesAsync();
 
@@ -1145,13 +1145,13 @@ public sealed class RecommendationServiceTests
         var unviewedInstruments = new List<Instrument>();
         for (var i = 0; i < 6; i++)
         {
-            unviewedInstruments.Add(new Instrument($"Unviewed{i}", "AAA", null, null, typeA.Id, store.Id));
+            unviewedInstruments.Add(new Instrument($"Unviewed{i}", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(unviewedInstruments);
         await context.SaveChangesAsync();
 
-        var mostViewed = new Instrument("MostViewed", "BBB", null, null, typeA.Id, store.Id);
-        var lessViewed = new Instrument("LessViewed", "CCC", null, null, typeA.Id, store.Id);
+        var mostViewed = new Instrument("MostViewed", TestManufacturers.Id("BBB"), null, null, typeA.Id, store.Id);
+        var lessViewed = new Instrument("LessViewed", TestManufacturers.Id("CCC"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().AddRange(mostViewed, lessViewed);
         await context.SaveChangesAsync();
 
@@ -1181,12 +1181,12 @@ public sealed class RecommendationServiceTests
         var neverRented = new List<Instrument>();
         for (var i = 0; i < 6; i++)
         {
-            neverRented.Add(new Instrument($"NeverRented{i}", "AAA", null, null, typeA.Id, store.Id));
+            neverRented.Add(new Instrument($"NeverRented{i}", TestManufacturers.Id("AAA"), null, null, typeA.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(neverRented);
         await context.SaveChangesAsync();
 
-        var popularInstrument = new Instrument("Popular", "BBB", null, null, typeA.Id, store.Id);
+        var popularInstrument = new Instrument("Popular", TestManufacturers.Id("BBB"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(popularInstrument);
         await context.SaveChangesAsync();
 
@@ -1210,19 +1210,19 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rentedInstrument = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
+        var rentedInstrument = new Instrument("Rented", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(rentedInstrument);
         await context.SaveChangesAsync();
 
         var preferredInstruments = new List<Instrument>();
         for (var i = 0; i < 85; i++)
         {
-            preferredInstruments.Add(new Instrument($"Preferred{i}", "ROL", null, null, typeA.Id, store.Id));
+            preferredInstruments.Add(new Instrument($"Preferred{i}", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(preferredInstruments);
         await context.SaveChangesAsync();
 
-        var targetInstrument = new Instrument("Target", "KOR", null, null, typeB.Id, store.Id);
+        var targetInstrument = new Instrument("Target", TestManufacturers.Id("KOR"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().Add(targetInstrument);
         await context.SaveChangesAsync();
 
@@ -1251,25 +1251,25 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rentedInstrument = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
+        var rentedInstrument = new Instrument("Rented", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
         context.Set<Instrument>().Add(rentedInstrument);
         await context.SaveChangesAsync();
 
         var preferredInstruments = new List<Instrument>();
         for (var i = 0; i < 45; i++)
         {
-            preferredInstruments.Add(new Instrument($"Preferred{i}", "ROL", null, null, typeA.Id, store.Id));
+            preferredInstruments.Add(new Instrument($"Preferred{i}", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id));
         }
         var collaborativeInstruments = new List<Instrument>();
         for (var i = 0; i < 45; i++)
         {
-            collaborativeInstruments.Add(new Instrument($"Collaborative{i}", "KOR", null, null, typeB.Id, store.Id));
+            collaborativeInstruments.Add(new Instrument($"Collaborative{i}", TestManufacturers.Id("KOR"), null, null, typeB.Id, store.Id));
         }
         context.Set<Instrument>().AddRange(preferredInstruments);
         context.Set<Instrument>().AddRange(collaborativeInstruments);
         await context.SaveChangesAsync();
 
-        var viewedInstrument = new Instrument("Viewed", "YAM", null, null, typeB.Id, store.Id);
+        var viewedInstrument = new Instrument("Viewed", TestManufacturers.Id("YAM"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().Add(viewedInstrument);
         await context.SaveChangesAsync();
 
@@ -1298,10 +1298,10 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        var rentedInstrument = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
-        var viewedOnce = new Instrument("ViewedOnce", "ROL", null, null, typeA.Id, store.Id);
-        var neverViewed = new Instrument("NeverViewed", "ROL", null, null, typeA.Id, store.Id);
-        var mostViewed = new Instrument("MostViewed", "KOR", null, null, typeB.Id, store.Id);
+        var rentedInstrument = new Instrument("Rented", TestManufacturers.Id("YAM"), null, null, typeA.Id, store.Id);
+        var viewedOnce = new Instrument("ViewedOnce", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
+        var neverViewed = new Instrument("NeverViewed", TestManufacturers.Id("ROL"), null, null, typeA.Id, store.Id);
+        var mostViewed = new Instrument("MostViewed", TestManufacturers.Id("KOR"), null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(rentedInstrument, viewedOnce, neverViewed, mostViewed);
         await context.SaveChangesAsync();
 

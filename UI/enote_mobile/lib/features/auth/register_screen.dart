@@ -52,8 +52,8 @@ class _RegisterScreenState extends State<RegisterScreen>
           username: username,
           email: _emailController.text.trim(),
           password: password,
-          firstName: firstName.isEmpty ? null : firstName,
-          lastName: lastName.isEmpty ? null : lastName,
+          firstName: firstName,
+          lastName: lastName,
         ),
       );
       if (!mounted) return;
@@ -107,13 +107,15 @@ class _RegisterScreenState extends State<RegisterScreen>
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _firstNameController,
-                label: 'Ime',
+                label: 'Ime *',
+                validator: Validators.firstName,
                 maxLength: 256,
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _lastNameController,
-                label: 'Prezime',
+                label: 'Prezime *',
+                validator: Validators.lastName,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 maxLength: 256,
