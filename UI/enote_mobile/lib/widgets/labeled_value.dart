@@ -16,11 +16,6 @@ class LabeledValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InfoRow(
-      icon: icon,
-      label: label,
-      value: value,
-      labelWidth: 112,
-    );
+    return InfoRow(icon: icon, label: label, value: value, labelWidth: 112);
   }
 }

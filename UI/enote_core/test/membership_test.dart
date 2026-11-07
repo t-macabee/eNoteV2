@@ -13,8 +13,16 @@ void main() {
 
     test('the expiry day is inclusive', () {
       final rows = <(DateTime?, DateTime, bool)>[
-        (DateTime.utc(2026, 9, 13), DateTime.utc(2026, 9, 13, 23, 59, 59), true),
-        (DateTime.utc(2026, 9, 14), DateTime.utc(2026, 9, 13, 23, 59, 59), true),
+        (
+          DateTime.utc(2026, 9, 13),
+          DateTime.utc(2026, 9, 13, 23, 59, 59),
+          true,
+        ),
+        (
+          DateTime.utc(2026, 9, 14),
+          DateTime.utc(2026, 9, 13, 23, 59, 59),
+          true,
+        ),
         (DateTime.utc(2026, 9, 14), DateTime.utc(2026, 9, 14, 0, 0, 0), true),
         (DateTime.utc(2026, 9, 14), DateTime.utc(2026, 9, 14, 12, 0, 0), true),
         (

@@ -38,32 +38,39 @@ InstrumentProvider _provider(http.Client client) {
 }
 
 void main() {
-  test('fetchPage queries instruments/public with the catalogue filters',
-      () async {
-    final client = RecordingHttpClient(
-      body: const {'items': [_instrument], 'page': 1, 'pageSize': 20, 'totalCount': 25},
-    );
-    final provider = _provider(client);
-    final result = await provider.fetchPage(
-      2,
-      InstrumentProvider.pageSize,
-      'Fender',
-    );
+  test(
+    'fetchPage queries instruments/public with the catalogue filters',
+    () async {
+      final client = RecordingHttpClient(
+        body: const {
+          'items': [_instrument],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 25,
+        },
+      );
+      final provider = _provider(client);
+      final result = await provider.fetchPage(
+        2,
+        InstrumentProvider.pageSize,
+        'Fender',
+      );
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'GET');
-    expect(sent.url.path, '/api/v1/instruments/public');
-    expect(sent.url.queryParameters, {
-      'search.Page': '2',
-      'search.PageSize': '20',
-      'search.IncludeTotalCount': 'true',
-      'search.Search': 'Fender',
-      'search.IsAvailable': 'true',
-    });
-    expect(result.items.single.manufacturer, 'Fender');
-    expect(result.totalCount, 25);
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'GET');
+      expect(sent.url.path, '/api/v1/instruments/public');
+      expect(sent.url.queryParameters, {
+        'search.Page': '2',
+        'search.PageSize': '20',
+        'search.IncludeTotalCount': 'true',
+        'search.Search': 'Fender',
+        'search.IsAvailable': 'true',
+      });
+      expect(result.items.single.manufacturer, 'Fender');
+      expect(result.totalCount, 25);
+    },
+  );
 
   test('fetchPage omits isAvailable when the toggle is off', () async {
     final client = RecordingHttpClient(body: const {'items': []});
@@ -125,18 +132,17 @@ void main() {
     expect(recommendations.single.reasons, hasLength(2));
   });
 
-  test('recommended rejects a non-list body through decodeListOrThrow',
-      () async {
-    final client = ScriptedClient(
-      (_) => jsonResponse('{"message":"not a list"}', 200),
-    );
-    final provider = _provider(client);
+  test(
+    'recommended rejects a non-list body through decodeListOrThrow',
+    () async {
+      final client = ScriptedClient(
+        (_) => jsonResponse('{"message":"not a list"}', 200),
+      );
+      final provider = _provider(client);
 
-    await expectLater(
-      provider.recommended(),
-      throwsA(isA<ApiException>()),
-    );
-  });
+      await expectLater(provider.recommended(), throwsA(isA<ApiException>()));
+    },
+  );
 
   test('recordView posts to student/instruments/{id}/view', () async {
     final client = RecordingHttpClient(statusCode: 204, body: const {});
@@ -144,7 +150,10 @@ void main() {
     await provider.recordView(7);
 
     expect(client.requests.single.method, 'POST');
-    expect(client.requests.single.url.path, '/api/v1/student/instruments/7/view');
+    expect(
+      client.requests.single.url.path,
+      '/api/v1/student/instruments/7/view',
+    );
   });
 
   test('recordView swallows a transport failure', () async {
@@ -167,7 +176,10 @@ void main() {
 
     await expectLater(provider.recordView(7), completes);
 
-    expect(client.requests.single.url.path, '/api/v1/student/instruments/7/view');
+    expect(
+      client.requests.single.url.path,
+      '/api/v1/student/instruments/7/view',
+    );
     expect(logged, hasLength(1));
     expect(logged.single, contains('Greška'));
   });

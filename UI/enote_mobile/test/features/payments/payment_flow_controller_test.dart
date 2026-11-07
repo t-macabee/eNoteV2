@@ -68,22 +68,25 @@ Future<void> _prepareAndPresent(PaymentFlowController controller) async {
 }
 
 void main() {
-  test('prepare keeps the created intent and does not open the sheet', () async {
-    final gateway = FakePaymentSheetGateway();
-    final controller = _controller(gateway: gateway);
+  test(
+    'prepare keeps the created intent and does not open the sheet',
+    () async {
+      final gateway = FakePaymentSheetGateway();
+      final controller = _controller(gateway: gateway);
 
-    final prepared = await controller.prepare();
+      final prepared = await controller.prepare();
 
-    expect(prepared?.clientSecret, 'pi_test_123_secret_abc');
-    expect(prepared?.amountCents, 800);
-    expect(prepared?.currency, 'bam');
-    expect(prepared?.amountLabel, '8.00 KM');
-    expect(controller.prepared, same(prepared));
-    expect(controller.view, PaymentView.review);
-    expect(controller.isBusy, isFalse);
-    expect(gateway.initCalls, 0);
-    expect(gateway.presentCalls, 0);
-  });
+      expect(prepared?.clientSecret, 'pi_test_123_secret_abc');
+      expect(prepared?.amountCents, 800);
+      expect(prepared?.currency, 'bam');
+      expect(prepared?.amountLabel, '8.00 KM');
+      expect(controller.prepared, same(prepared));
+      expect(controller.view, PaymentView.review);
+      expect(controller.isBusy, isFalse);
+      expect(gateway.initCalls, 0);
+      expect(gateway.presentCalls, 0);
+    },
+  );
 
   test('confirmAndPresent presents the prepared client secret', () async {
     final gateway = FakePaymentSheetGateway();
@@ -111,22 +114,25 @@ void main() {
     expect(controller.view, PaymentView.review);
   });
 
-  test('a failed prepare shows the server message and presents nothing', () async {
-    final gateway = FakePaymentSheetGateway();
-    final controller = _controller(
-      gateway: gateway,
-      intentError: ApiException('Kurs je besplatan.'),
-    );
+  test(
+    'a failed prepare shows the server message and presents nothing',
+    () async {
+      final gateway = FakePaymentSheetGateway();
+      final controller = _controller(
+        gateway: gateway,
+        intentError: ApiException('Kurs je besplatan.'),
+      );
 
-    final prepared = await controller.prepare();
+      final prepared = await controller.prepare();
 
-    expect(prepared, isNull);
-    expect(controller.prepared, isNull);
-    expect(controller.view, PaymentView.failed);
-    expect(controller.failureMessage, 'Kurs je besplatan.');
-    expect(controller.isBusy, isFalse);
-    expect(gateway.presentCalls, 0);
-  });
+      expect(prepared, isNull);
+      expect(controller.prepared, isNull);
+      expect(controller.view, PaymentView.failed);
+      expect(controller.failureMessage, 'Kurs je besplatan.');
+      expect(controller.isBusy, isFalse);
+      expect(gateway.presentCalls, 0);
+    },
+  );
 
   test('retry drops the prepared intent and returns to the review', () async {
     final gateway = FakePaymentSheetGateway()
@@ -181,27 +187,29 @@ void main() {
     },
   );
 
-  test('a failing status check after cancel keeps the cancel copy and logs',
-      () async {
-    final logged = <String>[];
-    final previousDebugPrint = debugPrint;
-    debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
-    addTearDown(() => debugPrint = previousDebugPrint);
+  test(
+    'a failing status check after cancel keeps the cancel copy and logs',
+    () async {
+      final logged = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
+      addTearDown(() => debugPrint = previousDebugPrint);
 
-    final gateway = FakePaymentSheetGateway()
-      ..queuePresent(PaymentSheetCancelled());
-    final controller = _controller(
-      gateway: gateway,
-      statusError: ApiException('Network error'),
-    );
+      final gateway = FakePaymentSheetGateway()
+        ..queuePresent(PaymentSheetCancelled());
+      final controller = _controller(
+        gateway: gateway,
+        statusError: ApiException('Network error'),
+      );
 
-    await _prepareAndPresent(controller);
+      await _prepareAndPresent(controller);
 
-    expect(controller.view, PaymentView.failed);
-    expect(controller.failureMessage, 'Plaćanje je otkazano.');
-    expect(logged, hasLength(1));
-    expect(logged.single, contains('Network error'));
-  });
+      expect(controller.view, PaymentView.failed);
+      expect(controller.failureMessage, 'Plaćanje je otkazano.');
+      expect(logged, hasLength(1));
+      expect(logged.single, contains('Network error'));
+    },
+  );
 
   test('a sheet failure shows the Stripe message', () async {
     final gateway = FakePaymentSheetGateway()
@@ -241,28 +249,25 @@ void main() {
     expect(controller.isPolling, isFalse);
   });
 
-  test(
-    'a second payment after a declined sheet does not carry the old message into pending',
-    () async {
-      final gateway = FakePaymentSheetGateway()
-        ..queuePresent(PaymentSheetCancelled());
-      final controller = _controller(
-        gateway: gateway,
-        status: PaymentStatus.failed,
-        pollError: ApiException('Network error'),
-      );
+  test('a second payment after a declined sheet does not carry the old message into pending', () async {
+    final gateway = FakePaymentSheetGateway()
+      ..queuePresent(PaymentSheetCancelled());
+    final controller = _controller(
+      gateway: gateway,
+      status: PaymentStatus.failed,
+      pollError: ApiException('Network error'),
+    );
 
-      await _prepareAndPresent(controller);
+    await _prepareAndPresent(controller);
 
-      expect(controller.view, PaymentView.failed);
-      expect(controller.failureMessage, PaymentFlowController.declinedMessage);
+    expect(controller.view, PaymentView.failed);
+    expect(controller.failureMessage, PaymentFlowController.declinedMessage);
 
-      await _prepareAndPresent(controller);
+    await _prepareAndPresent(controller);
 
-      expect(controller.view, PaymentView.pending);
-      expect(controller.failureMessage, isNull);
-    },
-  );
+    expect(controller.view, PaymentView.pending);
+    expect(controller.failureMessage, isNull);
+  });
 
   test('a succeeded poll carries the payment into view D', () async {
     final summary = _row(

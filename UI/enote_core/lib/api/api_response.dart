@@ -43,7 +43,8 @@ PagedResult<T> decodePage<T>(
   try {
     final items = (data['items'] as List<dynamic>? ?? []);
     final page = data['page'] as int? ?? params?['page'] as int? ?? 1;
-    final pageSize = data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
+    final pageSize =
+        data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
     final totalCount = data['totalCount'] as int?;
     return PagedResult<T>(
       items: items.map((e) => fromJson(Map<String, dynamic>.from(e))).toList(),

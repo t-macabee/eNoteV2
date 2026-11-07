@@ -6,9 +6,7 @@ import 'package:enote_mobile/session/token_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel(
-    'plugins.it_nomads.com/flutter_secure_storage',
-  );
+  const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
   final stored = <String, String>{};
   var failNext = false;
 

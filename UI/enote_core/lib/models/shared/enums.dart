@@ -2,7 +2,10 @@ String _wireName(Enum value) =>
     value.name[0].toUpperCase() + value.name.substring(1);
 
 T _fromWireName<T extends Enum>(List<T> values, String? json, T fallback) =>
-    values.firstWhere((value) => _wireName(value) == json, orElse: () => fallback);
+    values.firstWhere(
+      (value) => _wireName(value) == json,
+      orElse: () => fallback,
+    );
 
 enum UserRole {
   administrator,

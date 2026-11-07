@@ -30,9 +30,5 @@ class InstrumentTypeRequest {
 
   InstrumentTypeRequest({required this.type, required this.monthlyFee});
 
-  Map<String, dynamic> toJson() => {
-    'type': type,
-    'monthlyFee': monthlyFee,
-  };
+  Map<String, dynamic> toJson() => {'type': type, 'monthlyFee': monthlyFee};
 }
-

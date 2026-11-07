@@ -325,14 +325,25 @@ public sealed class ConfigurationOptionsTests
     public void RabbitMqOptions_EmptySection_Fails()
     {
         var services = BuildMessagingServices(CreateConfiguration(
-            removeKeys: ["RabbitMQ:Host", "RabbitMQ:VirtualHost", "RabbitMQ:User", "RabbitMQ:Password"]));
+            removeKeys: ["RabbitMQ:Host", "RabbitMQ:Port", "RabbitMQ:VirtualHost", "RabbitMQ:User", "RabbitMQ:Password"]));
 
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<RabbitMqOptions>(services));
 
         Assert.Contains("RabbitMQ__Host is required.", exception.Message);
+        Assert.Contains("RabbitMQ__Port must be between 1 and 65535.", exception.Message);
         Assert.Contains("RabbitMQ__VirtualHost is required.", exception.Message);
         Assert.Contains("RabbitMQ__User is required.", exception.Message);
         Assert.Contains("RabbitMQ__Password is required.", exception.Message);
+    }
+
+    [Fact]
+    public void RabbitMqOptions_MissingPort_Fails()
+    {
+        var services = BuildMessagingServices(CreateConfiguration(removeKeys: "RabbitMQ:Port"));
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<RabbitMqOptions>(services));
+
+        Assert.Contains("RabbitMQ__Port must be between 1 and 65535.", exception.Message);
     }
 
     [Fact]
@@ -341,6 +352,7 @@ public sealed class ConfigurationOptionsTests
         var services = BuildMessagingServices(CreateConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "rabbitmq",
+            ["RabbitMQ:Port"] = "5673",
             ["RabbitMQ:VirtualHost"] = "enote",
             ["RabbitMQ:User"] = "enote-user",
             ["RabbitMQ:Password"] = "enote-password"
@@ -349,6 +361,7 @@ public sealed class ConfigurationOptionsTests
         var options = ResolveOptions<RabbitMqOptions>(services);
 
         Assert.Equal("rabbitmq", options.Host);
+        Assert.Equal((ushort)5673, options.Port);
         Assert.Equal("enote", options.VirtualHost);
         Assert.Equal("enote-user", options.User);
         Assert.Equal("enote-password", options.Password);
@@ -497,6 +510,7 @@ public sealed class ConfigurationOptionsTests
             ["Stripe:TuitionStatementDescriptorSuffix"] = "ENOTE Skolarina",
             ["Rentals:OverduePenaltyMultiplier"] = "0.5",
             ["RabbitMQ:Host"] = "localhost",
+            ["RabbitMQ:Port"] = "5672",
             ["RabbitMQ:VirtualHost"] = "/",
             ["RabbitMQ:User"] = "guest",
             ["RabbitMQ:Password"] = "guest",

@@ -11,11 +11,13 @@ void main() {
         'type': 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
         'status': 400,
         'errors': {
-          'Password': ['Lozinka mora imati najmanje 8 znakova.']
+          'Password': ['Lozinka mora imati najmanje 8 znakova.'],
         },
       });
-      expect(ApiErrorMapper.mapError(400, body),
-          'Lozinka mora imati najmanje 8 znakova.');
+      expect(
+        ApiErrorMapper.mapError(400, body),
+        'Lozinka mora imati najmanje 8 znakova.',
+      );
     });
 
     test('two fields with three messages joined by newline', () {
@@ -26,13 +28,16 @@ void main() {
           'Email': ['Unesite važeću email adresu.'],
         },
       });
-      expect(ApiErrorMapper.mapError(400, body),
-          'Korisničko ime je obavezno.\nDruga greška.\nUnesite važeću email adresu.');
+      expect(
+        ApiErrorMapper.mapError(400, body),
+        'Korisničko ime je obavezno.\nDruga greška.\nUnesite važeću email adresu.',
+      );
     });
 
     test('unknown body falls back to the status default', () {
-      final body =
-          jsonEncode({'title': 'One or more validation errors occurred.'});
+      final body = jsonEncode({
+        'title': 'One or more validation errors occurred.',
+      });
       expect(ApiErrorMapper.mapError(400, body), 'Neispravan zahtjev.');
       expect(ApiErrorMapper.mapError(404, body), 'Resurs nije pronađen.');
     });
@@ -41,11 +46,10 @@ void main() {
       final body = jsonEncode({
         'message': 'Neispravan ID korisnika.',
         'errors': {
-          'Password': ['Lozinka mora imati najmanje 8 znakova.']
+          'Password': ['Lozinka mora imati najmanje 8 znakova.'],
         },
       });
-      expect(
-          ApiErrorMapper.mapError(400, body), 'Neispravan ID korisnika.');
+      expect(ApiErrorMapper.mapError(400, body), 'Neispravan ID korisnika.');
     });
 
     test('401 default spells istekla', () {
@@ -75,11 +79,11 @@ void main() {
       final error = ApiError.fromJson({
         'status': 400,
         'errors': {
-          'Password': ['a', 'b']
+          'Password': ['a', 'b'],
         },
       });
       expect(error.errors, {
-        'Password': ['a', 'b']
+        'Password': ['a', 'b'],
       });
     });
   });

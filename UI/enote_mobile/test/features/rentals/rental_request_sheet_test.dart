@@ -77,7 +77,9 @@ void main() {
     );
   });
 
-  testWidgets('shows the monthly fee under the instrument name', (tester) async {
+  testWidgets('shows the monthly fee under the instrument name', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(body: RentalRequestSheet(instrument: _instrument)),

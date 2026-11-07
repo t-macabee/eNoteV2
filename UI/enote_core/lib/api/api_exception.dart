@@ -3,11 +3,7 @@ class ApiException implements Exception {
   final String code;
   final Map<String, List<String>> errors;
 
-  ApiException(
-    this.message, {
-    this.code = '',
-    this.errors = const {},
-  });
+  ApiException(this.message, {this.code = '', this.errors = const {}});
 
   String? fieldError(String field) {
     final name = field.toLowerCase();

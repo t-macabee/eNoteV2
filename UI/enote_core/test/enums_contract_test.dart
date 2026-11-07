@@ -48,24 +48,40 @@ void main() {
 
     test('fromJson maps every backend wire value', () {
       expect(
-          InstrumentRentalStatus.fromJson('Pending'), InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromJson('Approved'),
-          InstrumentRentalStatus.approved);
+        InstrumentRentalStatus.fromJson('Pending'),
+        InstrumentRentalStatus.pending,
+      );
       expect(
-          InstrumentRentalStatus.fromJson('Active'), InstrumentRentalStatus.active);
-      expect(InstrumentRentalStatus.fromJson('Completed'),
-          InstrumentRentalStatus.completed);
-      expect(InstrumentRentalStatus.fromJson('Rejected'),
-          InstrumentRentalStatus.rejected);
-      expect(InstrumentRentalStatus.fromJson('Canceled'),
-          InstrumentRentalStatus.canceled);
-      expect(InstrumentRentalStatus.fromJson('ReturnedEarly'),
-          InstrumentRentalStatus.returnedEarly);
+        InstrumentRentalStatus.fromJson('Approved'),
+        InstrumentRentalStatus.approved,
+      );
+      expect(
+        InstrumentRentalStatus.fromJson('Active'),
+        InstrumentRentalStatus.active,
+      );
+      expect(
+        InstrumentRentalStatus.fromJson('Completed'),
+        InstrumentRentalStatus.completed,
+      );
+      expect(
+        InstrumentRentalStatus.fromJson('Rejected'),
+        InstrumentRentalStatus.rejected,
+      );
+      expect(
+        InstrumentRentalStatus.fromJson('Canceled'),
+        InstrumentRentalStatus.canceled,
+      );
+      expect(
+        InstrumentRentalStatus.fromJson('ReturnedEarly'),
+        InstrumentRentalStatus.returnedEarly,
+      );
     });
 
     test('unknown names fall back to pending', () {
-      expect(InstrumentRentalStatus.fromJson('garbage'),
-          InstrumentRentalStatus.pending);
+      expect(
+        InstrumentRentalStatus.fromJson('garbage'),
+        InstrumentRentalStatus.pending,
+      );
     });
   });
 
@@ -78,7 +94,10 @@ void main() {
 
     test('fromJson maps every backend wire value', () {
       expect(EnrollmentStatus.fromJson('Active'), EnrollmentStatus.active);
-      expect(EnrollmentStatus.fromJson('Completed'), EnrollmentStatus.completed);
+      expect(
+        EnrollmentStatus.fromJson('Completed'),
+        EnrollmentStatus.completed,
+      );
       expect(EnrollmentStatus.fromJson('Canceled'), EnrollmentStatus.canceled);
       expect(EnrollmentStatus.fromJson('Pending'), EnrollmentStatus.pending);
       expect(EnrollmentStatus.fromJson('Rejected'), EnrollmentStatus.rejected);
@@ -116,7 +135,9 @@ void main() {
     test('fromJson maps every backend wire value', () {
       expect(AnnouncementScope.fromJson('Course'), AnnouncementScope.course);
       expect(
-          AnnouncementScope.fromJson('MusicStore'), AnnouncementScope.musicStore);
+        AnnouncementScope.fromJson('MusicStore'),
+        AnnouncementScope.musicStore,
+      );
     });
 
     test('unknown names fall back to course', () {
@@ -133,13 +154,17 @@ void main() {
 
     test('fromJson maps every backend wire value', () {
       expect(
-          PaymentStatus.fromJson('RequiresAction'), PaymentStatus.requiresAction);
+        PaymentStatus.fromJson('RequiresAction'),
+        PaymentStatus.requiresAction,
+      );
       expect(PaymentStatus.fromJson('Succeeded'), PaymentStatus.succeeded);
       expect(PaymentStatus.fromJson('Failed'), PaymentStatus.failed);
       expect(PaymentStatus.fromJson('Canceled'), PaymentStatus.canceled);
       expect(PaymentStatus.fromJson('Refunded'), PaymentStatus.refunded);
-      expect(PaymentStatus.fromJson('PartiallyRefunded'),
-          PaymentStatus.partiallyRefunded);
+      expect(
+        PaymentStatus.fromJson('PartiallyRefunded'),
+        PaymentStatus.partiallyRefunded,
+      );
     });
 
     test('unknown names fall back to requiresAction', () {
@@ -148,9 +173,7 @@ void main() {
   });
 
   group('DTO tolerant enum deserialization', () {
-    test(
-        'LectureDto.fromJson parses string lectureStatus and preserves null attendance',
-        () {
+    test('LectureDto.fromJson parses string lectureStatus and preserves null attendance', () {
       final dto = LectureDto.fromJson({
         'lectureStatus': 'Held',
         'myAttendanceStatus': null,
@@ -169,16 +192,12 @@ void main() {
     });
 
     test('AttendanceDto.fromJson parses string attendance status', () {
-      final dto = AttendanceDto.fromJson({
-        'attendanceStatus': 'Present',
-      });
+      final dto = AttendanceDto.fromJson({'attendanceStatus': 'Present'});
       expect(dto.attendanceStatus, AttendanceStatus.present);
     });
 
     test('InstrumentRentalDto.fromJson parses string rentalStatus', () {
-      final dto = InstrumentRentalDto.fromJson({
-        'rentalStatus': 'Completed',
-      });
+      final dto = InstrumentRentalDto.fromJson({'rentalStatus': 'Completed'});
       expect(dto.rentalStatus, InstrumentRentalStatus.completed);
     });
   });

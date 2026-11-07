@@ -3,7 +3,7 @@ name: enote
 # Values that differ inside Docker: containers reach other services by service name.
 # Everything else comes from .env through env_file.
 x-docker-overrides: &docker-overrides
-  ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+  ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=${DB_NAME:?Set DB_NAME in .env};User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
   RabbitMQ__Host: rabbitmq
   Smtp__Host: mailhog
 

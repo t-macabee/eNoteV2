@@ -21,8 +21,11 @@ ScriptedClient _stub(
   });
 }
 
-http.Response _json(Object body) =>
-    jsonResponse(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
+http.Response _json(Object body) => jsonResponse(
+  jsonEncode(body),
+  200,
+  headers: {'content-type': 'application/json'},
+);
 
 Map<String, http.Response> _bootstrapResponses() => {
   'GET /api/v1/users/me': _json({
@@ -33,10 +36,7 @@ Map<String, http.Response> _bootstrapResponses() => {
     'hasPicture': false,
   }),
   'GET /api/v1/student/notifications/unread-count': _json({'unreadCount': 2}),
-  'GET /api/v1/student/notifications': _json({
-    'items': [],
-    'totalCount': 0,
-  }),
+  'GET /api/v1/student/notifications': _json({'items': [], 'totalCount': 0}),
   'POST /api/v1/auth/logout': _json({'message': 'OK'}),
 };
 
@@ -45,17 +45,11 @@ Map<String, http.Response> _profileResponses(String? paidUntilIso) => {
     'role': 'Student',
     'username': 'student',
     'email': 'student@enote.com',
-    'profile': {
-      'id': 7,
-      'membershipPaidUntil': ?paidUntilIso,
-    },
+    'profile': {'id': 7, 'membershipPaidUntil': ?paidUntilIso},
     'hasPicture': false,
   }),
   'GET /api/v1/student/notifications/unread-count': _json({'unreadCount': 0}),
-  'GET /api/v1/student/notifications': _json({
-    'items': [],
-    'totalCount': 0,
-  }),
+  'GET /api/v1/student/notifications': _json({'items': [], 'totalCount': 0}),
   'POST /api/v1/auth/logout': _json({'message': 'OK'}),
 };
 
@@ -121,8 +115,7 @@ void main() {
     expect(controller.authState.isAuthenticated, isFalse);
   });
 
-  test('isMembershipActive is false when no paid-until date is set',
-      () async {
+  test('isMembershipActive is false when no paid-until date is set', () async {
     final http = _stub(_profileResponses(null));
     final controller = _controller(http);
     await controller.bootstrap();
@@ -162,26 +155,30 @@ void main() {
     expect(controller.pictureVersion, 2);
   });
 
-  test('bootstrap stores bootstrapError on failure without rethrowing', () async {
-    final responses = {
-      ..._bootstrapResponses(),
-      'GET /api/v1/users/me': jsonResponse(
-        '{"message":"Server error"}',
-        500,
-        headers: {'content-type': 'application/json'},
-      ),
-    };
-    final stub = _stub(responses);
-    final controller = _controller(stub);
-    await controller.bootstrap();
-    expect(controller.profile, isNull);
-    expect(controller.bootstrapError, isNotNull);
+  test(
+    'bootstrap stores bootstrapError on failure without rethrowing',
+    () async {
+      final responses = {
+        ..._bootstrapResponses(),
+        'GET /api/v1/users/me': jsonResponse(
+          '{"message":"Server error"}',
+          500,
+          headers: {'content-type': 'application/json'},
+        ),
+      };
+      final stub = _stub(responses);
+      final controller = _controller(stub);
+      await controller.bootstrap();
+      expect(controller.profile, isNull);
+      expect(controller.bootstrapError, isNotNull);
 
-    responses['GET /api/v1/users/me'] = _bootstrapResponses()['GET /api/v1/users/me']!;
-    await controller.reloadProfile();
-    expect(controller.bootstrapError, isNull);
-    expect(controller.profile?.username, 'student');
-  });
+      responses['GET /api/v1/users/me'] =
+          _bootstrapResponses()['GET /api/v1/users/me']!;
+      await controller.reloadProfile();
+      expect(controller.bootstrapError, isNull);
+      expect(controller.profile?.username, 'student');
+    },
+  );
 
   test('F5-03: logoutAndRevoke clears the cached profile state', () async {
     final http = _stub(_bootstrapResponses());

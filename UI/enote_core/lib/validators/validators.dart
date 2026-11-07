@@ -24,7 +24,9 @@ class Validators {
     return null;
   }
 
-  static final RegExp _usernameRegex = RegExp(r'^[a-zA-Z0-9\-._@+čćšžđČĆŠŽĐ]+$');
+  static final RegExp _usernameRegex = RegExp(
+    r'^[a-zA-Z0-9\-._@+čćšžđČĆŠŽĐ]+$',
+  );
 
   static String? username(String? value) {
     final missing = required('Korisničko ime')(value);

@@ -66,18 +66,15 @@ void main() {
   test('sends the page size and the filters on every request', () async {
     final queries = <Map<String, dynamic>>[];
 
-    await fetchAllPages<int>(
-      (query) async {
-        queries.add(query);
-        return PagedResult<int>(
-          items: const [1],
-          page: 1,
-          pageSize: maxPageSize,
-          totalCount: 1,
-        );
-      },
-      filters: {'studentId': 5},
-    );
+    await fetchAllPages<int>((query) async {
+      queries.add(query);
+      return PagedResult<int>(
+        items: const [1],
+        page: 1,
+        pageSize: maxPageSize,
+        totalCount: 1,
+      );
+    }, filters: {'studentId': 5});
 
     expect(queries, hasLength(1));
     expect(queries.single['page'], 1);

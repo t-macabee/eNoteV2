@@ -88,8 +88,9 @@ void main() {
     });
   });
 
-  testWidgets('onUpload completes after dispose -> no exception',
-      (WidgetTester tester) async {
+  testWidgets('onUpload completes after dispose -> no exception', (
+    WidgetTester tester,
+  ) async {
     final completer = Completer<String?>();
 
     await tester.pumpWidget(
@@ -117,31 +118,35 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('onUpload throws -> spinner cleared, error propagates',
-      (WidgetTester tester) async {
+  testWidgets('onUpload throws -> spinner cleared, error propagates', (
+    WidgetTester tester,
+  ) async {
     Object? capturedError;
 
-    await runZonedGuarded(() async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ImageField(
-              alignment: Alignment.center,
-              imagePicker: () async => _picked,
-              onUpload: (bytes, fileName, contentType) async {
-                throw Exception('upload failed');
-              },
+    await runZonedGuarded(
+      () async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ImageField(
+                alignment: Alignment.center,
+                imagePicker: () async => _picked,
+                onUpload: (bytes, fileName, contentType) async {
+                  throw Exception('upload failed');
+                },
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.tap(find.byType(GestureDetector));
-      await tester.pump();
-      await tester.pump();
-    }, (error, stack) {
-      capturedError = error;
-    });
+        await tester.tap(find.byType(GestureDetector));
+        await tester.pump();
+        await tester.pump();
+      },
+      (error, stack) {
+        capturedError = error;
+      },
+    );
 
     expect(capturedError, isA<Exception>());
     expect(capturedError.toString(), contains('upload failed'));

@@ -98,9 +98,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            refundWasCounted
-                ? 'Povrat obrađen.'
-                : 'Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.',
+            refundWasCounted ? 'Povrat obrađen.' : 'Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.',
           ),
         ),
       );

@@ -7,15 +7,18 @@ import 'package:enote_mobile/features/auth/auth_provider.dart';
 
 import '../../helpers.dart';
 
-AuthState _authState(RecordingHttpClient http) => AuthState(
-  baseUrl: 'http://10.0.2.2:5059/api/v1/',
-  httpClient: http,
-);
+AuthState _authState(RecordingHttpClient http) =>
+    AuthState(baseUrl: 'http://10.0.2.2:5059/api/v1/', httpClient: http);
 
 void main() {
   test('register posts the register body to auth/register', () async {
     final http = RecordingHttpClient(
-      body: {'userId': 1, 'username': 'novi', 'roles': ['Student'], 'token': 't'},
+      body: {
+        'userId': 1,
+        'username': 'novi',
+        'roles': ['Student'],
+        'token': 't',
+      },
     );
     final provider = AuthProvider(
       apiClient: ApiClient(
@@ -47,9 +50,7 @@ void main() {
   });
 
   test('forgotPassword posts the email to auth/forgot-password', () async {
-    final http = RecordingHttpClient(
-      body: {'message': 'Poslano.'},
-    );
+    final http = RecordingHttpClient(body: {'message': 'Poslano.'});
     final provider = AuthProvider(
       apiClient: ApiClient(
         baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -67,9 +68,7 @@ void main() {
   });
 
   test('resetPassword posts email, token and new password', () async {
-    final http = RecordingHttpClient(
-      body: {'message': 'OK'},
-    );
+    final http = RecordingHttpClient(body: {'message': 'OK'});
     final provider = AuthProvider(
       apiClient: ApiClient(
         baseUrl: 'http://10.0.2.2:5059/api/v1/',

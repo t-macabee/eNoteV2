@@ -54,8 +54,9 @@ Widget _app(ScriptedClient client) {
 }
 
 void main() {
-  testWidgets('tapping a row opens the detail screen for the announcement id',
-      (tester) async {
+  testWidgets('tapping a row opens the detail screen for the announcement id', (
+    tester,
+  ) async {
     final client = ScriptedClient(
       (request) => request.url.path == '/api/v1/student/announcements/53'
           ? jsonResponse(_announcement53Json, 200)

@@ -1,6 +1,7 @@
 import 'package:enote_core/models/shared/enums.dart';
 import 'package:enote_core/models/shared/payment_intent_draft.dart';
 import 'package:enote_core/models/shared/payment_record.dart';
+
 import '../../formatting/formatters.dart';
 
 class CreateTuitionIntentResponse with PaymentIntentDraft {

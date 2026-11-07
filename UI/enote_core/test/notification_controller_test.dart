@@ -7,12 +7,12 @@ import 'package:http/http.dart' as http;
 import 'package:enote_core/enote_core.dart';
 
 Map<String, dynamic> _item(int id) => {
-      'id': id,
-      'title': 't$id',
-      'body': 'b$id',
-      'isRead': false,
-      'createdAt': '2026-09-01T10:00:00Z',
-    };
+  'id': id,
+  'title': 't$id',
+  'body': 'b$id',
+  'isRead': false,
+  'createdAt': '2026-09-01T10:00:00Z',
+};
 
 class _PagedFakeClient extends http.BaseClient {
   final Map<int, List<Map<String, dynamic>>> pages;
@@ -59,8 +59,7 @@ class _PagedFakeClient extends http.BaseClient {
         headers: {'content-type': 'application/json'},
       );
     }
-    final page =
-        int.tryParse(request.url.queryParameters['page'] ?? '1') ?? 1;
+    final page = int.tryParse(request.url.queryParameters['page'] ?? '1') ?? 1;
     if (failPages.contains(page)) {
       return http.StreamedResponse(
         Stream.value(utf8.encode('{"message":"Server error"}')),
@@ -79,9 +78,15 @@ class _PagedFakeClient extends http.BaseClient {
 
 NotificationController _controller(_PagedFakeClient client) {
   final auth = AuthState();
-  final api =
-      ApiClient(baseUrl: 'http://localhost:5059/api/v1/', authState: auth, httpClient: client);
-  return NotificationController(apiClient: api, endpoint: 'student/notifications');
+  final api = ApiClient(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    authState: auth,
+    httpClient: client,
+  );
+  return NotificationController(
+    apiClient: api,
+    endpoint: 'student/notifications',
+  );
 }
 
 int _listRequests(_PagedFakeClient client, int page) => client.urls
@@ -110,19 +115,21 @@ void main() {
     expect(c2.hasMore, isFalse);
   });
 
-  test('loadMore requests page 2, appends, hasMore false on short page',
-      () async {
-    final client = _PagedFakeClient({
-      1: [_item(1), _item(2)],
-      2: [_item(3)],
-    });
-    final c = _controller(client);
-    await c.refresh(search: NotificationSearchObject(pageSize: 2));
-    await c.loadMore();
-    expect(c.notifications.length, 3);
-    expect(c.hasMore, isFalse);
-    expect(client.urls.last.queryParameters['page'], '2');
-  });
+  test(
+    'loadMore requests page 2, appends, hasMore false on short page',
+    () async {
+      final client = _PagedFakeClient({
+        1: [_item(1), _item(2)],
+        2: [_item(3)],
+      });
+      final c = _controller(client);
+      await c.refresh(search: NotificationSearchObject(pageSize: 2));
+      await c.loadMore();
+      expect(c.notifications.length, 3);
+      expect(c.hasMore, isFalse);
+      expect(client.urls.last.queryParameters['page'], '2');
+    },
+  );
 
   test('refresh after loadMore resets to page 1', () async {
     final client = _PagedFakeClient({
@@ -138,15 +145,10 @@ void main() {
     expect(client.urls.last.queryParameters['page'], '1');
   });
 
-  test(
-      'page 1 has 2 unread, server count is 7, markRead on one becomes 6, markAllRead becomes 0',
-      () async {
-    final client = _PagedFakeClient(
-      {
-        1: [_item(1), _item(2)],
-      },
-      unreadCount: 7,
-    );
+  test('page 1 has 2 unread, server count is 7, markRead on one becomes 6, markAllRead becomes 0', () async {
+    final client = _PagedFakeClient({
+      1: [_item(1), _item(2)],
+    }, unreadCount: 7);
     final c = _controller(client);
     await c.refresh(search: NotificationSearchObject(pageSize: 2));
     expect(c.notifications.where((n) => !n.isRead).length, 2);
@@ -182,7 +184,7 @@ void main() {
           'body': 'b',
           'isRead': false,
           'createdAt': '2026-09-01T10:00:00Z',
-        }
+        },
       ],
     });
     final c = _controller(client);
@@ -195,35 +197,31 @@ void main() {
   });
 
   test('refresh succeeds even when unread-count throws', () async {
-    final client = _PagedFakeClient(
-      {
-        1: [_item(1)],
-      },
-      throwOnUnreadCount: true,
-    );
+    final client = _PagedFakeClient({
+      1: [_item(1)],
+    }, throwOnUnreadCount: true);
     final c = _controller(client);
     await c.refresh(search: NotificationSearchObject(pageSize: 2));
     expect(c.notifications.length, 1);
     expect(c.error, isNull);
   });
 
-  test('refreshUnreadCount keeps the old count on a 500 and does not throw',
-      () async {
-    final client = _PagedFakeClient(
-      {
+  test(
+    'refreshUnreadCount keeps the old count on a 500 and does not throw',
+    () async {
+      final client = _PagedFakeClient({
         1: [_item(1)],
-      },
-      unreadCount: 4,
-    );
-    final c = _controller(client);
-    await c.refresh(search: NotificationSearchObject(pageSize: 2));
-    expect(c.unreadCount, 4);
+      }, unreadCount: 4);
+      final c = _controller(client);
+      await c.refresh(search: NotificationSearchObject(pageSize: 2));
+      expect(c.unreadCount, 4);
 
-    client.failUnreadCount = true;
-    await expectLater(c.refreshUnreadCount(), completes);
+      client.failUnreadCount = true;
+      await expectLater(c.refreshUnreadCount(), completes);
 
-    expect(c.unreadCount, 4);
-  });
+      expect(c.unreadCount, 4);
+    },
+  );
 
   test('concurrent loadMore calls issue a single page 2 request', () async {
     final client = _PagedFakeClient({
@@ -239,24 +237,26 @@ void main() {
     expect(c.notifications.length, 4);
   });
 
-  test('loadMore on a failing page 2 keeps the page, surfaces and clears flag',
-      () async {
-    final client = _PagedFakeClient(
-      {
-        1: [_item(1), _item(2)],
-        2: [_item(3), _item(4)],
-      },
-      failPages: {2},
-    );
-    final c = _controller(client);
-    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+  test(
+    'loadMore on a failing page 2 keeps the page, surfaces and clears flag',
+    () async {
+      final client = _PagedFakeClient(
+        {
+          1: [_item(1), _item(2)],
+          2: [_item(3), _item(4)],
+        },
+        failPages: {2},
+      );
+      final c = _controller(client);
+      await c.refresh(search: NotificationSearchObject(pageSize: 2));
 
-    await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
-    expect(c.notifications.length, 2);
+      await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
+      expect(c.notifications.length, 2);
 
-    await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
-    expect(_listRequests(client, 2), 2);
-  });
+      await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
+      expect(_listRequests(client, 2), 2);
+    },
+  );
 
   group('endSession', () {
     test('clears the list, the count, the error and the paging', () async {
@@ -277,23 +277,29 @@ void main() {
       expect(c.error, isNull);
     });
 
-    test('a failed load of the next user shows nothing of the previous user',
-        () async {
-      final client = _PagedFakeClient({
-        1: [_item(1)],
-      }, unreadCount: 7, failPages: {});
-      final c = _controller(client);
-      await c.refresh();
+    test(
+      'a failed load of the next user shows nothing of the previous user',
+      () async {
+        final client = _PagedFakeClient(
+          {
+            1: [_item(1)],
+          },
+          unreadCount: 7,
+          failPages: {},
+        );
+        final c = _controller(client);
+        await c.refresh();
 
-      c.endSession();
-      client.failPages.add(1);
-      client.failUnreadCount = true;
-      await c.refresh();
+        c.endSession();
+        client.failPages.add(1);
+        client.failUnreadCount = true;
+        await c.refresh();
 
-      expect(c.notifications, isEmpty);
-      expect(c.unreadCount, 0);
-      expect(c.error, isNotNull);
-    });
+        expect(c.notifications, isEmpty);
+        expect(c.unreadCount, 0);
+        expect(c.error, isNotNull);
+      },
+    );
 
     test('a response that arrives after endSession is dropped', () async {
       final gate = Completer<void>();
@@ -326,24 +332,26 @@ void main() {
       expect(c.error, isNull);
     });
 
-    test('a loadMore response that arrives after endSession is dropped',
-        () async {
-      final client = _PagedFakeClient({
-        1: [_item(1), _item(2)],
-        2: [_item(3)],
-      });
-      final c = _controller(client);
-      await c.refresh(search: NotificationSearchObject(pageSize: 2));
+    test(
+      'a loadMore response that arrives after endSession is dropped',
+      () async {
+        final client = _PagedFakeClient({
+          1: [_item(1), _item(2)],
+          2: [_item(3)],
+        });
+        final c = _controller(client);
+        await c.refresh(search: NotificationSearchObject(pageSize: 2));
 
-      final gate = Completer<void>();
-      client.gate = gate;
-      final more = c.loadMore();
-      c.endSession();
-      gate.complete();
-      await more;
+        final gate = Completer<void>();
+        client.gate = gate;
+        final more = c.loadMore();
+        c.endSession();
+        gate.complete();
+        await more;
 
-      expect(c.notifications, isEmpty);
-    });
+        expect(c.notifications, isEmpty);
+      },
+    );
 
     test('a new session loads normally after endSession', () async {
       final client = _PagedFakeClient({

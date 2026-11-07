@@ -169,6 +169,7 @@ public sealed class StartupValidationTests
     {
         ["ConnectionStrings__DefaultConnection"] = "Server=localhost;Database=enote-startup-test;User Id=sa;Password=Placeholder1!;TrustServerCertificate=True",
         ["RabbitMQ__Host"] = "localhost",
+        ["RabbitMQ__Port"] = "5672",
         ["RabbitMQ__VirtualHost"] = "/",
         ["RabbitMQ__User"] = "guest",
         ["RabbitMQ__Password"] = "guest",

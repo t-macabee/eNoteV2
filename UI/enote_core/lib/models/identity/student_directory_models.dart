@@ -53,7 +53,9 @@ class StudentProfileDto {
       username: json['username'] as String?,
       courses: [
         for (final item in rawCourses)
-          StudentCourseGradeDto.fromJson(Map<String, dynamic>.from(item as Map)),
+          StudentCourseGradeDto.fromJson(
+            Map<String, dynamic>.from(item as Map),
+          ),
       ],
     );
   }
@@ -81,8 +83,9 @@ class StudentCourseGradeDto {
       courseId: json['courseId'] as int? ?? 0,
       courseName: json['courseName'] as String? ?? '',
       instructorName: json['instructorName'] as String?,
-      enrollmentStatus:
-          EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
+      enrollmentStatus: EnrollmentStatus.fromJson(
+        json['enrollmentStatus'] as String?,
+      ),
       averageGrade: (json['averageGrade'] as num?)?.toDouble(),
       gradedSubmissions: json['gradedSubmissions'] as int? ?? 0,
     );

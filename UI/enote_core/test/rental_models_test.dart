@@ -17,8 +17,9 @@ void main() {
         'score': 0.95,
         'reasons': ['Slično vašim pregledima', 'Popularno'],
       };
-      final dto =
-          InstrumentRecommendationDto.fromJson(Map<String, dynamic>.from(json));
+      final dto = InstrumentRecommendationDto.fromJson(
+        Map<String, dynamic>.from(json),
+      );
       expect(dto.instrument.model, 'Stratocaster');
       expect(dto.score, 0.95);
       expect(dto.reasons, ['Slično vašim pregledima', 'Popularno']);
@@ -48,13 +49,14 @@ void main() {
 
   group('RentalDebtDto', () {
     test('fromJson with rentalId present and absent', () {
-      final withId = RentalDebtDto.fromJson(
-          {'hasUnpaidDebt': true, 'rentalId': 7});
+      final withId = RentalDebtDto.fromJson({
+        'hasUnpaidDebt': true,
+        'rentalId': 7,
+      });
       expect(withId.hasUnpaidDebt, isTrue);
       expect(withId.rentalId, 7);
 
-      final withoutId =
-          RentalDebtDto.fromJson({'hasUnpaidDebt': false});
+      final withoutId = RentalDebtDto.fromJson({'hasUnpaidDebt': false});
       expect(withoutId.hasUnpaidDebt, isFalse);
       expect(withoutId.rentalId, isNull);
     });
@@ -109,11 +111,14 @@ void main() {
 
     test('writes the deadline only when it is set', () {
       final deadline = DateTime.utc(2026, 6, 17, 12);
-      final json =
-          rental({'pickupDeadline': deadline.toIso8601String()}).toJson();
+      final json = rental({'pickupDeadline': deadline.toIso8601String()})
+          .toJson();
 
       expect(json.containsKey('pickupDeadline'), isTrue);
-      expect(DateTime.parse(json['pickupDeadline'] as String).toUtc(), deadline);
+      expect(
+        DateTime.parse(json['pickupDeadline'] as String).toUtc(),
+        deadline,
+      );
       expect(rental({}).toJson().containsKey('pickupDeadline'), isFalse);
     });
   });
@@ -173,21 +178,30 @@ void main() {
       expect(dto.isOverdue, isTrue);
 
       final json = dto.toJson();
-      expect(DateTime.parse(json['dueAt'] as String).toUtc(), DateTime.utc(2026, 3, 31, 10));
-      expect(DateTime.parse(json['renewalOpensAt'] as String).toUtc(), DateTime.utc(2026, 3, 26, 10));
+      expect(
+        DateTime.parse(json['dueAt'] as String).toUtc(),
+        DateTime.utc(2026, 3, 31, 10),
+      );
+      expect(
+        DateTime.parse(json['renewalOpensAt'] as String).toUtc(),
+        DateTime.utc(2026, 3, 26, 10),
+      );
       expect(json['dailyPenaltyFee'], 1.5);
       expect(json['overdueDays'], 4);
       expect(json['penaltyFee'], 6.0);
     });
 
-    test('defaults the daily penalty fee and treats a missing overdue day as zero', () {
-      final dto = rental({});
+    test(
+      'defaults the daily penalty fee and treats a missing overdue day as zero',
+      () {
+        final dto = rental({});
 
-      expect(dto.dailyPenaltyFee, 0.0);
-      expect(dto.overdueDays, isNull);
-      expect(dto.isOverdue, isFalse);
-      expect(dto.toJson()['dailyPenaltyFee'], 0.0);
-    });
+        expect(dto.dailyPenaltyFee, 0.0);
+        expect(dto.overdueDays, isNull);
+        expect(dto.isOverdue, isFalse);
+        expect(dto.toJson()['dailyPenaltyFee'], 0.0);
+      },
+    );
 
     test('isOverdue is false for zero overdue days', () {
       expect(rental({'overdueDays': 0}).isOverdue, isFalse);

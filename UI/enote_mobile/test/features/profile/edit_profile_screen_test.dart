@@ -88,9 +88,9 @@ Widget _host(Widget screen) {
     body: Builder(
       builder: (context) => Center(
         child: FilledButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => screen)),
+          onPressed: () =>
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => screen)),
           child: const Text('otvori'),
         ),
       ),
@@ -180,8 +180,9 @@ void main() {
     await _tapSave(tester);
 
     expect(find.text('Unesite važeću email adresu.'), findsOneWidget);
-    final puts = harness.client.requests
-        .where((r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me');
+    final puts = harness.client.requests.where(
+      (r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me',
+    );
     expect(puts, isEmpty);
   });
 

@@ -42,10 +42,12 @@ void main() {
 
     await expectLater(
       saveFileWithDialog(bytes, 'a.pdf'),
-      throwsA(predicate((Object e) {
-        expectFailedMessage(e);
-        return true;
-      })),
+      throwsA(
+        predicate((Object e) {
+          expectFailedMessage(e);
+          return true;
+        }),
+      ),
     );
   });
 
@@ -54,10 +56,12 @@ void main() {
 
     await expectLater(
       saveFileWithDialog(bytes, 'a.pdf'),
-      throwsA(predicate((Object e) {
-        expectFailedMessage(e);
-        return true;
-      })),
+      throwsA(
+        predicate((Object e) {
+          expectFailedMessage(e);
+          return true;
+        }),
+      ),
     );
   });
 }

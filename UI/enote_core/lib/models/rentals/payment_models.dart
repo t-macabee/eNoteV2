@@ -1,6 +1,7 @@
 import 'package:enote_core/models/shared/enums.dart';
 import 'package:enote_core/models/shared/payment_intent_draft.dart';
 import 'package:enote_core/models/shared/payment_record.dart';
+
 import '../../formatting/formatters.dart';
 
 class RentalPaymentDto implements PaymentRecord {
@@ -43,7 +44,6 @@ class RentalPaymentDto implements PaymentRecord {
       refundedCents: (json['refundedCents'] as num?)?.toInt(),
     );
   }
-
 }
 
 class CreatePaymentIntentResponse with PaymentIntentDraft {
@@ -87,4 +87,3 @@ class RefundRequest {
     if (amountCents != null) 'amountCents': amountCents,
   };
 }
-

@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+
 import '../../formatting/formatters.dart';
 
 class InstrumentRentalDto {
@@ -89,8 +90,9 @@ class InstrumentRentalDto {
       storeName: json['storeName'] as String? ?? '',
       instrumentImagePath: json['instrumentImagePath'] as String?,
       instrumentIsActive: json['instrumentIsActive'] as bool? ?? true,
-      rentalStatus:
-          InstrumentRentalStatus.fromJson(json['rentalStatus'] as String?),
+      rentalStatus: InstrumentRentalStatus.fromJson(
+        json['rentalStatus'] as String?,
+      ),
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
       requestedAt: parseDate(json['requestedAt']) ?? DateTime.now(),
@@ -200,8 +202,5 @@ class RentalStatusRequest {
 
   RentalStatusRequest({this.note});
 
-  Map<String, dynamic> toJson() => {
-    if (note != null) 'note': note,
-  };
+  Map<String, dynamic> toJson() => {if (note != null) 'note': note};
 }
-

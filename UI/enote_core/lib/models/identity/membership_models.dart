@@ -78,7 +78,5 @@ class SendMembershipWarningRequest {
 
   SendMembershipWarningRequest({this.message});
 
-  Map<String, dynamic> toJson() => {
-    if (message != null) 'message': message,
-  };
+  Map<String, dynamic> toJson() => {if (message != null) 'message': message};
 }

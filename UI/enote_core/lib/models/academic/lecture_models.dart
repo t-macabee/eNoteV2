@@ -155,8 +155,9 @@ class AttendanceDto {
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
-      attendanceStatus:
-          AttendanceStatus.fromJson(json['attendanceStatus'] as String?),
+      attendanceStatus: AttendanceStatus.fromJson(
+        json['attendanceStatus'] as String?,
+      ),
     );
   }
 
@@ -188,9 +189,7 @@ class RsvpRequest {
 
   RsvpRequest({required this.confirm});
 
-  Map<String, dynamic> toJson() => {
-    'confirm': confirm,
-  };
+  Map<String, dynamic> toJson() => {'confirm': confirm};
 }
 
 class RsvpResponse {
@@ -212,4 +211,3 @@ class RsvpResponse {
     );
   }
 }
-

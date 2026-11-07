@@ -3,7 +3,8 @@ import 'package:enote_core/enote_core.dart';
 class RentalProvider extends ReadOnlyProvider<InstrumentRentalDto> {
   static const int pageSize = 20;
 
-  RentalProvider({required super.apiClient}) : super(endpoint: 'student/rentals');
+  RentalProvider({required super.apiClient})
+    : super(endpoint: 'student/rentals');
 
   @override
   InstrumentRentalDto fromJson(Map<String, dynamic> json) =>

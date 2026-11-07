@@ -7,9 +7,9 @@ import 'package:enote_mobile/shell/app_router.dart';
 import 'package:enote_mobile/shell/routes.dart';
 
 Widget _app() => MaterialApp(
-      onGenerateRoute: AppRouter.onGenerateRoute,
-      home: const Scaffold(body: Text('home')),
-    );
+  onGenerateRoute: AppRouter.onGenerateRoute,
+  home: const Scaffold(body: Text('home')),
+);
 
 Future<void> _pushNamed(WidgetTester tester, String name) async {
   final navigator = tester.state<NavigatorState>(find.byType(Navigator));

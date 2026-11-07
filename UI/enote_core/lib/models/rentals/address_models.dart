@@ -49,4 +49,3 @@ class AddressRequest {
     'number': number,
   };
 }
-

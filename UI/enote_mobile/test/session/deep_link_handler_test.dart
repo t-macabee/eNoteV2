@@ -49,14 +49,12 @@ void main() {
       DeepLinkHandler.parse(Uri.parse('https://enote.com/reset-password')),
       isA<UnknownTarget>(),
     );
-    expect(
-      DeepLinkHandler.parse(Uri.parse('enote://x')),
-      isA<UnknownTarget>(),
-    );
+    expect(DeepLinkHandler.parse(Uri.parse('enote://x')), isA<UnknownTarget>());
   });
 
-  testWidgets('a link before the navigator exists is queued and flushed once',
-      (tester) async {
+  testWidgets('a link before the navigator exists is queued and flushed once', (
+    tester,
+  ) async {
     final navigatorKey = GlobalKey<NavigatorState>();
     final handler = DeepLinkHandler();
     handler.onLink(
@@ -97,10 +95,8 @@ void main() {
     );
 
     expect(
-      () => DeepLinkHandler.dispatch(
-        navigatorKey,
-        const StripeRedirectTarget(),
-      ),
+      () =>
+          DeepLinkHandler.dispatch(navigatorKey, const StripeRedirectTarget()),
       returnsNormally,
     );
     await tester.pumpAndSettle();

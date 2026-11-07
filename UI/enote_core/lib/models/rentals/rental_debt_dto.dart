@@ -12,7 +12,7 @@ class RentalDebtDto {
   }
 
   Map<String, dynamic> toJson() => {
-        'hasUnpaidDebt': hasUnpaidDebt,
-        if (rentalId != null) 'rentalId': rentalId,
-      };
+    'hasUnpaidDebt': hasUnpaidDebt,
+    if (rentalId != null) 'rentalId': rentalId,
+  };
 }

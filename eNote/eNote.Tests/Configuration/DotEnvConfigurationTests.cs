@@ -71,6 +71,31 @@ public sealed class DotEnvConfigurationTests : IDisposable
         }
     }
 
+    [Fact]
+    public void Load_ExpandsVariablesInValues()
+    {
+        var nameKey = "DB_NAME";
+        var connectionKey = "ConnectionStrings__DefaultConnection";
+        var previousName = Environment.GetEnvironmentVariable(nameKey);
+        var previousConnection = Environment.GetEnvironmentVariable(connectionKey);
+        var envFile = Path.Combine(root, ".env");
+        File.WriteAllText(envFile, "DB_NAME=x1\nConnectionStrings__DefaultConnection=Server=s;Database=${DB_NAME}\n");
+        Environment.SetEnvironmentVariable(nameKey, null);
+        Environment.SetEnvironmentVariable(connectionKey, null);
+
+        try
+        {
+            DotEnvConfiguration.Load(envFile);
+
+            Assert.Contains("Database=x1", Environment.GetEnvironmentVariable(connectionKey));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(nameKey, previousName);
+            Environment.SetEnvironmentVariable(connectionKey, previousConnection);
+        }
+    }
+
     private static string WriteEnv(string directory)
     {
         var path = Path.Combine(directory, ".env");

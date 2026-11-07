@@ -20,6 +20,7 @@ public static class MassTransitServiceExtensions
 
                 cfg.Host(
                     options.Host,
+                    options.Port,
                     options.VirtualHost,
                     h =>
                     {

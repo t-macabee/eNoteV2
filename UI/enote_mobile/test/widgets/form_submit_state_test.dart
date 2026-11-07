@@ -59,8 +59,9 @@ class _ProbeState extends State<_Probe> with FormSubmitState<_Probe> {
 }
 
 void main() {
-  testWidgets('raises the busy flag while running and clears it after',
-      (tester) async {
+  testWidgets('raises the busy flag while running and clears it after', (
+    tester,
+  ) async {
     final completer = Completer<void>();
     await tester.pumpWidget(
       _Probe(action: () => completer.future, withAction: () async {}),
@@ -113,8 +114,9 @@ void main() {
     expect(find.text('no-error'), findsOneWidget);
   });
 
-  testWidgets('submitWith raises the alternate flag, not isSubmitting',
-      (tester) async {
+  testWidgets('submitWith raises the alternate flag, not isSubmitting', (
+    tester,
+  ) async {
     final completer = Completer<void>();
     await tester.pumpWidget(
       _Probe(action: () async {}, withAction: () => completer.future),
@@ -130,8 +132,9 @@ void main() {
     expect(find.text('alt-idle'), findsOneWidget);
   });
 
-  testWidgets('showBanner routes the error to a SnackBar, not submitError',
-      (tester) async {
+  testWidgets('showBanner routes the error to a SnackBar, not submitError', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

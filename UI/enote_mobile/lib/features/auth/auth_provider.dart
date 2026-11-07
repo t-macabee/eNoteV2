@@ -6,7 +6,10 @@ class AuthProvider {
   AuthProvider({required this.apiClient});
 
   Future<AuthResponse> register(RegisterRequest request) async {
-    final response = await apiClient.post('auth/register', body: request.toJson());
+    final response = await apiClient.post(
+      'auth/register',
+      body: request.toJson(),
+    );
     return AuthResponse.fromJson(decodeOrThrow(response));
   }
 

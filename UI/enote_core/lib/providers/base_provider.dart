@@ -12,10 +12,7 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
 
   bool _disposed = false;
 
-  ReadOnlyProvider({
-    required this.apiClient,
-    required this.endpoint,
-  });
+  ReadOnlyProvider({required this.apiClient, required this.endpoint});
 
   T fromJson(Map<String, dynamic> json);
 
@@ -40,7 +37,8 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
     return fromJson(data);
   }
 
-  Future<PagedResult<T>> search(Map<String, dynamic> params) => getPage(params: params);
+  Future<PagedResult<T>> search(Map<String, dynamic> params) =>
+      getPage(params: params);
 
   @override
   void notifyListeners() {
@@ -55,10 +53,7 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
 }
 
 abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
-  CrudProvider({
-    required super.apiClient,
-    required super.endpoint,
-  });
+  CrudProvider({required super.apiClient, required super.endpoint});
 
   Future<T> uploadImage(
     int id,
@@ -108,10 +103,7 @@ abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
 }
 
 abstract class DelegatedUserProvider<T> extends CrudProvider<T> {
-  DelegatedUserProvider({
-    required super.apiClient,
-    required super.endpoint,
-  });
+  DelegatedUserProvider({required super.apiClient, required super.endpoint});
 
   Future<void> createDelegatedUser(RegisterRequest request) async {
     final response = await apiClient.post(endpoint, body: request.toJson());

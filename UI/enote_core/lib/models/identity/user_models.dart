@@ -1,5 +1,6 @@
 import '../../formatting/formatters.dart';
 import '../shared/enums.dart';
+
 class UserProfileResponse {
   final String role;
   final String username;

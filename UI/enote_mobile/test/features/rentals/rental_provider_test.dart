@@ -41,43 +41,52 @@ RentalProvider _provider(http.Client client) {
 }
 
 void main() {
-  test('fetchPage queries student/rentals with paging only by default',
-      () async {
-    final client = RecordingHttpClient(
-      body: const {'items': [_rental], 'page': 1, 'pageSize': 20, 'totalCount': 1},
-    );
-    final provider = _provider(client);
-    final result = await provider.fetchPage(1, RentalProvider.pageSize);
+  test(
+    'fetchPage queries student/rentals with paging only by default',
+    () async {
+      final client = RecordingHttpClient(
+        body: const {
+          'items': [_rental],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 1,
+        },
+      );
+      final provider = _provider(client);
+      final result = await provider.fetchPage(1, RentalProvider.pageSize);
 
-    expect(client.requests.single.method, 'GET');
-    expect(client.requests.single.url.path, '/api/v1/student/rentals');
-    expect(client.requests.single.url.queryParameters, {
-      'page': '1',
-      'pageSize': '20',
-      'includeTotalCount': 'true',
-    });
-    expect(result.items.single.rentalStatus, InstrumentRentalStatus.pending);
-  });
+      expect(client.requests.single.method, 'GET');
+      expect(client.requests.single.url.path, '/api/v1/student/rentals');
+      expect(client.requests.single.url.queryParameters, {
+        'page': '1',
+        'pageSize': '20',
+        'includeTotalCount': 'true',
+      });
+      expect(result.items.single.rentalStatus, InstrumentRentalStatus.pending);
+    },
+  );
 
-  test('fetchPage sends rentalStatus as the server name and the instrument id',
-      () async {
-    final client = RecordingHttpClient(body: const {'items': []});
-    final provider = _provider(client);
-    await provider.fetchPage(
-      3,
-      20,
-      rentalStatus: InstrumentRentalStatus.completed,
-      instrumentId: 3,
-    );
+  test(
+    'fetchPage sends rentalStatus as the server name and the instrument id',
+    () async {
+      final client = RecordingHttpClient(body: const {'items': []});
+      final provider = _provider(client);
+      await provider.fetchPage(
+        3,
+        20,
+        rentalStatus: InstrumentRentalStatus.completed,
+        instrumentId: 3,
+      );
 
-    expect(client.requests.single.url.queryParameters, {
-      'page': '3',
-      'pageSize': '20',
-      'includeTotalCount': 'true',
-      'rentalStatus': 'Completed',
-      'instrumentId': '3',
-    });
-  });
+      expect(client.requests.single.url.queryParameters, {
+        'page': '3',
+        'pageSize': '20',
+        'includeTotalCount': 'true',
+        'rentalStatus': 'Completed',
+        'instrumentId': '3',
+      });
+    },
+  );
 
   test('every status maps to its server name', () async {
     const expected = {
@@ -101,16 +110,18 @@ void main() {
     }
   });
 
-  test('a string rentalStatus from the server is parsed, not defaulted',
-      () async {
-    final client = RecordingHttpClient(
-      body: {..._rental, 'rentalStatus': 'Completed'},
-    );
-    final provider = _provider(client);
-    final rental = await provider.getById(1);
+  test(
+    'a string rentalStatus from the server is parsed, not defaulted',
+    () async {
+      final client = RecordingHttpClient(
+        body: {..._rental, 'rentalStatus': 'Completed'},
+      );
+      final provider = _provider(client);
+      final rental = await provider.getById(1);
 
-    expect(rental.rentalStatus, InstrumentRentalStatus.completed);
-  });
+      expect(rental.rentalStatus, InstrumentRentalStatus.completed);
+    },
+  );
 
   test('getById reads student/rentals/{id}', () async {
     final client = RecordingHttpClient(body: _rental);
@@ -121,8 +132,7 @@ void main() {
     expect(rental.instrumentModel, 'Stratocaster');
   });
 
-  test('createRequest posts the instrument id and the optional note',
-      () async {
+  test('createRequest posts the instrument id and the optional note', () async {
     final client = RecordingHttpClient(statusCode: 201, body: _rental);
     final provider = _provider(client);
     final created = await provider.createRequest(
@@ -166,20 +176,23 @@ void main() {
     expect(jsonDecode(client.requests.single.body), isEmpty);
   });
 
-  test('renew posts to student/rentals/{id}/renew and returns the dto', () async {
-    final client = RecordingHttpClient(
-      body: {..._rental, 'id': 7, 'rentalStatus': 'Active'},
-    );
-    final provider = _provider(client);
-    final renewed = await provider.renew(7);
+  test(
+    'renew posts to student/rentals/{id}/renew and returns the dto',
+    () async {
+      final client = RecordingHttpClient(
+        body: {..._rental, 'id': 7, 'rentalStatus': 'Active'},
+      );
+      final provider = _provider(client);
+      final renewed = await provider.renew(7);
 
-    final sent = client.requests.single;
-    expect(sent.method, 'POST');
-    expect(sent.url.path, '/api/v1/student/rentals/7/renew');
-    expect(sent.body.isEmpty || sent.body == 'null', isTrue);
-    expect(renewed.id, 7);
-    expect(renewed.rentalStatus, InstrumentRentalStatus.active);
-  });
+      final sent = client.requests.single;
+      expect(sent.method, 'POST');
+      expect(sent.url.path, '/api/v1/student/rentals/7/renew');
+      expect(sent.body.isEmpty || sent.body == 'null', isTrue);
+      expect(renewed.id, 7);
+      expect(renewed.rentalStatus, InstrumentRentalStatus.active);
+    },
+  );
 
   test('debt reads student/rentals/debt and decodes the rental id', () async {
     final client = RecordingHttpClient(

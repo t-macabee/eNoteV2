@@ -184,38 +184,39 @@ void main() {
     });
   }
 
-  testWidgets('the next user does not hold the notifications of the last user', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1400, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    final harness = _harness(role: 'Administrator', unreadCount: 7);
+  testWidgets(
+    'the next user does not hold the notifications of the last user',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final harness = _harness(role: 'Administrator', unreadCount: 7);
 
-    await tester.pumpWidget(_app(harness));
-    await tester.pumpAndSettle();
-    final controller = tester
-        .element(find.byType(MasterScreen))
-        .read<NotificationController>();
-    expect(controller.notifications, hasLength(1));
-    expect(controller.unreadCount, 7);
+      await tester.pumpWidget(_app(harness));
+      await tester.pumpAndSettle();
+      final controller = tester
+          .element(find.byType(MasterScreen))
+          .read<NotificationController>();
+      expect(controller.notifications, hasLength(1));
+      expect(controller.unreadCount, 7);
 
-    await harness.authState.logout();
-    await tester.pumpAndSettle();
-    expect(controller.notifications, isEmpty);
-    expect(controller.unreadCount, 0);
+      await harness.authState.logout();
+      await tester.pumpAndSettle();
+      expect(controller.notifications, isEmpty);
+      expect(controller.unreadCount, 0);
 
-    harness.failNotifications = true;
-    await harness.authState.login('admin', 'p');
-    await tester.pumpAndSettle();
+      harness.failNotifications = true;
+      await harness.authState.login('admin', 'p');
+      await tester.pumpAndSettle();
 
-    expect(controller.notifications, isEmpty);
-    expect(controller.unreadCount, 0);
+      expect(controller.notifications, isEmpty);
+      expect(controller.unreadCount, 0);
 
-    await harness.authState.logout();
-    await tester.pumpAndSettle();
-  });
+      await harness.authState.logout();
+      await tester.pumpAndSettle();
+    },
+  );
 }
 
 class _Harness {

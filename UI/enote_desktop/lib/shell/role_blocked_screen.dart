@@ -24,8 +24,7 @@ class RoleBlockedScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
               FilledButton(
-                onPressed: () =>
-                    context.read<AuthState>().logout(revoke: true),
+                onPressed: () => context.read<AuthState>().logout(revoke: true),
                 child: const Text('Odjavi se'),
               ),
             ],

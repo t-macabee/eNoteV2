@@ -20,15 +20,16 @@ class _NullBytesPicker extends FilePicker {
     bool lockParentWindow = false,
     bool readSequential = false,
   }) async {
-    return FilePickerResult([
-      PlatformFile(name: 'zadaca.pdf', size: 10),
-    ]);
+    return FilePickerResult([PlatformFile(name: 'zadaca.pdf', size: 10)]);
   }
 }
 
 void main() {
   test('assignmentFileLabel shows no raw file name', () {
-    expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.pdf'), 'PDF datoteka');
+    expect(
+      assignmentFileLabel('/api/v1/uploads/assignments/abc.pdf'),
+      'PDF datoteka',
+    );
     expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.PNG'), 'Slika');
     expect(assignmentFileLabel('/api/v1/uploads/assignments/abc.jpg'), 'Slika');
     expect(assignmentFileLabel(null), 'Nema datoteke');
@@ -55,17 +56,16 @@ void main() {
     if (real != null) FilePicker.platform = real;
   });
 
-  testWidgets('a file with null bytes shows the unreadable-file error',
-      (tester) async {
+  testWidgets('a file with null bytes shows the unreadable-file error', (
+    tester,
+  ) async {
     FilePicker.platform = _NullBytesPicker();
 
     Object? picked = 'sentinel';
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: FilePickerField(
-            onChanged: (file) => picked = file,
-          ),
+          body: FilePickerField(onChanged: (file) => picked = file),
         ),
       ),
     );

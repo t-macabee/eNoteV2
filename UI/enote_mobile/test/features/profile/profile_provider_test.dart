@@ -65,30 +65,32 @@ void main() {
     expect(profile.hasPicture, isFalse);
   });
 
-  test('updateMe issues PUT users/me with the UpdateProfileRequest body',
-      () async {
-    final client = RecordingHttpClient(body: _meBody);
-    final provider = _provider(client);
-    final request = UpdateProfileRequest(
-      email: 'new@enote.com',
-      firstName: 'Novo',
-      lastName: 'Prezime',
-      dateOfBirth: DateTime(2002, 3, 4),
-    );
-    await provider.updateMe(request);
+  test(
+    'updateMe issues PUT users/me with the UpdateProfileRequest body',
+    () async {
+      final client = RecordingHttpClient(body: _meBody);
+      final provider = _provider(client);
+      final request = UpdateProfileRequest(
+        email: 'new@enote.com',
+        firstName: 'Novo',
+        lastName: 'Prezime',
+        dateOfBirth: DateTime(2002, 3, 4),
+      );
+      await provider.updateMe(request);
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'PUT');
-    expect(sent.url.path, '/api/v1/users/me');
-    final body = jsonDecode(sent.body) as Map<String, dynamic>;
-    expect(body, {
-      'email': 'new@enote.com',
-      'firstName': 'Novo',
-      'lastName': 'Prezime',
-      'dateOfBirth': '2002-03-04T00:00:00.000',
-    });
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'PUT');
+      expect(sent.url.path, '/api/v1/users/me');
+      final body = jsonDecode(sent.body) as Map<String, dynamic>;
+      expect(body, {
+        'email': 'new@enote.com',
+        'firstName': 'Novo',
+        'lastName': 'Prezime',
+        'dateOfBirth': '2002-03-04T00:00:00.000',
+      });
+    },
+  );
 
   test('updateMe omits null optional members from the JSON body', () async {
     final client = RecordingHttpClient(body: _meBody);
@@ -100,26 +102,28 @@ void main() {
     expect(body, {'email': 'e@enote.com'});
   });
 
-  test('uploadPicture issues PUT users/me/picture with the file part',
-      () async {
-    final client = _MultipartStubClient();
-    final provider = _provider(client);
-    final bytes = List<int>.generate(8, (i) => i);
-    await provider.uploadPicture(bytes, 'slika.jpg', 'image/jpeg');
+  test(
+    'uploadPicture issues PUT users/me/picture with the file part',
+    () async {
+      final client = _MultipartStubClient();
+      final provider = _provider(client);
+      final bytes = List<int>.generate(8, (i) => i);
+      await provider.uploadPicture(bytes, 'slika.jpg', 'image/jpeg');
 
-    expect(client.sent, hasLength(1));
-    final request = client.sent.single;
-    expect(request.method, 'PUT');
-    expect(request.url.path, '/api/v1/users/me/picture');
-    expect(request, isA<http.MultipartRequest>());
-    final multipart = request as http.MultipartRequest;
-    expect(multipart.files, hasLength(1));
-    final part = multipart.files.single;
-    expect(part.field, 'file');
-    expect(part.filename, 'slika.jpg');
-    expect(part.contentType.mimeType, 'image/jpeg');
-    expect(await part.finalize().toBytes(), bytes);
-  });
+      expect(client.sent, hasLength(1));
+      final request = client.sent.single;
+      expect(request.method, 'PUT');
+      expect(request.url.path, '/api/v1/users/me/picture');
+      expect(request, isA<http.MultipartRequest>());
+      final multipart = request as http.MultipartRequest;
+      expect(multipart.files, hasLength(1));
+      final part = multipart.files.single;
+      expect(part.field, 'file');
+      expect(part.filename, 'slika.jpg');
+      expect(part.contentType.mimeType, 'image/jpeg');
+      expect(await part.finalize().toBytes(), bytes);
+    },
+  );
 
   test('deletePicture issues DELETE users/me/picture', () async {
     final client = RecordingHttpClient(body: const {});
@@ -131,43 +135,47 @@ void main() {
     expect(client.requests.single.url.path, '/api/v1/users/me/picture');
   });
 
-  test('changePassword issues PUT users/me/password with the request body',
-      () async {
-    final client = RecordingHttpClient(body: const {});
-    final provider = _provider(client);
-    await provider.changePassword(
-      ChangePasswordRequest(
-        currentPassword: 'Stara1!',
-        newPassword: 'Nova2@Bcd',
-        confirmNewPassword: 'Nova2@Bcd',
-      ),
-    );
+  test(
+    'changePassword issues PUT users/me/password with the request body',
+    () async {
+      final client = RecordingHttpClient(body: const {});
+      final provider = _provider(client);
+      await provider.changePassword(
+        ChangePasswordRequest(
+          currentPassword: 'Stara1!',
+          newPassword: 'Nova2@Bcd',
+          confirmNewPassword: 'Nova2@Bcd',
+        ),
+      );
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'PUT');
-    expect(sent.url.path, '/api/v1/users/me/password');
-    final body = jsonDecode(sent.body) as Map<String, dynamic>;
-    expect(body, {
-      'currentPassword': 'Stara1!',
-      'newPassword': 'Nova2@Bcd',
-      'confirmNewPassword': 'Nova2@Bcd',
-    });
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'PUT');
+      expect(sent.url.path, '/api/v1/users/me/password');
+      final body = jsonDecode(sent.body) as Map<String, dynamic>;
+      expect(body, {
+        'currentPassword': 'Stara1!',
+        'newPassword': 'Nova2@Bcd',
+        'confirmNewPassword': 'Nova2@Bcd',
+      });
+    },
+  );
 
-  test('deleteProfile issues DELETE users/me with the current password',
-      () async {
-    final client = RecordingHttpClient(body: const {});
-    final provider = _provider(client);
-    await provider.deleteProfile(
-      DeleteProfileRequest(currentPassword: 'Stara1!'),
-    );
+  test(
+    'deleteProfile issues DELETE users/me with the current password',
+    () async {
+      final client = RecordingHttpClient(body: const {});
+      final provider = _provider(client);
+      await provider.deleteProfile(
+        DeleteProfileRequest(currentPassword: 'Stara1!'),
+      );
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'DELETE');
-    expect(sent.url.path, '/api/v1/users/me');
-    final body = jsonDecode(sent.body) as Map<String, dynamic>;
-    expect(body, {'currentPassword': 'Stara1!'});
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'DELETE');
+      expect(sent.url.path, '/api/v1/users/me');
+      final body = jsonDecode(sent.body) as Map<String, dynamic>;
+      expect(body, {'currentPassword': 'Stara1!'});
+    },
+  );
 }

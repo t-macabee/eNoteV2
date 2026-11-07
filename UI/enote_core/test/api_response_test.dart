@@ -9,7 +9,9 @@ void main() {
   group('throwIfError', () {
     test('does not throw when status code is < 400', () {
       expect(
-        () => throwIfError(http.Response('{"ok": true}', 200, headers: jsonHeaders)),
+        () => throwIfError(
+          http.Response('{"ok": true}', 200, headers: jsonHeaders),
+        ),
         returnsNormally,
       );
       expect(() => throwIfError(http.Response('', 204)), returnsNormally);
@@ -63,8 +65,11 @@ void main() {
                 'fieldError',
                 'Rok za predaju mora biti u budućnosti.',
               )
-              .having((e) => e.fieldError('dueat'), 'case-insensitive',
-                  'Rok za predaju mora biti u budućnosti.')
+              .having(
+                (e) => e.fieldError('dueat'),
+                'case-insensitive',
+                'Rok za predaju mora biti u budućnosti.',
+              )
               .having((e) => e.fieldError('Title'), 'other field', isNull),
         ),
       );
@@ -182,28 +187,28 @@ void main() {
       ]);
     });
 
-    test('malformed or empty body throws ApiException, not FormatException',
-        () {
-      expect(
-        () => decodeListOrThrow(http.Response('not-json{{{', 200)),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Neispravan odgovor servera.',
+    test(
+      'malformed or empty body throws ApiException, not FormatException',
+      () {
+        expect(
+          () => decodeListOrThrow(http.Response('not-json{{{', 200)),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'Neispravan odgovor servera.',
+            ),
           ),
-        ),
-      );
-      expect(
-        () => decodeListOrThrow(http.Response('', 200)),
-        throwsA(isA<ApiException>()),
-      );
-    });
+        );
+        expect(
+          () => decodeListOrThrow(http.Response('', 200)),
+          throwsA(isA<ApiException>()),
+        );
+      },
+    );
 
-    test('JSON object body throws ApiException with parse-failure message',
-        () {
-      final response =
-          http.Response('{"id": 1}', 200, headers: jsonHeaders);
+    test('JSON object body throws ApiException with parse-failure message', () {
+      final response = http.Response('{"id": 1}', 200, headers: jsonHeaders);
       expect(
         () => decodeListOrThrow(response),
         throwsA(
@@ -249,15 +254,11 @@ void main() {
         200,
         headers: jsonHeaders,
       );
-      expect(
-        decodeList(response, (json) => json['id'] as int),
-        [1, 2],
-      );
+      expect(decodeList(response, (json) => json['id'] as int), [1, 2]);
     });
 
     test('non-list body throws ApiException with parse-failure message', () {
-      final response =
-          http.Response('{"id": 1}', 200, headers: jsonHeaders);
+      final response = http.Response('{"id": 1}', 200, headers: jsonHeaders);
       expect(
         () => decodeList(response, (json) => json['id'] as int),
         throwsA(

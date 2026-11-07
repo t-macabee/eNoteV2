@@ -29,10 +29,10 @@ class AuthState extends ChangeNotifier {
     this._tokenWriter,
     this._tokenRevoker,
     http.Client? httpClient,
-  })  : _baseUrl = baseUrl.isEmpty || baseUrl.endsWith('/')
-            ? baseUrl
-            : '$baseUrl/',
-        _httpClient = httpClient ?? http.Client() {
+  }) : _baseUrl = baseUrl.isEmpty || baseUrl.endsWith('/')
+           ? baseUrl
+           : '$baseUrl/',
+       _httpClient = httpClient ?? http.Client() {
     _accessToken = _tokenReader?.call();
     if (_accessToken != null && !_decodeToken(_accessToken)) {
       _tokenWriter?.call(null);
@@ -121,8 +121,9 @@ class AuthState extends ChangeNotifier {
 
   Future<void> login(String username, String password) async {
     final uri = Uri.parse('${_baseUrl}auth/login');
-    final body =
-        jsonEncode(LoginRequest(username: username, password: password).toJson());
+    final body = jsonEncode(
+      LoginRequest(username: username, password: password).toJson(),
+    );
 
     final response = await _httpClient.post(
       uri,

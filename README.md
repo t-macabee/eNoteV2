@@ -37,6 +37,8 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    Zamijenite placeholder vrijednosti: `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje
    32 znaka), `Stripe__SecretKey`, `Stripe__WebhookSecret` i
    `STRIPE_PUBLISHABLE_KEY`. Ostale vrijednosti iz primjera rade lokalno bez izmjene.
+   `DB_NAME` je naziv baze (npr. `150057`), a `RabbitMQ__Port` port na kojem
+   RabbitMQ sluša (npr. `5672`).
    Svaka vrijednost se upisuje samo jednom, u `.env`;
    `docker compose` prosljeđuje tu datoteku api i worker kontejnerima i
    zamjenjuje samo imena hostova (`sqlserver`, `rabbitmq`, `mailhog`).

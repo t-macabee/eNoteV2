@@ -2,10 +2,7 @@ class CityDto {
   final int id;
   final String name;
 
-  CityDto({
-    required this.id,
-    required this.name,
-  });
+  CityDto({required this.id, required this.name});
 
   factory CityDto.fromJson(Map<String, dynamic> json) {
     return CityDto(
@@ -14,10 +11,7 @@ class CityDto {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-  };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
 class CityRequest {
@@ -25,7 +19,5 @@ class CityRequest {
 
   CityRequest({required this.name});
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-  };
+  Map<String, dynamic> toJson() => {'name': name};
 }

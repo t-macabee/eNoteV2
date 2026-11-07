@@ -15,8 +15,11 @@ void main() {
     });
 
     test('flat shape parses', () {
-      final profile = UserProfile.fromJson(
-          {'id': 7, 'firstName': 'Ana', 'storeName': 'Sarajevo'});
+      final profile = UserProfile.fromJson({
+        'id': 7,
+        'firstName': 'Ana',
+        'storeName': 'Sarajevo',
+      });
 
       expect(profile.id, 7);
       expect(profile.firstName, 'Ana');

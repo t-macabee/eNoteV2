@@ -185,7 +185,10 @@ void main() {
   testWidgets('a submitted file shows its kind and not the stored name', (
     tester,
   ) async {
-    final harness = _Harness(dueAt: _futureDueAt, submission: _submissionJson());
+    final harness = _Harness(
+      dueAt: _futureDueAt,
+      submission: _submissionJson(),
+    );
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 

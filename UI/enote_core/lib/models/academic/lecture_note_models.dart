@@ -34,9 +34,5 @@ class LectureNoteRequest {
 
   LectureNoteRequest({required this.title, required this.content});
 
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'content': content,
-  };
+  Map<String, dynamic> toJson() => {'title': title, 'content': content};
 }
-

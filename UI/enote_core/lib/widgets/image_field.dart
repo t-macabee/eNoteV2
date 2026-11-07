@@ -117,7 +117,11 @@ class _ImageFieldState extends State<ImageField> {
     setState(() => _isUploading = true);
     String? uploaded;
     try {
-      uploaded = await upload(picked.bytes, picked.fileName, picked.contentType);
+      uploaded = await upload(
+        picked.bytes,
+        picked.fileName,
+        picked.contentType,
+      );
     } finally {
       if (mounted) {
         setState(() {

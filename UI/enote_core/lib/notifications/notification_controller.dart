@@ -64,10 +64,10 @@ class NotificationController extends ChangeNotifier {
       final unreadFuture = refreshUnreadCount();
       final response = await apiClient.get(
         endpoint,
-        queryParams: (search ?? NotificationSearchObject(pageSize: 50))
-            .toQueryMap()
-          ..['page'] = 1
-          ..['pageSize'] = pageSize,
+        queryParams:
+            (search ?? NotificationSearchObject(pageSize: 50)).toQueryMap()
+              ..['page'] = 1
+              ..['pageSize'] = pageSize,
       );
       final data = decodeOrThrow(response);
       if (session != _session) return;
@@ -149,17 +149,17 @@ class NotificationController extends ChangeNotifier {
   }
 
   NotificationDto _markedRead(NotificationDto n) => NotificationDto(
-        id: n.id,
-        rentalId: n.rentalId,
-        lectureId: n.lectureId,
-        submissionId: n.submissionId,
-        announcementId: n.announcementId,
-        courseId: n.courseId,
-        title: n.title,
-        body: n.body,
-        isRead: true,
-        createdAt: n.createdAt,
-      );
+    id: n.id,
+    rentalId: n.rentalId,
+    lectureId: n.lectureId,
+    submissionId: n.submissionId,
+    announcementId: n.announcementId,
+    courseId: n.courseId,
+    title: n.title,
+    body: n.body,
+    isRead: true,
+    createdAt: n.createdAt,
+  );
 
   @override
   void dispose() {

@@ -39,8 +39,7 @@ CourseProvider _provider(RecordingHttpClient client) {
 }
 
 void main() {
-  test('getPage issues GET student/courses with paging + name query',
-      () async {
+  test('getPage issues GET student/courses with paging + name query', () async {
     final client = RecordingHttpClient(body: _pageBody);
     final provider = _provider(client);
 
@@ -80,10 +79,7 @@ void main() {
     );
 
     expect(client.requests, hasLength(1));
-    expect(
-      client.requests.single.url.queryParameters['enrolledOnly'],
-      'true',
-    );
+    expect(client.requests.single.url.queryParameters['enrolledOnly'], 'true');
   });
 
   test('getById issues GET student/courses/{id}', () async {
@@ -109,10 +105,7 @@ void main() {
     expect(status, EnrollmentStatus.active);
     expect(client.requests, hasLength(1));
     expect(client.requests.single.method, 'POST');
-    expect(
-      client.requests.single.url.path,
-      '/api/v1/student/courses/1/enroll',
-    );
+    expect(client.requests.single.url.path, '/api/v1/student/courses/1/enroll');
   });
 
   test('unenroll issues POST student/courses/{id}/unenroll', () async {

@@ -8,22 +8,22 @@ import 'package:enote_core/enote_core.dart';
 import 'helpers.dart';
 
 Map<String, dynamic> _decodePayload(String token) => jsonDecode(
-      utf8.decode(
-        base64Url.decode(base64Url.normalize(token.split('.')[1])),
-      ),
-    ) as Map<String, dynamic>;
+  utf8.decode(base64Url.decode(base64Url.normalize(token.split('.')[1]))),
+) as Map<String, dynamic>;
 
 void main() {
   group('AuthState.login', () {
     test('a 200 with a valid JWT authenticates and populates roles', () async {
       var writerCalls = 0;
       var writerObservedAuthenticated = false;
-      final httpClient = RecordingHttpClient(body: {
-        'userId': 1,
-        'username': 'ana',
-        'roles': ['Instructor'],
-        'token': fakeJwt(username: 'ana', role: 'Instructor'),
-      });
+      final httpClient = RecordingHttpClient(
+        body: {
+          'userId': 1,
+          'username': 'ana',
+          'roles': ['Instructor'],
+          'token': fakeJwt(username: 'ana', role: 'Instructor'),
+        },
+      );
       late final AuthState authState;
       authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -44,53 +44,60 @@ void main() {
       expect(writerObservedAuthenticated, isTrue);
 
       final request = httpClient.requests.single;
-      expect(
-        request.url.toString(),
-        'http://localhost:5059/api/v1/auth/login',
-      );
+      expect(request.url.toString(), 'http://localhost:5059/api/v1/auth/login');
       expect(request.headers['Content-Type'], 'application/json');
       final sentBody = jsonDecode(request.body) as Map<String, dynamic>;
       expect(sentBody, {'username': 'ana', 'password': 'password'});
     });
 
-    test('a 200 with a non-JWT token throws ApiException without writing storage', () async {
-      var writerCalls = 0;
-      final httpClient = RecordingHttpClient(body: {
-        'userId': 1,
-        'username': 'ana',
-        'roles': ['Instructor'],
-        'token': 'not-a-jwt',
-      });
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: httpClient,
-        tokenWriter: (_) => writerCalls++,
-      );
+    test(
+      'a 200 with a non-JWT token throws ApiException without writing storage',
+      () async {
+        var writerCalls = 0;
+        final httpClient = RecordingHttpClient(
+          body: {
+            'userId': 1,
+            'username': 'ana',
+            'roles': ['Instructor'],
+            'token': 'not-a-jwt',
+          },
+        );
+        final authState = AuthState(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          httpClient: httpClient,
+          tokenWriter: (_) => writerCalls++,
+        );
 
-      await expectLater(
-        authState.login('ana', 'password'),
-        throwsA(isA<ApiException>().having(
-          (e) => e.message,
-          'message',
-          'Neispravan odgovor servera.',
-        )),
-      );
+        await expectLater(
+          authState.login('ana', 'password'),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'Neispravan odgovor servera.',
+            ),
+          ),
+        );
 
-      expect(writerCalls, 0);
-      expect(authState.isAuthenticated, isFalse);
-    });
+        expect(writerCalls, 0);
+        expect(authState.isAuthenticated, isFalse);
+      },
+    );
 
-    test('reader returning garbage at construction calls tokenWriter with null', () {
-      final written = <String?>[];
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        tokenReader: () => 'garbage-not-jwt',
-        tokenWriter: (token) => written.add(token),
-      );
+    test(
+      'reader returning garbage at construction calls tokenWriter with null',
+      () {
+        final written = <String?>[];
+        final authState = AuthState(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          tokenReader: () => 'garbage-not-jwt',
+          tokenWriter: (token) => written.add(token),
+        );
 
-      expect(written, [null]);
-      expect(authState.isAuthenticated, isFalse);
-    });
+        expect(written, [null]);
+        expect(authState.isAuthenticated, isFalse);
+      },
+    );
 
     test('a 401 throws ApiException with the mapped Bosnian message', () async {
       final httpClient = RecordingHttpClient(
@@ -108,40 +115,47 @@ void main() {
 
       await expectLater(
         authState.login('ana', 'wrong'),
-        throwsA(isA<ApiException>().having(
-          (e) => e.message,
-          'message',
-          'Pogrešno korisničko ime ili lozinka.',
-        )),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Pogrešno korisničko ime ili lozinka.',
+          ),
+        ),
       );
       expect(authState.isAuthenticated, isFalse);
     });
 
-    test('is_manager claim is correctly decoded into authState.isManager', () async {
-      final httpClient = RecordingHttpClient(body: {
-        'userId': 2,
-        'username': 'manager_bob',
-        'roles': ['StoreEmployee'],
-        'token': fakeJwt(
-          subject: '2',
-          username: 'manager_bob',
-          role: 'StoreEmployee',
-          isManager: true,
-        ),
-      });
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: httpClient,
-      );
+    test(
+      'is_manager claim is correctly decoded into authState.isManager',
+      () async {
+        final httpClient = RecordingHttpClient(
+          body: {
+            'userId': 2,
+            'username': 'manager_bob',
+            'roles': ['StoreEmployee'],
+            'token': fakeJwt(
+              subject: '2',
+              username: 'manager_bob',
+              role: 'StoreEmployee',
+              isManager: true,
+            ),
+          },
+        );
+        final authState = AuthState(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          httpClient: httpClient,
+        );
 
-      await authState.login('manager_bob', 'password');
+        await authState.login('manager_bob', 'password');
 
-      expect(authState.isAuthenticated, isTrue);
-      expect(authState.isManager, isTrue);
+        expect(authState.isAuthenticated, isTrue);
+        expect(authState.isManager, isTrue);
 
-      await authState.logout();
-      expect(authState.isManager, isFalse);
-    });
+        await authState.logout();
+        expect(authState.isManager, isFalse);
+      },
+    );
   });
 
   group('AuthState token claims', () {
@@ -154,13 +168,16 @@ void main() {
     });
 
     test('a token with only a role key gives no roles', () {
-      final header = base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
+      final header = base64UrlSegment(
+        jsonEncode({'alg': 'none', 'typ': 'JWT'}),
+      );
       final payload = base64UrlSegment(
         jsonEncode({
           'sub': '1',
           'unique_name': 'student',
           'role': 'Instructor',
-          'exp': DateTime.now()
+          'exp':
+              DateTime.now()
                   .add(const Duration(days: 1))
                   .millisecondsSinceEpoch ~/
               1000,
@@ -176,22 +193,25 @@ void main() {
   });
 
   group('AuthState.logout', () {
-    test('revoke: true calls the injected revoker and clears the session', () async {
-      var revokeCalls = 0;
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        tokenReader: () => fakeJwt(),
-        tokenRevoker: () async {
-          revokeCalls++;
-        },
-      );
-      expect(authState.isAuthenticated, isTrue);
+    test(
+      'revoke: true calls the injected revoker and clears the session',
+      () async {
+        var revokeCalls = 0;
+        final authState = AuthState(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          tokenReader: () => fakeJwt(),
+          tokenRevoker: () async {
+            revokeCalls++;
+          },
+        );
+        expect(authState.isAuthenticated, isTrue);
 
-      await authState.logout(revoke: true);
+        await authState.logout(revoke: true);
 
-      expect(revokeCalls, 1);
-      expect(authState.isAuthenticated, isFalse);
-    });
+        expect(revokeCalls, 1);
+        expect(authState.isAuthenticated, isFalse);
+      },
+    );
 
     test('revoke defaults to false and skips the revoker', () async {
       var revokeCalls = 0;
@@ -209,26 +229,29 @@ void main() {
       expect(authState.isAuthenticated, isFalse);
     });
 
-    test('a failing revoker logs the failure and still clears the session', () async {
-      final logged = <String>[];
-      final previousDebugPrint = debugPrint;
-      debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
-      addTearDown(() => debugPrint = previousDebugPrint);
+    test(
+      'a failing revoker logs the failure and still clears the session',
+      () async {
+        final logged = <String>[];
+        final previousDebugPrint = debugPrint;
+        debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
+        addTearDown(() => debugPrint = previousDebugPrint);
 
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        tokenReader: () => fakeJwt(),
-        tokenRevoker: () async {
-          throw Exception('offline');
-        },
-      );
+        final authState = AuthState(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          tokenReader: () => fakeJwt(),
+          tokenRevoker: () async {
+            throw Exception('offline');
+          },
+        );
 
-      await authState.logout(revoke: true);
+        await authState.logout(revoke: true);
 
-      expect(authState.isAuthenticated, isFalse);
-      expect(logged, hasLength(1));
-      expect(logged.single, contains('offline'));
-    });
+        expect(authState.isAuthenticated, isFalse);
+        expect(logged, hasLength(1));
+        expect(logged.single, contains('offline'));
+      },
+    );
   });
 
   group('AuthState session expiry', () {

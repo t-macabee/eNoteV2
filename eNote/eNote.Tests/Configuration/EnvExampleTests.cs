@@ -17,6 +17,7 @@ public sealed class EnvExampleTests
 
     private static readonly HashSet<string> ExternalKeys =
     [
+        "DB_NAME",
         "MSSQL_SA_PASSWORD",
         "STRIPE_PUBLISHABLE_KEY"
     ];

@@ -185,7 +185,6 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructureHealthChecks(this IServiceCollection services) =>
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database")
-            .AddCheck<RabbitMqHealthCheck>("rabbitmq")
             .Services;
 
     public static void LoadEnvironment() => Configuration.DotEnvConfiguration.Load();

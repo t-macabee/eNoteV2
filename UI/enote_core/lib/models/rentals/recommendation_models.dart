@@ -17,7 +17,8 @@ class InstrumentRecommendationDto {
         json['instrument'] as Map<String, dynamic>,
       ),
       score: (json['score'] as num?)?.toDouble() ?? 0.0,
-      reasons: (json['reasons'] as List<dynamic>?)
+      reasons:
+          (json['reasons'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

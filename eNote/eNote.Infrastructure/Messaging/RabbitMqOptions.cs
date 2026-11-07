@@ -9,6 +9,9 @@ public sealed class RabbitMqOptions
     [Required(ErrorMessage = "RabbitMQ__Host is required.")]
     public string Host { get; set; } = string.Empty;
 
+    [Range(1, 65535, ErrorMessage = "RabbitMQ__Port must be between 1 and 65535.")]
+    public ushort Port { get; set; }
+
     [Required(ErrorMessage = "RabbitMQ__VirtualHost is required.")]
     public string VirtualHost { get; set; } = string.Empty;
 

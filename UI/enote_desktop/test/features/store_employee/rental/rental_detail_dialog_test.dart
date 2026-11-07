@@ -291,26 +291,22 @@ void main() {
   });
 
   testWidgets('a counted refund shows the processed snackbar', (tester) async {
-    await _pumpDialog(
-      tester,
-      {
-        'id': 5,
-        'instrumentId': 1,
-        'musicStoreId': 1,
-        'studentProfileId': 1,
-        'studentUserId': 1,
-        'instrumentModel': 'Fender',
-        'instrumentType': 'Gitara',
-        'storeName': 'Shop',
-        'rentalStatus': 'Completed',
-        'requestedAt': DateTime.now().toIso8601String(),
-        'fee': 10.0,
-        'isPaid': true,
-        'amountPaid': 10.0,
-        'paidAt': DateTime.now().toIso8601String(),
-      },
-      refundedCentsAfterRefund: 300,
-    );
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Completed',
+      'requestedAt': DateTime.now().toIso8601String(),
+      'fee': 10.0,
+      'isPaid': true,
+      'amountPaid': 10.0,
+      'paidAt': DateTime.now().toIso8601String(),
+    }, refundedCentsAfterRefund: 300);
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Refundiraj'));
     await tester.pumpAndSettle();
@@ -319,7 +315,9 @@ void main() {
 
     expect(find.text('Povrat obrađen.'), findsOneWidget);
     expect(
-      find.text('Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.'),
+      find.text(
+        'Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.',
+      ),
       findsNothing,
     );
   });
@@ -348,7 +346,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.'),
+      find.text(
+        'Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.',
+      ),
       findsOneWidget,
     );
     expect(find.text('Povrat obrađen.'), findsNothing);

@@ -59,7 +59,9 @@ void main() {
   });
 
   group('networkImageOrPlaceholder', () {
-    testWidgets('null or empty url renders placeholder', (WidgetTester tester) async {
+    testWidgets('null or empty url renders placeholder', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -77,37 +79,44 @@ void main() {
       expect(find.text('placeholder'), findsOneWidget);
     });
 
-    testWidgets('relative path resolves against baseUrl origin without duplicate api prefix',
-        (WidgetTester tester) async {
-      final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: _DummyHttpClient(),
-      );
+    testWidgets(
+      'relative path resolves against baseUrl origin without duplicate api prefix',
+      (WidgetTester tester) async {
+        final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+        final apiClient = ApiClient(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          authState: authState,
+          httpClient: _DummyHttpClient(),
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: networkImageOrPlaceholder(
-              '/api/v1/uploads/instruments/guitar.jpg',
-              apiClient,
-              size: 40,
-              borderRadius: 4,
-              placeholder: () => const Text('placeholder'),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: networkImageOrPlaceholder(
+                '/api/v1/uploads/instruments/guitar.jpg',
+                apiClient,
+                size: 40,
+                borderRadius: 4,
+                placeholder: () => const Text('placeholder'),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      final imageFinder = find.byType(Image);
-      expect(imageFinder, findsOneWidget);
-      final image = tester.widget<Image>(imageFinder);
-      final provider = image.image as NetworkImage;
-      expect(provider.url, 'http://localhost:5059/api/v1/uploads/instruments/guitar.jpg');
-    });
+        final imageFinder = find.byType(Image);
+        expect(imageFinder, findsOneWidget);
+        final image = tester.widget<Image>(imageFinder);
+        final provider = image.image as NetworkImage;
+        expect(
+          provider.url,
+          'http://localhost:5059/api/v1/uploads/instruments/guitar.jpg',
+        );
+      },
+    );
 
-    testWidgets('absolute url renders placeholder', (WidgetTester tester) async {
+    testWidgets('absolute url renders placeholder', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(

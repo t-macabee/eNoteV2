@@ -1,4 +1,3 @@
-
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -65,30 +64,31 @@ int _statusCalls(ScriptedClient client) => client.requests
     .where(
       (r) =>
           r.method == 'GET' &&
-          (r).url.path.endsWith(
-            '/student/enrollments/$_enrollmentId/tuition',
-          ),
+          (r).url.path.endsWith('/student/enrollments/$_enrollmentId/tuition'),
     )
     .length;
 
 void main() {
-  test('createIntent posts to create-intent and decodes the response', () async {
-    final client = _scriptedClient([(statusCode: 200, body: _intent)]);
-    final provider = _provider(client);
-    final intent = await provider.createIntent(_enrollmentId);
+  test(
+    'createIntent posts to create-intent and decodes the response',
+    () async {
+      final client = _scriptedClient([(statusCode: 200, body: _intent)]);
+      final provider = _provider(client);
+      final intent = await provider.createIntent(_enrollmentId);
 
-    final sent = client.requests.single;
-    expect(sent.method, 'POST');
-    expect(
-      sent.url.path,
-      '/api/v1/student/enrollments/$_enrollmentId/tuition/create-intent',
-    );
-    expect(intent.paymentIntentId, 'pi_tuition_123');
-    expect(intent.clientSecret, 'pi_tuition_123_secret_abc');
-    expect(intent.amountCents, 80000);
-    expect(intent.currency, 'bam');
-    expect(intent.status, PaymentStatus.requiresAction);
-  });
+      final sent = client.requests.single;
+      expect(sent.method, 'POST');
+      expect(
+        sent.url.path,
+        '/api/v1/student/enrollments/$_enrollmentId/tuition/create-intent',
+      );
+      expect(intent.paymentIntentId, 'pi_tuition_123');
+      expect(intent.clientSecret, 'pi_tuition_123_secret_abc');
+      expect(intent.amountCents, 80000);
+      expect(intent.currency, 'bam');
+      expect(intent.status, PaymentStatus.requiresAction);
+    },
+  );
 
   test('status returns the payment and 404 means not started', () async {
     final client = _scriptedClient([
@@ -121,11 +121,8 @@ void main() {
       ),
     ]);
 
-    final page = await _provider(client).history(
-      _enrollmentId,
-      page: 2,
-      pageSize: 5,
-    );
+    final page = await _provider(client)
+        .history(_enrollmentId, page: 2, pageSize: 5);
 
     final sent = client.requests.single;
     expect(sent.method, 'GET');
@@ -147,9 +144,7 @@ void main() {
   });
 
   test('history rejects a malformed body', () async {
-    final client = ScriptedClient(
-      (_) => http.Response('not-json{{{', 200),
-    );
+    final client = ScriptedClient((_) => http.Response('not-json{{{', 200));
     await expectLater(
       _provider(client).history(_enrollmentId),
       throwsA(isA<ApiException>()),
@@ -166,7 +161,9 @@ void main() {
       final provider = _provider(client);
 
       CoursePaymentDto? result;
-      provider.pollUntilSucceeded(_enrollmentId).then((value) => result = value);
+      provider
+          .pollUntilSucceeded(_enrollmentId)
+          .then((value) => result = value);
       async.elapse(const Duration(seconds: 7));
 
       expect(result?.status, PaymentStatus.succeeded);
@@ -205,8 +202,7 @@ void main() {
 
     final creates = client.requests.where(
       (r) =>
-          r.method == 'POST' &&
-          (r).url.path.endsWith('/tuition/create-intent'),
+          r.method == 'POST' && (r).url.path.endsWith('/tuition/create-intent'),
     );
     expect(creates, hasLength(2));
   });

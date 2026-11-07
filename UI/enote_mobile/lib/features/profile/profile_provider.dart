@@ -35,10 +35,7 @@ class ProfileProvider {
   }
 
   Future<void> deleteProfile(DeleteProfileRequest request) async {
-    final response = await apiClient.delete(
-      'users/me',
-      body: request.toJson(),
-    );
+    final response = await apiClient.delete('users/me', body: request.toJson());
     throwIfError(response);
   }
 }

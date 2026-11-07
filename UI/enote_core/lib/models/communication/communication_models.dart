@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+
 import '../../formatting/formatters.dart';
 
 class AnnouncementDto {
@@ -61,10 +62,7 @@ class AnnouncementRequest {
 
   AnnouncementRequest({required this.title, required this.content});
 
-  Map<String, dynamic> toJson() => {
-    'title': title,
-    'content': content,
-  };
+  Map<String, dynamic> toJson() => {'title': title, 'content': content};
 }
 
 class NotificationDto {
@@ -266,4 +264,3 @@ class NotificationPushDto {
     );
   }
 }
-

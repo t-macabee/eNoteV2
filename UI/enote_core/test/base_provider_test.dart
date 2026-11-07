@@ -53,7 +53,10 @@ void main() {
   const jsonHeaders = {'content-type': 'application/json; charset=utf-8'};
 
   final authState = AuthState();
-  final apiClient = ApiClient(baseUrl: 'http://localhost/', authState: authState);
+  final apiClient = ApiClient(
+    baseUrl: 'http://localhost/',
+    authState: authState,
+  );
   final provider = _TestProvider(apiClient: apiClient, endpoint: 'test');
 
   group('ReadOnlyProvider.parsePage', () {
@@ -76,24 +79,29 @@ void main() {
       );
     });
 
-    test('non-map item in items list throws ApiException with parse message', () {
-      final response = http.Response(
-        jsonEncode({'items': [1]}),
-        200,
-        headers: jsonHeaders,
-      );
+    test(
+      'non-map item in items list throws ApiException with parse message',
+      () {
+        final response = http.Response(
+          jsonEncode({
+            'items': [1],
+          }),
+          200,
+          headers: jsonHeaders,
+        );
 
-      expect(
-        () => provider.testParsePage(response),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Neispravan odgovor servera.',
+        expect(
+          () => provider.testParsePage(response),
+          throwsA(
+            isA<ApiException>().having(
+              (e) => e.message,
+              'message',
+              'Neispravan odgovor servera.',
+            ),
           ),
-        ),
-      );
-    });
+        );
+      },
+    );
 
     test('well-formed page parses correctly', () {
       final response = http.Response(
@@ -192,17 +200,21 @@ void main() {
         authState: AuthState(),
         httpClient: client,
       );
-      final provider =
-          _TestCrudProvider(apiClient: apiClient, endpoint: 'test');
+      final provider = _TestCrudProvider(
+        apiClient: apiClient,
+        endpoint: 'test',
+      );
 
       final pending = provider.insert({'name': 'x'});
       provider.dispose();
 
-      client.completer.complete(http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({'id': 1}))),
-        200,
-        headers: jsonHeaders,
-      ));
+      client.completer.complete(
+        http.StreamedResponse(
+          Stream.value(utf8.encode(jsonEncode({'id': 1}))),
+          200,
+          headers: jsonHeaders,
+        ),
+      );
 
       await expectLater(pending, completes);
     });

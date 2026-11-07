@@ -36,28 +36,30 @@ LectureNoteProvider _provider(RecordingHttpClient client) {
 }
 
 void main() {
-  test('getPage issues GET student/lectures/{id}/notes with title query',
-      () async {
-    final client = RecordingHttpClient(body: _pageBody);
-    final provider = _provider(client);
+  test(
+    'getPage issues GET student/lectures/{id}/notes with title query',
+    () async {
+      final client = RecordingHttpClient(body: _pageBody);
+      final provider = _provider(client);
 
-    final page = await provider.getPage(
-      params: {
-        'page': 1,
-        'pageSize': 20,
-        'includeTotalCount': true,
-        'title': 'skale',
-      },
-    );
+      final page = await provider.getPage(
+        params: {
+          'page': 1,
+          'pageSize': 20,
+          'includeTotalCount': true,
+          'title': 'skale',
+        },
+      );
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'GET');
-    expect(sent.url.path, '/api/v1/student/lectures/11/notes');
-    expect(sent.url.queryParameters['title'], 'skale');
-    expect(page.items, hasLength(1));
-    expect(page.items.single.title, 'Skale');
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'GET');
+      expect(sent.url.path, '/api/v1/student/lectures/11/notes');
+      expect(sent.url.queryParameters['title'], 'skale');
+      expect(page.items, hasLength(1));
+      expect(page.items.single.title, 'Skale');
+    },
+  );
 
   test('getById issues GET student/lectures/{id}/notes/{noteId}', () async {
     final client = RecordingHttpClient(body: _noteJson);

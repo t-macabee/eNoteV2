@@ -39,8 +39,7 @@ class NotificationHubClient {
     return '$origin/hubs/notifications';
   }
 
-  bool get isConnected =>
-      _connection?.state == HubConnectionState.Connected;
+  bool get isConnected => _connection?.state == HubConnectionState.Connected;
 
   Future<void> start() async {
     final token = await tokenProvider();
@@ -95,9 +94,7 @@ class NotificationHubClient {
       if (args == null || args.isEmpty) return;
       final raw = args[0];
       if (raw is! Map) return;
-      final push = NotificationPushDto.fromJson(
-        Map<String, dynamic>.from(raw),
-      );
+      final push = NotificationPushDto.fromJson(Map<String, dynamic>.from(raw));
       debugPrint('SignalR push received: ${push.title}');
       onRefresh();
       onPush(push);

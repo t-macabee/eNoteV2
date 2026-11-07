@@ -16,8 +16,8 @@ Map<String, dynamic> meJson({DateTime? paidUntil, bool hasPicture = false}) => {
     'firstName': 'Student',
     'lastName': 'Enote',
     'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil':
-        (paidUntil ?? DateTime.utc(2027, 9, 9)).toIso8601String(),
+    'membershipPaidUntil': (paidUntil ?? DateTime.utc(2027, 9, 9))
+        .toIso8601String(),
   },
   'hasPicture': hasPicture,
 };
@@ -26,7 +26,8 @@ int countRequests(ScriptedClient client, String marker) =>
     client.requests.where((r) => '${r.method} ${r.url.path}' == marker).length;
 
 Future<void> pumpPastDebounce(WidgetTester tester) => tester.pump(
-  PagedFetchController.defaultSearchDebounce + const Duration(milliseconds: 100),
+  PagedFetchController.defaultSearchDebounce +
+      const Duration(milliseconds: 100),
 );
 
 void setPhoneSurface(WidgetTester tester) {
@@ -84,8 +85,7 @@ class FakeHubConnection implements HubConnection {
   Future<void> send(String methodName, {List<Object>? args}) async {}
 
   @override
-  Future<Object?> invoke(String methodName, {List<Object>? args}) async =>
-      null;
+  Future<Object?> invoke(String methodName, {List<Object>? args}) async => null;
 
   @override
   Stream<HubConnectionState> get stateStream => const Stream.empty();

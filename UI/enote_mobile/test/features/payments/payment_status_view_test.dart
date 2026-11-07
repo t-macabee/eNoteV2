@@ -37,10 +37,7 @@ void main() {
       ),
     );
 
-    expect(
-      find.text('Provjerite ponovo za nekoliko sekundi.'),
-      findsOneWidget,
-    );
+    expect(find.text('Provjerite ponovo za nekoliko sekundi.'), findsOneWidget);
     expect(
       find.text('Ne zatvarajte ekran, provjeravamo plaćanje.'),
       findsNothing,

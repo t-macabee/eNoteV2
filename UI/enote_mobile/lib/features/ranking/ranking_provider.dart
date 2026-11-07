@@ -6,9 +6,7 @@ class RankingProvider {
   RankingProvider({required this.apiClient});
 
   Future<List<CourseRankingEntryDto>> getForCourse(int courseId) async {
-    final response = await apiClient.get(
-      'student/courses/$courseId/ranking',
-    );
+    final response = await apiClient.get('student/courses/$courseId/ranking');
     throwIfError(response);
     return parseCourseRanking(response.body);
   }

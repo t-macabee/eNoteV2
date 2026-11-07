@@ -8,9 +8,14 @@ import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/file_save.dart';
 import 'submission_provider.dart';
 
-String submissionFileName(AssignmentSubmissionDto item, String assignmentTitle) {
-  final name = '${item.studentName ?? 'Predaja'} - $assignmentTitle'
-      .replaceAll(RegExp(r'[/\\:*?"<>|]'), '_');
+String submissionFileName(
+  AssignmentSubmissionDto item,
+  String assignmentTitle,
+) {
+  final name = '${item.studentName ?? 'Predaja'} - $assignmentTitle'.replaceAll(
+    RegExp(r'[/\\:*?"<>|]'),
+    '_',
+  );
   return '$name.${fileExtension(item.filePath!)}';
 }
 
@@ -71,13 +76,17 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final filePath = item.filePath!;
-      final bytes = await context.read<SubmissionProvider>().downloadFile(filePath);
+      final bytes = await context.read<SubmissionProvider>().downloadFile(
+        filePath,
+      );
       final saved = await widget.saveFile(
         bytes,
         submissionFileName(item, widget.assignmentTitle),
       );
       if (saved == null) return;
-      messenger.showSnackBar(SnackBar(content: Text('Datoteka sačuvana: $saved')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Datoteka sačuvana: $saved')),
+      );
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
     }

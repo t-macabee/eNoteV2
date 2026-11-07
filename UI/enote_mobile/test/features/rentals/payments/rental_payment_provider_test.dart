@@ -1,4 +1,3 @@
-
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -66,26 +65,28 @@ int _statusCalls(ScriptedClient client) => client.requests
     .length;
 
 void main() {
-  test('createIntent posts to create-intent and decodes the response', () async {
-    final client = _scriptedClient([(statusCode: 200, body: _intent)]);
-    final provider = _provider(client);
-    final intent = await provider.createIntent(2);
+  test(
+    'createIntent posts to create-intent and decodes the response',
+    () async {
+      final client = _scriptedClient([(statusCode: 200, body: _intent)]);
+      final provider = _provider(client);
+      final intent = await provider.createIntent(2);
 
-    final sent = client.requests.single;
-    expect(sent.method, 'POST');
-    expect(
-      sent.url.path,
-      '/api/v1/student/rentals/2/payments/create-intent',
-    );
-    expect(intent.paymentIntentId, 'pi_test_123');
-    expect(intent.clientSecret, 'pi_test_123_secret_abc');
-    expect(intent.amountCents, 4500);
-    expect(intent.currency, 'bam');
-    expect(intent.status, PaymentStatus.requiresAction);
-  });
+      final sent = client.requests.single;
+      expect(sent.method, 'POST');
+      expect(sent.url.path, '/api/v1/student/rentals/2/payments/create-intent');
+      expect(intent.paymentIntentId, 'pi_test_123');
+      expect(intent.clientSecret, 'pi_test_123_secret_abc');
+      expect(intent.amountCents, 4500);
+      expect(intent.currency, 'bam');
+      expect(intent.status, PaymentStatus.requiresAction);
+    },
+  );
 
   test('status returns the payment and 404 means not started', () async {
-    final client = _scriptedClient([(statusCode: 200, body: _payment('Succeeded'))]);
+    final client = _scriptedClient([
+      (statusCode: 200, body: _payment('Succeeded')),
+    ]);
     expect(
       (await _provider(client).status(2))?.status,
       PaymentStatus.succeeded,
@@ -120,12 +121,10 @@ void main() {
 
       RentalPaymentDto? result;
       var done = false;
-      provider
-          .pollUntilSucceeded(2)
-          .then((value) {
-            result = value;
-            done = true;
-          });
+      provider.pollUntilSucceeded(2).then((value) {
+        result = value;
+        done = true;
+      });
       async.elapse(const Duration(seconds: 11));
 
       expect(done, isTrue);

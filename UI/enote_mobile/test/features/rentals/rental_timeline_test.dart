@@ -55,9 +55,7 @@ Future<void> _pump(WidgetTester tester, InstrumentRentalDto rental) async {
     MaterialApp(
       theme: mobileTheme,
       home: Scaffold(
-        body: SingleChildScrollView(
-          child: RentalTimeline(rental: rental),
-        ),
+        body: SingleChildScrollView(child: RentalTimeline(rental: rental)),
       ),
     ),
   );
@@ -109,9 +107,7 @@ void main() {
     expect(_hollowDots(tester), 1);
   });
 
-  testWidgets('approved: the last step is the pickup deadline', (
-    tester,
-  ) async {
+  testWidgets('approved: the last step is the pickup deadline', (tester) async {
     final rental = _rental(
       status: InstrumentRentalStatus.approved,
       pickupDeadline: DateTime(2026, 6, 17, 12),

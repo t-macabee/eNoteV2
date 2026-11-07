@@ -127,7 +127,7 @@ public sealed class DiResolutionTests
         var healthChecks = await HealthCheckRegistrationsAsync(services);
         Assert.DoesNotContain(healthChecks, registration => registration.Name == "outbox");
         Assert.Contains(healthChecks, registration => registration.Name == "database");
-        Assert.Contains(healthChecks, registration => registration.Name == "rabbitmq");
+        Assert.Contains(healthChecks, registration => registration.Name == "masstransit-bus");
     }
 
     private static IConfiguration CreateConfiguration(Dictionary<string, string?> additional)
@@ -142,6 +142,7 @@ public sealed class DiResolutionTests
             ["Smtp:EnableSsl"] = "false",
             ["Jwt:ExpirationMinutes"] = "30",
             ["RabbitMQ:Host"] = "localhost",
+            ["RabbitMQ:Port"] = "5672",
             ["RabbitMQ:VirtualHost"] = "/",
             ["RabbitMQ:User"] = "guest",
             ["RabbitMQ:Password"] = "guest",

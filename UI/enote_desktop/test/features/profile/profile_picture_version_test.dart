@@ -15,7 +15,11 @@ const _profile = {
   'role': 'Instructor',
   'username': 'instructor',
   'email': 'instructor@enote.com',
-  'profile': {r'$type': 'instructor', 'firstName': 'Selma', 'lastName': 'Begić'},
+  'profile': {
+    r'$type': 'instructor',
+    'firstName': 'Selma',
+    'lastName': 'Begić',
+  },
 };
 
 ApiClient _apiClient() {
@@ -42,60 +46,61 @@ void main() {
     expect(seen.add(provider.pictureUrl()), isTrue);
   });
 
-  testWidgets('a reopened edit form does not use the address of the old picture', (
-    tester,
-  ) async {
-    final apiClient = _apiClient();
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          Provider<ApiClient>.value(value: apiClient),
-          Provider<ProfileProvider>(
-            create: (_) => ProfileProvider(apiClient: apiClient),
-          ),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => FilledButton(
-                onPressed: () => EntityFormScaffold.showAsDialog(
-                  context,
-                  builder: (_) => const EditProfileDialog(
-                    initialFirstName: 'Selma',
-                    initialLastName: 'Begić',
-                    initialEmail: 'instructor@enote.com',
-                    initialDateOfBirth: null,
-                    initialHasPicture: false,
+  testWidgets(
+    'a reopened edit form does not use the address of the old picture',
+    (tester) async {
+      final apiClient = _apiClient();
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            Provider<ProfileProvider>(
+              create: (_) => ProfileProvider(apiClient: apiClient),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => FilledButton(
+                  onPressed: () => EntityFormScaffold.showAsDialog(
+                    context,
+                    builder: (_) => const EditProfileDialog(
+                      initialFirstName: 'Selma',
+                      initialLastName: 'Begić',
+                      initialEmail: 'instructor@enote.com',
+                      initialDateOfBirth: null,
+                      initialHasPicture: false,
+                    ),
                   ),
+                  child: const Text('otvori'),
                 ),
-                child: const Text('otvori'),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('otvori'));
-    await tester.pumpAndSettle();
-    final field = tester.widget<ImageField>(find.byType(ImageField));
-    final oldAddress = field.imageUrl;
+      await tester.tap(find.text('otvori'));
+      await tester.pumpAndSettle();
+      final field = tester.widget<ImageField>(find.byType(ImageField));
+      final oldAddress = field.imageUrl;
 
-    final uploaded = field.onUpload!(
-      Uint8List.fromList([1, 2, 3]),
-      'a.png',
-      'image/png',
-    );
-    await tester.pumpAndSettle();
-    final newAddress = await uploaded;
-    expect(newAddress, isNot(oldAddress));
+      final uploaded = field.onUpload!(
+        Uint8List.fromList([1, 2, 3]),
+        'a.png',
+        'image/png',
+      );
+      await tester.pumpAndSettle();
+      final newAddress = await uploaded;
+      expect(newAddress, isNot(oldAddress));
 
-    await tester.tap(find.text('Otkaži'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('otvori'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Otkaži'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('otvori'));
+      await tester.pumpAndSettle();
 
-    final reopened = tester.widget<ImageField>(find.byType(ImageField));
-    expect(reopened.imageUrl, newAddress);
-  });
+      final reopened = tester.widget<ImageField>(find.byType(ImageField));
+      expect(reopened.imageUrl, newAddress);
+    },
+  );
 }

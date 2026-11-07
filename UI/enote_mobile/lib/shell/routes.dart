@@ -79,10 +79,7 @@ class TuitionHistoryArgs {
   final int enrollmentId;
   final String courseName;
 
-  const TuitionHistoryArgs(
-    this.enrollmentId, {
-    required this.courseName,
-  });
+  const TuitionHistoryArgs(this.enrollmentId, {required this.courseName});
 }
 
 class ResetArgs {

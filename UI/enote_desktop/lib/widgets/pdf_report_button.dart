@@ -75,7 +75,10 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     final bytes = await _load();
     if (bytes == null) return;
     try {
-      final path = await (widget.savePdf ?? saveFileWithDialog)(bytes, widget.fileName);
+      final path = await (widget.savePdf ?? saveFileWithDialog)(
+        bytes,
+        widget.fileName,
+      );
       if (path == null || !mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Izvještaj sačuvan: $path')));

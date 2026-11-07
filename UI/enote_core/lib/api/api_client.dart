@@ -14,8 +14,8 @@ class ApiClient {
     required String baseUrl,
     required this.authState,
     http.Client? httpClient,
-  })  : baseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
-        _httpClient = httpClient ?? http.Client();
+  }) : baseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
+       _httpClient = httpClient ?? http.Client();
 
   Map<String, String> get _headers {
     final token = authState.accessToken;
@@ -33,8 +33,7 @@ class ApiClient {
       return uri;
     }
     return uri.replace(
-      queryParameters: queryParams
-          .map((k, v) => MapEntry(k, _stringify(v))),
+      queryParameters: queryParams.map((k, v) => MapEntry(k, _stringify(v))),
     );
   }
 
@@ -92,15 +91,19 @@ class ApiClient {
     return response;
   }
 
-
   Future<http.Response> postMultipart(
     String path, {
     required List<int> bytes,
     required String fileName,
     required String contentType,
   }) async {
-    return sendMultipart('POST', path,
-        bytes: bytes, fileName: fileName, contentType: contentType);
+    return sendMultipart(
+      'POST',
+      path,
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
   }
 
   Future<http.Response> putMultipart(
@@ -109,8 +112,13 @@ class ApiClient {
     required String fileName,
     required String contentType,
   }) async {
-    return sendMultipart('PUT', path,
-        bytes: bytes, fileName: fileName, contentType: contentType);
+    return sendMultipart(
+      'PUT',
+      path,
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
   }
 
   Future<http.Response> sendMultipart(
@@ -143,6 +151,4 @@ class ApiClient {
     final response = await http.Response.fromStream(streamedResponse);
     return response;
   }
-
-
 }
