@@ -1,9 +1,8 @@
-﻿using eNote.API.Hubs;
+using eNote.API.Hubs;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -78,10 +77,10 @@ public static class IdentityExtensions
             return;
         }
 
-        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
-        AppUser? user = await userManager.FindByIdAsync(userId.ToString());
+        var sessionCache = context.HttpContext.RequestServices.GetRequiredService<IUserSessionStateCache>();
+        var state = await sessionCache.GetAsync(userId, context.HttpContext.RequestAborted);
 
-        if (user is null || !user.IsActive)
+        if (state is null || !state.IsActive)
         {
             context.Fail(Messages.TokenInvalid);
             return;
@@ -89,7 +88,7 @@ public static class IdentityExtensions
 
         var stamp = context.Principal!.FindFirstValue(TokenService.SecurityStampClaimType);
 
-        if (string.IsNullOrWhiteSpace(stamp) || stamp != user.SecurityStamp)
+        if (string.IsNullOrWhiteSpace(stamp) || stamp != state.SecurityStamp)
         {
             context.Fail(Messages.TokenInvalid);
         }

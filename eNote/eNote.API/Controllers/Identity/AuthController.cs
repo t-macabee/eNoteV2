@@ -58,7 +58,7 @@ public sealed class AuthController(IAuthService authService) : CoreController
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
-        await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
+        await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, CurrentUserId, HttpContext.RequestAborted);
         return NoContent();
     }
 }

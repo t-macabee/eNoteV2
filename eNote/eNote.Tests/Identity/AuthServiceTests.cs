@@ -9,6 +9,7 @@ using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 
@@ -428,9 +429,9 @@ public sealed class AuthServiceTests
         var auth = harness.CreateAuthService();
         var expiresAt = Now.AddDays(7);
 
-        await auth.LogoutAsync("jti-1", expiresAt);
+        await auth.LogoutAsync("jti-1", expiresAt, harness.User.Id);
 
-        Assert.Equal(("jti-1", expiresAt), harness.Revocations.Single());
+        Assert.Equal(("jti-1", expiresAt, harness.User.Id), harness.Revocations.Single());
     }
 
     [Fact]
@@ -479,7 +480,7 @@ public sealed class AuthServiceTests
         public RoleManager<AppRole> RoleManager => roleManager;
         public ENoteContext Context => context;
         public AppUser User => user;
-        public List<(string Jti, DateTime ExpiresAt)> Revocations { get; } = [];
+        public List<(string Jti, DateTime ExpiresAt, int UserId)> Revocations { get; } = [];
         public List<IssuedToken> Tokens { get; } = [];
 
         public AuthService CreateAuthService(IUserProvisioningService? provisioning = null) =>
@@ -488,6 +489,7 @@ public sealed class AuthServiceTests
                 new StubTokenService(Tokens),
                 provisioning ?? new StubUserProvisioningService(),
                 new RecordingTokenRevocationService(Revocations),
+                new UserSessionStateCache(Context, new MemoryCache(new MemoryCacheOptions())),
                 Context,
                 new FixedClock(Now),
                 NullLogger<AuthService>.Instance);
@@ -504,11 +506,11 @@ public sealed class AuthServiceTests
         }
     }
 
-    private sealed class RecordingTokenRevocationService(List<(string Jti, DateTime ExpiresAt)> calls) : ITokenRevocationService
+    private sealed class RecordingTokenRevocationService(List<(string Jti, DateTime ExpiresAt, int UserId)> calls) : ITokenRevocationService
     {
-        public Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default)
+        public Task RevokeAsync(string jti, DateTime expiresAt, int userId, CancellationToken cancellationToken = default)
         {
-            calls.Add((jti, expiresAt));
+            calls.Add((jti, expiresAt, userId));
             return Task.CompletedTask;
         }
 

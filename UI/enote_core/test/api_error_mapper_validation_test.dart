@@ -75,6 +75,16 @@ void main() {
       );
     });
 
+    test('500 body with a trace id appends the error code', () {
+      final body = jsonEncode({
+        'status': 500,
+        'code': 'error.internal',
+        'message': 'Greška na serveru. Pokušajte ponovo kasnije.',
+        'traceId': 'abc',
+      });
+      expect(ApiErrorMapper.mapError(500, body), endsWith('Kod greške: abc.'));
+    });
+
     test('ApiError.fromJson parses errors map', () {
       final error = ApiError.fromJson({
         'status': 400,

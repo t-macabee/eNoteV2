@@ -12,6 +12,7 @@ void throwIfError(http.Response response) {
     throw ApiException(
       ApiErrorMapper.mapError(response.statusCode, response.body),
       code: error.code,
+      traceId: error.traceId,
       errors: error.errors,
     );
   }

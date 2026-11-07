@@ -9,9 +9,12 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class TokenRevocationService(IAppDbContext context, IClock clock, IMemoryCache cache) : ITokenRevocationService
 {
+    private static readonly TimeSpan TokenRevocationCacheDuration = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan RevokedTokenCacheDuration = TimeSpan.FromHours(1);
+
     private static string Key(string jti) => $"revoked:{jti}";
 
-    public async Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default)
+    public async Task RevokeAsync(string jti, DateTime expiresAt, int userId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(jti))
         {
@@ -35,6 +38,7 @@ public sealed class TokenRevocationService(IAppDbContext context, IClock clock, 
 
         context.Set<RevokedToken>().Add(new RevokedToken
         {
+            UserId = userId,
             Jti = jti,
             ExpiresAt = expiresAt,
             RevokedAt = clock.UtcNow
@@ -57,19 +61,16 @@ public sealed class TokenRevocationService(IAppDbContext context, IClock clock, 
             return false;
         }
 
-        if (cache.TryGetValue(Key(jti), out _))
+        if (cache.TryGetValue(Key(jti), out bool revoked))
         {
-            return true;
+            return revoked;
         }
 
-        var revoked = await context.Set<RevokedToken>()
+        revoked = await context.Set<RevokedToken>()
             .AsNoTracking()
             .AnyAsync(x => x.Jti == jti && x.ExpiresAt > clock.UtcNow, cancellationToken);
 
-        if (revoked)
-        {
-            cache.Set(Key(jti), true, TimeSpan.FromHours(1));
-        }
+        cache.Set(Key(jti), revoked, revoked ? RevokedTokenCacheDuration : TokenRevocationCacheDuration);
 
         return revoked;
     }

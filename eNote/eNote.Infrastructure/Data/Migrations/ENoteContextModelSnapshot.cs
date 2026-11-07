@@ -1076,11 +1076,16 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<DateTime>("RevokedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Jti")
                         .IsUnique()
                         .HasDatabaseName("IX_RevokedToken_Jti");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RevokedToken");
                 });
@@ -2303,6 +2308,15 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("MusicStore");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Identity.RevokedToken", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Identity.Student", b =>

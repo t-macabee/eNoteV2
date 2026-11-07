@@ -15,6 +15,21 @@ public abstract class CoreController : ControllerBase
 {
     protected string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
 
+    protected int CurrentUserId
+    {
+        get
+        {
+            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (!int.TryParse(sub, out var userId))
+            {
+                throw new AuthenticationException(Messages.InvalidUserClaim);
+            }
+
+            return userId;
+        }
+    }
+
     protected DateTime CurrentTokenExpiresAtUtc
     {
         get

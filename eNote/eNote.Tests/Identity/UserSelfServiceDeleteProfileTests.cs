@@ -8,6 +8,7 @@ using eNote.Tests.TestUtils;
 using eNote.Domain.Entities.Communication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Identity;
@@ -382,7 +383,7 @@ public sealed class UserSelfServiceDeleteProfileTests
         var context = TestDbContextFactory.CreateContext(Now);
         var identity = IdentityTestHarness.Create(context);
         var fileStorage = new RecordingFileStorageService();
-        var accountService = new UserAccountService(identity.UserManager, fileStorage);
+        var accountService = new UserAccountService(identity.UserManager, fileStorage, new UserSessionStateCache(context, new MemoryCache(new MemoryCacheOptions())));
         var user = new AppUser
         {
             UserName = "student",

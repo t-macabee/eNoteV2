@@ -1,4 +1,5 @@
 using eNote.API.Extensions;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
@@ -93,13 +94,40 @@ public sealed class TokenValidationTests
         var stampBefore = harness.User.SecurityStamp;
         var accountService = new UserAccountService(
             harness.Services.GetRequiredService<UserManager<AppUser>>(),
-            new RecordingFileStorageService());
+            new RecordingFileStorageService(),
+            harness.Services.GetRequiredService<IUserSessionStateCache>());
 
         await accountService.CloseAccountAsync(harness.User.Id);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), stampBefore);
 
         Assert.False(context.Result!.Succeeded);
+    }
+
+    [Fact]
+    public async Task OnTokenValidated_UsesCachedStamp_UntilPasswordChangeInvalidatesIt()
+    {
+        await using var harness = await CreateHarnessAsync(isActive: true);
+        var stamp = harness.User.SecurityStamp!;
+
+        var first = await ValidateAsync(harness, harness.User.Id.ToString(), stamp);
+        Assert.Null(first.Result);
+
+        harness.User.SecurityStamp = Guid.NewGuid().ToString();
+        await harness.Context.SaveChangesAsync();
+
+        var cached = await ValidateAsync(harness, harness.User.Id.ToString(), stamp);
+        Assert.Null(cached.Result);
+
+        var accountService = new UserAccountService(
+            harness.Services.GetRequiredService<UserManager<AppUser>>(),
+            new RecordingFileStorageService(),
+            harness.Services.GetRequiredService<IUserSessionStateCache>());
+
+        await accountService.ChangePasswordAsync(harness.User.Id, "Password1!", "Newpassword1!");
+
+        var afterChange = await ValidateAsync(harness, harness.User.Id.ToString(), stamp);
+        Assert.False(afterChange.Result!.Succeeded);
     }
 
     private static async Task<TokenValidatedContext> ValidateAsync(
@@ -145,6 +173,9 @@ public sealed class TokenValidationTests
         services.AddOptions();
         services.AddDataProtection();
         services.AddScoped(_ => context);
+        services.AddScoped<IAppDbContext>(_ => context);
+        services.AddMemoryCache();
+        services.AddScoped<IUserSessionStateCache, UserSessionStateCache>();
         services.AddIdentityCore<AppUser>()
             .AddEntityFrameworkStores<ENoteContext>()
             .AddDefaultTokenProviders();
@@ -155,10 +186,10 @@ public sealed class TokenValidationTests
         var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = isActive };
         await userManager.CreateAsync(user, "Password1!");
 
-        return new Harness(provider, user);
+        return new Harness(provider, user, context);
     }
 
-    private sealed record Harness(IServiceProvider Services, AppUser User) : IAsyncDisposable
+    private sealed record Harness(IServiceProvider Services, AppUser User, ENoteContext Context) : IAsyncDisposable
     {
         public ValueTask DisposeAsync() => Services is IAsyncDisposable disposable
             ? disposable.DisposeAsync()
@@ -169,7 +200,7 @@ public sealed class TokenValidationTests
     {
         private readonly HashSet<string> _revokedJtis = [.. revokedJtis];
 
-        public Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default) =>
+        public Task RevokeAsync(string jti, DateTime expiresAt, int userId, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
         public Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default) =>

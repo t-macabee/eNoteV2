@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,5 +13,9 @@ public sealed class RevokedTokenConfig : IEntityTypeConfiguration<RevokedToken>
         builder.HasIndex(x => x.Jti).IsUnique().HasDatabaseName(DbConstraintNames.RevokedTokenJtiUniqueIndex);
         builder.Property(x => x.ExpiresAt).IsRequired();
         builder.Property(x => x.RevokedAt).IsRequired();
+        builder.HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

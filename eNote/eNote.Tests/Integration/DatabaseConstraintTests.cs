@@ -10,6 +10,7 @@ using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace eNote.Tests.Integration;
 
@@ -83,7 +84,8 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             "FK_Student_AspNetUsers_AppUserId",
             "FK_Instructor_AspNetUsers_AppUserId",
             "FK_Notification_AspNetUsers_UserId",
-            "FK_InstrumentView_AspNetUsers_UserId"
+            "FK_InstrumentView_AspNetUsers_UserId",
+            "FK_RevokedToken_AspNetUsers_UserId"
         };
 
         Assert.NotEmpty(foreignKeys);
@@ -546,7 +548,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         {
             await using var context = database.CreateContext();
             var identity = IdentityTestHarness.Create(context);
-            var service = new UserAccountService(identity.UserManager, new StubFileStorageService());
+            var service = new UserAccountService(identity.UserManager, new StubFileStorageService(), new UserSessionStateCache(context, new MemoryCache(new MemoryCacheOptions())));
             var (userName, email) = identityOf(index);
             start.Wait();
             try

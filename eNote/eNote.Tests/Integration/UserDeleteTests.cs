@@ -3,6 +3,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace eNote.Tests.Integration;
 
@@ -173,6 +174,35 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
         Assert.False(await verifyContext.Set<MusicStoreEmployee>().AnyAsync(e => e.AppUserId == userId));
     }
 
+    [Fact]
+    public async Task DeleteUserAsync_RemovesRevokedTokens()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var userId = await SeedAsync(database, async context =>
+        {
+            var user = await AddUserAsync(context, "student");
+
+            context.Set<RevokedToken>().Add(new RevokedToken
+            {
+                UserId = user.Id,
+                Jti = "jti-1",
+                ExpiresAt = Now.AddHours(1),
+                RevokedAt = Now
+            });
+            await context.SaveChangesAsync();
+
+            return user.Id;
+        });
+
+        await using var deleteContext = database.CreateContext();
+        await CreateService(deleteContext).DeleteUserAsync(userId);
+
+        await using var verifyContext = database.CreateContext();
+
+        Assert.False(await verifyContext.Set<RevokedToken>().AnyAsync(t => t.UserId == userId));
+    }
+
     private static async Task<int> SeedAsync(SqlServerDatabase database, Func<ENoteContext, Task<int>> seed)
     {
         await using var context = database.CreateContext();
@@ -199,7 +229,7 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
 
         return new UserProvisioningService(
             context,
-            new UserAccountService(identity.UserManager, new StubFileStorageService()),
+            new UserAccountService(identity.UserManager, new StubFileStorageService(), new UserSessionStateCache(context, new MemoryCache(new MemoryCacheOptions()))),
             new FixedClock(Now),
             new StubFileStorageService(),
             new StubCurrentActor(userId: AdminActorId));

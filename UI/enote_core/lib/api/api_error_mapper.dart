@@ -10,12 +10,14 @@ class ApiError {
   final int status;
   final String code;
   final String message;
+  final String? traceId;
   final Map<String, List<String>> errors;
 
   ApiError({
     required this.status,
     required this.code,
     required this.message,
+    this.traceId,
     Map<String, List<String>>? errors,
   }) : errors = errors ?? const {};
 
@@ -34,6 +36,7 @@ class ApiError {
       status: json['status'] as int? ?? 0,
       code: json['code'] as String? ?? '',
       message: json['message'] as String? ?? '',
+      traceId: json['traceId'] as String?,
       errors: parsedErrors,
     );
   }
@@ -61,16 +64,20 @@ class ApiErrorMapper {
 
   static String mapError(int statusCode, String body) {
     final apiError = ApiError.fromResponseBody(body);
+    final traceId = apiError.traceId;
 
-    if (apiError.message.isNotEmpty) {
-      return apiError.message;
+    var message = apiError.message;
+    if (message.isEmpty) {
+      message = apiError.errors.isNotEmpty
+          ? apiError.errors.values.expand((e) => e).join('\n')
+          : _defaultMessage(statusCode);
     }
 
-    if (apiError.errors.isNotEmpty) {
-      return apiError.errors.values.expand((e) => e).join('\n');
+    if (statusCode >= 500 && traceId != null && traceId.isNotEmpty) {
+      return '$message Kod greške: $traceId.';
     }
 
-    return _defaultMessage(statusCode);
+    return message;
   }
 
   static String _defaultMessage(int statusCode) {

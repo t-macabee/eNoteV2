@@ -162,6 +162,7 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<IUserSessionStateCache, UserSessionStateCache>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IUserAccountService, UserAccountService>();
         services.AddScoped<IReportService, ReportService>();

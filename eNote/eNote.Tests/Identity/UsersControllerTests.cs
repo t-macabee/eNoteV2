@@ -50,6 +50,7 @@ public sealed class UsersControllerTests
 
         Assert.IsType<NoContentResult>(result);
         Assert.Equal("jti-1", revocation.RevokedJti);
+        Assert.Equal(5, revocation.RevokedUserId);
     }
 
     [Fact]
@@ -134,10 +135,12 @@ public sealed class UsersControllerTests
     private sealed class RecordingTokenRevocationService : ITokenRevocationService
     {
         public string? RevokedJti { get; private set; }
+        public int? RevokedUserId { get; private set; }
 
-        public Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default)
+        public Task RevokeAsync(string jti, DateTime expiresAt, int userId, CancellationToken cancellationToken = default)
         {
             RevokedJti = jti;
+            RevokedUserId = userId;
             return Task.CompletedTask;
         }
 

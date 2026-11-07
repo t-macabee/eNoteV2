@@ -94,6 +94,28 @@ public sealed class ErrorResponseTests
     }
 
     [Fact]
+    public async Task ErrorHandling_ReturnsTraceId_ForAnUnexpectedFailure()
+    {
+        await using var app = CreateApp(() => throw new InvalidOperationException("Disk failure."));
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var response = await client.GetAsync("/conflict");
+
+            Assert.Equal(500, (int)response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.False(string.IsNullOrWhiteSpace(body.RootElement.GetProperty("traceId").GetString()));
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Fact]
     public async Task ErrorHandling_ReturnsInternalErrorBody_ForArgumentOutOfRangeException()
     {
         await using var app = CreateApp(() => throw new ArgumentOutOfRangeException("value"));

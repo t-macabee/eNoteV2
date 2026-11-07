@@ -1,4 +1,5 @@
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
@@ -23,6 +24,8 @@ public static class SeedTestHarness
         services.AddScoped<IClock>(_ => new FixedClock(now));
         services.AddScoped<IFileStorageService>(_ => new StubFileStorageService());
         services.AddScoped<ICurrentUserContext>(_ => new StubCurrentActor());
+        services.AddMemoryCache();
+        services.AddScoped<IUserSessionStateCache, UserSessionStateCache>();
         services.AddScoped<IUserAccountService, UserAccountService>();
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
         IdentityTestHarness.AddIdentityServices(services);

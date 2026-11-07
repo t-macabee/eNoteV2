@@ -5,6 +5,7 @@ using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace eNote.Tests.Identity;
 
@@ -593,7 +594,7 @@ public sealed class UserAccountServiceTests
         var identity = IdentityTestHarness.Create(context);
         await identity.RoleManager.CreateAsync(new AppRole { Name = "Student" });
         var fileStorage = new RecordingFileStorageService();
-        return new Harness(identity.UserManager, identity.RoleManager, fileStorage, context, new UserAccountService(identity.UserManager, fileStorage));
+        return new Harness(identity.UserManager, identity.RoleManager, fileStorage, context, new UserAccountService(identity.UserManager, fileStorage, new UserSessionStateCache(context, new MemoryCache(new MemoryCacheOptions()))));
     }
 
     private static MemoryStream PngStream() =>

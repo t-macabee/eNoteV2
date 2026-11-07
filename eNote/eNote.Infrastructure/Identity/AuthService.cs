@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Identity;
 
-internal sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IAppDbContext context, IClock clock, ILogger<AuthService> logger) : IAuthService
+internal sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IUserSessionStateCache sessionCache, IAppDbContext context, IClock clock, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
@@ -86,7 +86,8 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
         };
     }
 
-    public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) => tokenRevocationService.RevokeAsync(jti, expiresAtUtc, cancellationToken);
+    public Task LogoutAsync(string jti, DateTime expiresAtUtc, int userId, CancellationToken cancellationToken = default) =>
+        tokenRevocationService.RevokeAsync(jti, expiresAtUtc, userId, cancellationToken);
 
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
@@ -127,5 +128,6 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
         await userManager.SetLockoutEndDateAsync(user, null);
         await userManager.ResetAccessFailedCountAsync(user);
+        sessionCache.Invalidate(user.Id);
     }
 }

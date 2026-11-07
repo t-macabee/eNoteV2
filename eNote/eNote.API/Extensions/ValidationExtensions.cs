@@ -5,6 +5,7 @@ using eNote.Application.Validation;
 using eNote.Application.Validation.Identity;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace eNote.API.Extensions;
@@ -24,6 +25,7 @@ public static class ValidationExtensions
             options.InvalidModelStateResponseFactory = context =>
             {
                 var request = context.HttpContext.Request;
+                var traceId = Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
 
                 if (request.ContentLength > context.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()?.MaxRequestBodySize)
                 {
@@ -31,7 +33,8 @@ public static class ValidationExtensions
                     {
                         Status = StatusCodes.Status413PayloadTooLarge,
                         Code = "error.file_too_large",
-                        Message = Messages.FileTooLarge
+                        Message = Messages.FileTooLarge,
+                        TraceId = traceId
                     })
                     {
                         StatusCode = StatusCodes.Status413PayloadTooLarge
@@ -44,7 +47,8 @@ public static class ValidationExtensions
                     {
                         Status = StatusCodes.Status400BadRequest,
                         Code = "error.validation",
-                        Message = Messages.FileNotReadable
+                        Message = Messages.FileNotReadable,
+                        TraceId = traceId
                     });
                 }
 
@@ -61,7 +65,8 @@ public static class ValidationExtensions
                     Status = StatusCodes.Status400BadRequest,
                     Code = "error.validation",
                     Message = string.Join("\n", errors.Values.SelectMany(messages => messages)),
-                    Errors = errors
+                    Errors = errors,
+                    TraceId = traceId
                 });
             };
         });

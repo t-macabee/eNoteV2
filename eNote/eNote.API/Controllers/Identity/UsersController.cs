@@ -68,7 +68,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     public async Task<IActionResult> DeleteProfile([FromBody] DeleteProfileRequest request, CancellationToken cancellationToken)
     {
         await selfService.DeleteProfileAsync(request, cancellationToken);
-        await tokenRevocation.RevokeAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, cancellationToken);
+        await tokenRevocation.RevokeAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, CurrentUserId, cancellationToken);
 
         return NoContent();
     }

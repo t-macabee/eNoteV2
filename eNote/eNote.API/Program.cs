@@ -8,6 +8,8 @@ using eNote.Infrastructure.Data.Seed;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Serilog;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 eNote.Infrastructure.DependencyInjection.LoadEnvironment();
@@ -77,6 +79,18 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        var userId = httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            diagnosticContext.Set("UserId", userId);
+        }
+    };
+});
 app.UseMiddleware<eNote.API.Middleware.AuthRateLimitIdentityMiddleware>();
 
 if (app.Services.GetRequiredService<IOptions<SeedOptions>>().Value.Enabled)

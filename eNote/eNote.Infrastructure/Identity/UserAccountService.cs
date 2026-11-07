@@ -4,6 +4,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity;
 
-public sealed class UserAccountService(UserManager<AppUser> userManager, IFileStorageService fileStorage) : IUserAccountService
+public sealed class UserAccountService(UserManager<AppUser> userManager, IFileStorageService fileStorage, IUserSessionStateCache sessionCache) : IUserAccountService
 {
     private const string ClosedAccountFirstName = "Obrisani";
     private const string ClosedAccountLastName = "korisnik";
@@ -89,6 +90,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
+
+        sessionCache.Invalidate(userId);
     }
 
     public async Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default)
@@ -115,6 +118,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
+
+        sessionCache.Invalidate(userId);
     }
 
     public async Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default)
@@ -141,6 +146,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
+
+        sessionCache.Invalidate(userId);
 
         return previousPicturePath;
     }
@@ -221,6 +228,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             throw new ConflictException(Messages.UserDeleteBlocked);
         }
+
+        sessionCache.Invalidate(userId);
 
         return user.PicturePath;
     }
