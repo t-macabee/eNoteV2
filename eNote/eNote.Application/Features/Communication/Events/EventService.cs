@@ -1,4 +1,5 @@
 using eNote.Application.Common.Crud;
+using eNote.Application.Features.ReferenceData.Addresses;
 
 namespace eNote.Application.Features.Communication.Events;
 
@@ -58,18 +59,16 @@ public sealed class EventService(IAppDbContext context) : ReferenceDataCrudServi
 
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateForeignKeysAsync(request, cancellationToken);
+        await Db.EnsureAddressExistsAsync(request.AddressId, cancellationToken);
 
         return await base.CreateAsync(request, cancellationToken);
     }
 
     public override async Task<EventDto> UpdateAsync(int id, EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateForeignKeysAsync(request, cancellationToken);
+        await Db.EnsureAddressExistsAsync(request.AddressId, cancellationToken);
 
-        var dto = await base.UpdateAsync(id, request, cancellationToken);
-
-        return await GetByIdAsync(dto.Id, cancellationToken);
+        return await base.UpdateAsync(id, request, cancellationToken);
     }
 
     protected override IQueryable<Event> ApplySearch(IQueryable<Event> query, EventSearchObject search)
@@ -83,16 +82,4 @@ public sealed class EventService(IAppDbContext context) : ReferenceDataCrudServi
     }
 
     protected override string NotFoundMessage => Messages.EventNotFound;
-
-    private async Task ValidateForeignKeysAsync(EventRequest request, CancellationToken ct)
-    {
-        if (request.AddressId.HasValue)
-        {
-            var exists = await Db.Set<Address>().AnyAsync(x => x.Id == request.AddressId.Value, ct);
-            if (!exists)
-            {
-                throw new NotFoundException(Messages.AddressNotFound);
-            }
-        }
-    }
 }

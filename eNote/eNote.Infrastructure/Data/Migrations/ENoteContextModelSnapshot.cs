@@ -1563,7 +1563,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CityId");
+                    b.HasIndex("CityId", "Street", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Address_CityId_Street_Number");
 
                     b.ToTable("Address");
 

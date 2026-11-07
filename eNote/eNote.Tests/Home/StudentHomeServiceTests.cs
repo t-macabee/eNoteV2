@@ -148,7 +148,81 @@ public sealed class StudentHomeServiceTests
         Assert.Equal(unpaid.Id, dto.Debt.RentalId);
     }
 
-    private static async Task<Course> AddEnrolledCourseAsync(ENoteContext context, AcademicHarness harness, string name, decimal price, DateTime? paidFrom)
+    [Fact]
+    public async Task TuitionDueCourses_ExcludesACourseWhoseTuitionEndsExactlyNow()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        await AddEnrolledCourseAsync(context, harness, "Ends now", 100m, paidFrom: Now.AddDays(-30));
+        var service = CreateService(context, harness);
+
+        var dto = await service.GetAsync();
+
+        Assert.Empty(dto.TuitionDueCourses);
+    }
+
+    [Theory]
+    [InlineData(EnrollmentStatus.Pending)]
+    [InlineData(EnrollmentStatus.Completed)]
+    [InlineData(EnrollmentStatus.Canceled)]
+    [InlineData(EnrollmentStatus.Rejected)]
+    public async Task TuitionDueCourses_ExcludesAnEnrollmentThatIsNotActive(EnrollmentStatus status)
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        await AddEnrolledCourseAsync(context, harness, "Not active", 100m, paidFrom: null, status);
+        var service = CreateService(context, harness);
+
+        var dto = await service.GetAsync();
+
+        Assert.Empty(dto.TuitionDueCourses);
+    }
+
+    [Fact]
+    public async Task TuitionDueCourses_HoldsACourseWhoseTuitionEndedOneSecondAgo()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        var course = await AddEnrolledCourseAsync(context, harness, "Ended", 100m, paidFrom: Now.AddDays(-30).AddSeconds(-1));
+        var service = CreateService(context, harness);
+
+        var dto = await service.GetAsync();
+
+        Assert.Equal(course.Id, Assert.Single(dto.TuitionDueCourses).Id);
+    }
+
+    [Fact]
+    public async Task TuitionDueCourses_ExcludesACourseWithPaidTuition()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        await AddEnrolledCourseAsync(context, harness, "Paid", 100m, paidFrom: Now.AddDays(-29));
+        var service = CreateService(context, harness);
+
+        var dto = await service.GetAsync();
+
+        Assert.Empty(dto.TuitionDueCourses);
+    }
+
+    [Fact]
+    public async Task Home_IsEmpty_ForAStudentWithNoData()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        harness.Lecture.Cancel("Razlog", 1, Now);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, harness);
+
+        var dto = await service.GetAsync();
+
+        Assert.Null(dto.NextLecture);
+        Assert.Empty(dto.OpenAssignments);
+        Assert.Empty(dto.CurrentRentals);
+        Assert.Empty(dto.TuitionDueCourses);
+        Assert.False(dto.Debt.HasUnpaidDebt);
+    }
+
+    private static async Task<Course> AddEnrolledCourseAsync(ENoteContext context, AcademicHarness harness, string name, decimal price, DateTime? paidFrom, EnrollmentStatus status = EnrollmentStatus.Active)
     {
         var course = new Course(name, null, price, Now, Now.AddMonths(6), harness.Instructor.Id)
         {
@@ -158,7 +232,7 @@ public sealed class StudentHomeServiceTests
         context.Set<Course>().Add(course);
         await context.SaveChangesAsync();
 
-        var enrollment = new Enrollment(harness.Student.Id, course.Id, EnrollmentStatus.Active);
+        var enrollment = new Enrollment(harness.Student.Id, course.Id, status);
         if (paidFrom.HasValue)
         {
             enrollment.ExtendPaidUntil(paidFrom.Value, 30);

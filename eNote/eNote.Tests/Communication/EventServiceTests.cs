@@ -106,18 +106,63 @@ public sealed class EventServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_InvalidAddressId_ThrowsNotFound()
+    public async Task CreateAsync_UnknownAddress_ThrowsTheSameBusinessErrorAsAStore()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var service = new EventService(ctx);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new EventRequest
         {
             Title = "Bad Address",
             Description = "Invalid FK",
             StartsAt = Now.AddDays(2),
             AddressId = 9999
         }));
+
+        Assert.Equal("Adresa nije pronađena.", exception.Message);
+        Assert.Empty(await ctx.Set<Event>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnknownAddress_ThrowsTheSameBusinessErrorAsAStore_AndKeepsTheEvent()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = new EventService(ctx);
+        var created = await service.CreateAsync(new EventRequest { Title = "Old", Description = "D", StartsAt = Now.AddDays(2) });
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateAsync(created.Id, new EventRequest
+        {
+            Title = "New",
+            Description = "D",
+            StartsAt = Now.AddDays(3),
+            AddressId = 9999
+        }));
+
+        Assert.Equal("Adresa nije pronađena.", exception.Message);
+        Assert.Equal("Old", (await service.GetByIdAsync(created.Id)).Title);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ReturnsTheStreetAndCity_WhenTheContextHasNotLoadedTheAddress()
+    {
+        var database = Guid.NewGuid().ToString();
+        int addressId;
+        await using (var seed = TestDbContextFactory.CreateContext(Now, database))
+        {
+            addressId = (await SeedAddressAsync(seed)).Id;
+        }
+
+        await using var ctx = TestDbContextFactory.CreateContext(Now, database);
+        var dto = await new EventService(ctx).CreateAsync(new EventRequest
+        {
+            Title = "Koncert",
+            Description = "D",
+            StartsAt = Now.AddDays(2),
+            AddressId = addressId
+        });
+
+        Assert.Equal("Main St", dto.AddressStreet);
+        Assert.Equal("Test City", dto.AddressCity);
     }
 
     [Fact]
@@ -230,6 +275,35 @@ public sealed class EventServiceTests
         var range = await service.GetPagedAsync(new EventSearchObject { From = Now.AddDays(5), To = Now.AddDays(15) });
         Assert.Single(range.Items);
         Assert.Equal("E2", range.Items[0].Title);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_DateRange_IncludesAnEventThatStartsExactlyAtFromOrTo()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = new EventService(ctx);
+        await service.CreateAsync(new EventRequest { Title = "Before", Description = "D", StartsAt = Now.AddDays(5).AddSeconds(-1) });
+        await service.CreateAsync(new EventRequest { Title = "AtFrom", Description = "D", StartsAt = Now.AddDays(5) });
+        await service.CreateAsync(new EventRequest { Title = "AtTo", Description = "D", StartsAt = Now.AddDays(15) });
+        await service.CreateAsync(new EventRequest { Title = "After", Description = "D", StartsAt = Now.AddDays(15).AddSeconds(1) });
+
+        var range = await service.GetPagedAsync(new EventSearchObject { From = Now.AddDays(5), To = Now.AddDays(15) });
+
+        Assert.Equal(["AtFrom", "AtTo"], range.Items.Select(e => e.Title));
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_OrdersByStartThenTitle()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = new EventService(ctx);
+        await service.CreateAsync(new EventRequest { Title = "B", Description = "D", StartsAt = Now.AddDays(1) });
+        await service.CreateAsync(new EventRequest { Title = "A", Description = "D", StartsAt = Now.AddDays(1) });
+        await service.CreateAsync(new EventRequest { Title = "Z", Description = "D", StartsAt = Now });
+
+        var page = await service.GetPagedAsync(new EventSearchObject());
+
+        Assert.Equal(["Z", "A", "B"], page.Items.Select(e => e.Title));
     }
 
     private static async Task<Address> SeedAddressAsync(ENoteContext ctx)

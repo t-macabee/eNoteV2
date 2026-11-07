@@ -1,5 +1,6 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Common.Files;
+using eNote.Application.Features.ReferenceData.Addresses;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
@@ -43,21 +44,14 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     public override async Task<MusicStoreDto> CreateAsync(MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
-        await EnsureAddressExistsAsync(request.AddressId, cancellationToken);
-        var entity = CreateEntity(request);
-        Db.Set<MusicStore>().Add(entity);
-        await Db.SaveChangesAsync(cancellationToken);
-        return await LoadDtoAsync(entity.Id, cancellationToken);
+        await Db.EnsureAddressExistsAsync(request.AddressId, cancellationToken);
+        return await base.CreateAsync(request, cancellationToken);
     }
 
     public override async Task<MusicStoreDto> UpdateAsync(int id, MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
-        await EnsureAddressExistsAsync(request.AddressId, cancellationToken);
-        var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-        UpdateEntity(entity, request);
-        await Db.SaveChangesAsync(cancellationToken);
-        return await LoadDtoAsync(id, cancellationToken);
+        await Db.EnsureAddressExistsAsync(request.AddressId, cancellationToken);
+        return await base.UpdateAsync(id, request, cancellationToken);
     }
 
     public async Task<MusicStoreDto> UpdateOperationalDetailsAsync(int id, string businessHours, string? phoneNumber, CancellationToken cancellationToken = default)
@@ -128,14 +122,6 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
             ?? throw new NotFoundException(NotFoundMessage);
 
         return Map(entity);
-    }
-
-    private async Task EnsureAddressExistsAsync(int? addressId, CancellationToken cancellationToken)
-    {
-        if (addressId is { } id && !await Db.Set<Address>().AnyAsync(x => x.Id == id, cancellationToken))
-        {
-            throw new BusinessException(Messages.AddressNotFound);
-        }
     }
 
     protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct)

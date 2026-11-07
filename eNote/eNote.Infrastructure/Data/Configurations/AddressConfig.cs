@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,5 +14,8 @@ public sealed class AddressConfig : IEntityTypeConfiguration<Address>
                .OnDelete(DeleteBehavior.Restrict);
         builder.Property(a => a.Street).HasStringConfig(Address.StreetMaxLength, true);
         builder.Property(a => a.Number).HasStringConfig(Address.NumberMaxLength, true);
+        builder.HasIndex(a => new { a.CityId, a.Street, a.Number })
+               .IsUnique()
+               .HasDatabaseName(DbConstraintNames.AddressCityStreetNumberUniqueIndex);
     }
 }

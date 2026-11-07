@@ -135,7 +135,8 @@ public static class Messages
 
     public const string AddressNotFound = "Adresa nije pronađena.";
     public const string CityNotFound = "Grad nije pronađen.";
-    public const string AddressDeleteBlocked = "Adresa se ne može obrisati jer je povezana s korisnikom.";
+    public const string AddressDeleteBlocked = "Adresa se ne može obrisati jer je povezana s radnjom ili događajem.";
+    public const string AddressAlreadyExists = "Adresa s tim gradom, ulicom i brojem već postoji.";
     public const string CityDeleteBlocked = "Grad se ne može obrisati jer je u upotrebi.";
     public const string InstrumentTypeDeleteBlocked = "Vrsta instrumenta se ne može obrisati jer je u upotrebi.";
     public const string MusicStoreDeleteBlocked = "Radnja se ne može obrisati jer sadrži instrumente ili zaposlenike.";

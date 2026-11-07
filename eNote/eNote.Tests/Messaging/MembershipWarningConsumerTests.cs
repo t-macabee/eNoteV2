@@ -61,9 +61,9 @@ public sealed class MembershipWarningConsumerTests
             var message = new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now);
 
             await harness.Bus.Publish(message);
+            await WaitForConsumedAsync(harness, 1);
             await harness.Bus.Publish(message);
-
-            Assert.True(await harness.Consumed.Any<MembershipWarning>());
+            await WaitForConsumedAsync(harness, 2);
         }
         finally
         {
@@ -87,9 +87,9 @@ public sealed class MembershipWarningConsumerTests
         try
         {
             await harness.Bus.Publish(new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now));
+            await WaitForConsumedAsync(harness, 1);
             await harness.Bus.Publish(new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now.AddDays(1)));
-
-            Assert.True(await harness.Consumed.Any<MembershipWarning>());
+            await WaitForConsumedAsync(harness, 2);
         }
         finally
         {
@@ -99,5 +99,12 @@ public sealed class MembershipWarningConsumerTests
         var notifications = await context.Set<Notification>().ToListAsync();
         Assert.Equal(2, notifications.Count);
         Assert.Equal([Now, Now.AddDays(1)], notifications.Select(n => n.CreatedAt).Order().ToList());
+    }
+
+    private static async Task WaitForConsumedAsync(ITestHarness harness, int count)
+    {
+        var message = await harness.Consumed.SelectAsync<MembershipWarning>().ElementAtAsync(count - 1);
+
+        Assert.NotNull(message);
     }
 }

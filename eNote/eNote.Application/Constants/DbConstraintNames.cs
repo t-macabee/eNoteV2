@@ -10,6 +10,8 @@ public static class DbConstraintNames
 
     public const string CityNameUniqueIndex = "UX_City_Name";
 
+    public const string AddressCityStreetNumberUniqueIndex = "UX_Address_CityId_Street_Number";
+
     public const string UserNameUniqueIndex = "UserNameIndex";
 
     public const string UserEmailUniqueIndex = "UX_AspNetUsers_NormalizedEmail";

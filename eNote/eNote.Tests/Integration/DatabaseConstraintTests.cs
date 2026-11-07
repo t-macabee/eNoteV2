@@ -2,6 +2,7 @@ using System.Reflection;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.ReferenceData.Addresses;
 using eNote.Application.Features.ReferenceData.Cities;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Domain.Entities.Assignments;
@@ -369,6 +370,27 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
 
         Assert.Equal("Grad s tim nazivom već postoji.", createError.Message);
         Assert.Equal("Grad s tim nazivom već postoji.", updateError.Message);
+    }
+
+    [Fact]
+    public async Task DuplicateAddress_GivesConflict_OnCreateAndOnUpdate()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var seedContext = database.CreateContext();
+        var city = await new CityService(seedContext).CreateAsync(new CityRequest { Name = "Mostar A7" });
+        var service = new AddressService(seedContext);
+        await service.CreateAsync(new AddressRequest { CityId = city.Id, Street = "Bistrik", Number = "12" });
+        var other = await service.CreateAsync(new AddressRequest { CityId = city.Id, Street = "Titova", Number = "3" });
+
+        await using var createContext = database.CreateContext();
+        var createError = await Assert.ThrowsAsync<ConflictException>(() =>
+            new AddressService(createContext).CreateAsync(new AddressRequest { CityId = city.Id, Street = " bistrik ", Number = "12" }));
+        await using var updateContext = database.CreateContext();
+        var updateError = await Assert.ThrowsAsync<ConflictException>(() =>
+            new AddressService(updateContext).UpdateAsync(other.Id, new AddressRequest { CityId = city.Id, Street = "Bistrik", Number = "12" }));
+
+        Assert.Equal("Adresa s tim gradom, ulicom i brojem već postoji.", createError.Message);
+        Assert.Equal("Adresa s tim gradom, ulicom i brojem već postoji.", updateError.Message);
     }
 
     [Fact]

@@ -41,7 +41,7 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
         Db.Set<TEntity>().Add(entity);
         await SaveAsync(cancellationToken);
 
-        return Map(entity);
+        return await GetByIdAsync(entity.Id, cancellationToken);
     }
 
     public virtual async Task<TDto> UpdateAsync(int id, TRequest request, CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
         UpdateEntity(entity, request);
         await SaveAsync(cancellationToken);
 
-        return Map(entity);
+        return await GetByIdAsync(id, cancellationToken);
     }
 
     public virtual async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
