@@ -90,7 +90,25 @@ class _RankingScreenState extends State<RankingScreen> {
                         '${entry.rank}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      title: Text(entry.studentName),
+                      title: Row(
+                        children: [
+                          UserAvatar(
+                            userId: entry.studentAppUserId,
+                            apiClient: context.read<ApiClient>(),
+                            radius: 12,
+                            placeholder: () =>
+                                InitialsAvatar(text: entry.studentName),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              entry.studentName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                       subtitle: Text(
                         entry.averageGrade == null
                             ? 'Bez ocjena'

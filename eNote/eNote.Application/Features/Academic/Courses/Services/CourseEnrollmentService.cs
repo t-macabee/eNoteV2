@@ -1,3 +1,4 @@
+using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Payments;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ public sealed class CourseEnrollmentService(
     IClock clock,
     ICurrentUserContext currentUser, IStudentContext students,
     IPaymentGateway paymentGateway,
+    IEnrollmentNotificationDispatcher notificationDispatcher,
     ILogger<CourseEnrollmentService> logger)
 {
     public async Task<EnrollmentStatus> EnrollAsync(int courseId, CancellationToken cancellationToken = default)
@@ -22,6 +24,7 @@ public sealed class CourseEnrollmentService(
 
         var course = await context.Set<Course>()
             .AsNoTracking()
+            .Include(c => c.Instructor)
             .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished, cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
@@ -38,7 +41,8 @@ public sealed class CourseEnrollmentService(
 
         if (enrollment is null)
         {
-            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Pending));
+            enrollment = new Enrollment(student.Id, courseId, EnrollmentStatus.Pending);
+            context.Set<Enrollment>().Add(enrollment);
         }
         else if (enrollment.EnrollmentStatus is EnrollmentStatus.Pending or EnrollmentStatus.Active)
         {
@@ -49,7 +53,7 @@ public sealed class CourseEnrollmentService(
             var trigger = enrollment.CanResume(clock.UtcNow)
                 ? EnrollmentTrigger.Resume
                 : EnrollmentTrigger.Request;
-            var result = enrollment.Transition(trigger, currentUser.UserId, clock.UtcNow);
+            var result = enrollment.Transition(trigger, EnrollmentActor.Student, currentUser.UserId, clock.UtcNow);
 
             if (!result.IsSuccess)
             {
@@ -62,7 +66,16 @@ public sealed class CourseEnrollmentService(
 
         try
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await context.ExecuteInTransactionAsync(async () =>
+            {
+                await context.SaveChangesAsync(cancellationToken);
+
+                if (status == EnrollmentStatus.Pending)
+                {
+                    await notificationDispatcher.DispatchRequestedAsync(enrollment.Id, courseId, course.Instructor.AppUserId, course.Name);
+                    await context.SaveChangesAsync(cancellationToken);
+                }
+            }, cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -83,6 +96,8 @@ public sealed class CourseEnrollmentService(
         var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         var enrollment = await context.Set<Enrollment>()
+            .Include(e => e.Course)
+            .ThenInclude(c => c.Instructor)
             .FirstOrDefaultAsync(e =>
                 e.CourseId == courseId &&
                 e.StudentId == student.Id &&
@@ -105,12 +120,14 @@ public sealed class CourseEnrollmentService(
             Messages.UnenrollBlockedByPendingPayment,
             cancellationToken);
 
-        var result = enrollment.Transition(EnrollmentTrigger.Cancel, currentUser.UserId, clock.UtcNow);
+        var result = enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, currentUser.UserId, clock.UtcNow);
 
         if (!result.IsSuccess)
         {
             throw new BusinessException(result.Error);
         }
+
+        await notificationDispatcher.DispatchStudentCanceledAsync(enrollment.Id, enrollment.CourseId, enrollment.Course.Instructor.AppUserId, enrollment.Course.Name);
 
         try
         {

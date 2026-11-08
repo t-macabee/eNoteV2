@@ -1,4 +1,5 @@
 using eNote.Application.Features.Academic.StudentDirectory;
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
@@ -201,7 +202,11 @@ public sealed class StudentDirectoryServiceTests
     }
 
     private static StudentDirectoryService CreateService(ENoteContext context, StubUserIdentityService identity) =>
-        new(context, identity);
+        new(
+            context,
+            identity,
+            new StubCurrentActor(),
+            new InstructorAccessService(context, new StubUserProfileLookup()));
 
     private static StubUserIdentityService CreateIdentity(params UserIdentityDto[] users) =>
         new(users.ToDictionary(u => u.Id));

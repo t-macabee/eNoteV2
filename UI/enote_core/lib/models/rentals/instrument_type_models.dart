@@ -2,11 +2,13 @@ class InstrumentTypeDto {
   final int id;
   final String type;
   final double monthlyFee;
+  final String? deleteBlockedReason;
 
   InstrumentTypeDto({
     required this.id,
     required this.type,
     required this.monthlyFee,
+    this.deleteBlockedReason,
   });
 
   factory InstrumentTypeDto.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,7 @@ class InstrumentTypeDto {
       id: json['id'] as int? ?? 0,
       type: json['type'] as String? ?? '',
       monthlyFee: (json['monthlyFee'] as num?)?.toDouble() ?? 0.0,
+      deleteBlockedReason: json['deleteBlockedReason'] as String?,
     );
   }
 
@@ -21,6 +24,7 @@ class InstrumentTypeDto {
     'id': id,
     'type': type,
     'monthlyFee': monthlyFee,
+    if (deleteBlockedReason != null) 'deleteBlockedReason': deleteBlockedReason,
   };
 }
 

@@ -224,7 +224,7 @@ public sealed class StudentAnnouncementFeedServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(CreateStudentContext(), Now);
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Context.Set<Announcement>().Add(new Announcement("Course note", "For the course", harness.Course.Id, null, Now) { Id = 501 });
         await harness.Context.SaveChangesAsync();
 
@@ -241,7 +241,7 @@ public sealed class StudentAnnouncementFeedServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(CreateStudentContext(), Now.AddDays(-40));
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Context.Set<Announcement>().Add(new Announcement("Course note", "For the course", harness.Course.Id, null, Now) { Id = 502 });
         await harness.Context.SaveChangesAsync();
 

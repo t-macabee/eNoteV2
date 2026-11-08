@@ -7,4 +7,5 @@ public sealed class AddressReferenceDto
     public string City { get; init; } = null!;
     public string Street { get; init; } = null!;
     public string Number { get; init; } = null!;
+    public string? DeleteBlockedReason { get; init; }
 }

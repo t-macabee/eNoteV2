@@ -186,23 +186,29 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
-                OutlinedButton.icon(
-                  onPressed: _isDeleting ? null : _delete,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.error,
-                    side: const BorderSide(color: AppTheme.error),
+                Tooltip(
+                  message: _instrument.deleteBlockedReason ?? 'Obriši',
+                  child: OutlinedButton.icon(
+                    onPressed:
+                        _isDeleting || _instrument.deleteBlockedReason != null
+                        ? null
+                        : _delete,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
+                    icon: _isDeleting
+                        ? const SizedBox(
+                            width: AppSize.spinnerSm,
+                            height: AppSize.spinnerSm,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.error,
+                            ),
+                          )
+                        : const Icon(Icons.delete_outline),
+                    label: const Text('Obriši'),
                   ),
-                  icon: _isDeleting
-                      ? const SizedBox(
-                          width: AppSize.spinnerSm,
-                          height: AppSize.spinnerSm,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.error,
-                          ),
-                        )
-                      : const Icon(Icons.delete_outline),
-                  label: const Text('Obriši'),
                 ),
                 const Spacer(),
                 TextButton(

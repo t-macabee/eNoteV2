@@ -63,7 +63,7 @@ Future<ScriptedClient> _pumpCatalog(
       }
       return jsonResponse(recommendations, 200);
     }
-    if (path.endsWith('/instruments/public')) {
+    if (path.endsWith('/instruments')) {
       return jsonResponse({
         'items': const [],
         'page': 1,
@@ -198,7 +198,7 @@ void main() {
     );
     expect(dostupni.selected, isTrue);
     final catalogRequests = client.requests.where(
-      (r) => r.url.path.endsWith('/instruments/public'),
+      (r) => r.url.path.endsWith('/instruments'),
     );
     expect(
       catalogRequests.last.url.queryParameters['search.IsAvailable'],
@@ -213,7 +213,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final catalogRequests = client.requests.where(
-      (r) => r.url.path.endsWith('/instruments/public'),
+      (r) => r.url.path.endsWith('/instruments'),
     );
     expect(
       catalogRequests.last.url.queryParameters,

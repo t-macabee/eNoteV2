@@ -144,6 +144,11 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                     title: 'Vremenska linija',
                     child: RentalTimeline(rental: rental),
                   ),
+                  if (rental.canceledAt != null)
+                    DetailSection(
+                      title: 'Otkazivanje',
+                      child: _cancellation(rental),
+                    ),
                   DetailSection(title: 'Naknade', child: _fees(rental)),
                   _actions(rental),
                 ],
@@ -194,6 +199,20 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     Navigator.of(context).pushNamed(
       AppRoutes.instrumentDetail,
       arguments: InstrumentDetailArgs(rental.instrumentId),
+    );
+  }
+
+  Widget _cancellation(InstrumentRentalDto rental) {
+    final note = rental.note;
+    return Column(
+      children: [
+        LabeledValue(
+          label: 'Otkazano',
+          value: formatDateTime(rental.canceledAt!),
+        ),
+        if (note != null && note.isNotEmpty)
+          LabeledValue(label: 'Razlog', value: note),
+      ],
     );
   }
 

@@ -1,14 +1,50 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace eNote.Infrastructure.Identity;
 
 public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteContext context) : IUserIdentityService
 {
+    private Expression<Func<AppUser, bool>> HasHistoryRule => u =>
+        context.Set<Enrollment>().Any(e =>
+            e.Student!.AppUserId == u.Id || e.DecidedById == u.Id || e.CanceledById == u.Id)
+        || context.Set<InstrumentRental>().Any(r =>
+            r.StudentProfile!.AppUserId == u.Id || r.ApprovedById == u.Id || r.RejectedById == u.Id || r.CanceledById == u.Id)
+        || context.Set<Lecture>().Any(l =>
+            l.CancelledById == u.Id
+            || l.CreatedById == u.Id
+            || l.UpdatedById == u.Id
+            || (l.StudentId.HasValue && l.Student!.AppUserId == u.Id))
+        || context.Set<Attendance>().Any(a => a.Student!.AppUserId == u.Id)
+        || context.Set<AssignmentSubmission>().Any(s => s.Student.AppUserId == u.Id)
+        || context.Set<MembershipPayment>().Any(m => m.Student.AppUserId == u.Id)
+        || context.Set<Course>().Any(c =>
+            c.Instructor.AppUserId == u.Id || c.CreatedById == u.Id || c.UpdatedById == u.Id)
+        || context.Set<Assignment>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<Attendance>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<LectureNote>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<Announcement>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<Event>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<Instrument>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<InstrumentRental>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<MusicStore>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<MusicStoreEmployee>().Any(x => x.AppUserId != u.Id && (x.CreatedById == u.Id || x.UpdatedById == u.Id))
+        || context.Set<Student>().Any(x => x.AppUserId != u.Id && (x.CreatedById == u.Id || x.UpdatedById == u.Id))
+        || context.Set<Instructor>().Any(x => x.AppUserId != u.Id && (x.CreatedById == u.Id || x.UpdatedById == u.Id))
+        || context.Set<MembershipPayment>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<AssignmentSubmission>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<Enrollment>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<NotificationOutbox>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<StripeWebhookEvent>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<CoursePayment>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id)
+        || context.Set<RentalPayment>().Any(x => x.CreatedById == u.Id || x.UpdatedById == u.Id);
+
     public async Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.Users
@@ -112,6 +148,14 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
             .Select(e => new { e.AppUserId, e.IsManager, e.MusicStore.StoreName })
             .ToDictionaryAsync(e => e.AppUserId, cancellationToken);
 
+        var blockedIds = await userManager.Users
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(u => ids.Contains(u.Id))
+            .Where(HasHistoryRule)
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
+
         return users.Select(u =>
         {
             students.TryGetValue(u.Id, out var student);
@@ -129,7 +173,8 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
                 MembershipPaidUntil = student?.MembershipPaidUntil,
                 EnrollmentDate = student?.EnrollmentDate,
                 StoreName = employee?.StoreName,
-                IsManager = employee?.IsManager
+                IsManager = employee?.IsManager,
+                DeleteBlockedReason = blockedIds.Contains(u.Id) ? Messages.UserDeleteBlocked : null
             };
         }).ToList();
     }

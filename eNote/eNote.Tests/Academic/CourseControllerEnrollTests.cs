@@ -1,6 +1,7 @@
 using eNote.API.Controllers.Academic;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
+using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +21,7 @@ public sealed class CourseControllerEnrollTests
         harness.Student.UpdateMembership(Now.AddDays(30));
         var enrollment = await context.Set<Enrollment>()
             .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         await context.SaveChangesAsync();
         var controller = CreateController(context, harness);
 
@@ -54,6 +55,7 @@ public sealed class CourseControllerEnrollTests
             actor,
             actor,
             new FakePaymentGateway(),
+            new EnrollmentNotificationDispatcher(context, clock),
             NullLogger<CourseEnrollmentService>.Instance);
 
         return new CourseController(courseService, enrollmentService);

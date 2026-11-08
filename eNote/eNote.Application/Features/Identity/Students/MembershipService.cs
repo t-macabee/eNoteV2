@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students.Services;
 
 namespace eNote.Application.Features.Identity.Students;
@@ -7,10 +8,22 @@ public sealed class MembershipService(
     IAppDbContext context,
     AdminStudentService students,
     IClock clock,
-    IMembershipWarningDispatcher notifications)
+    IMembershipWarningDispatcher notifications,
+    ICurrentUserContext currentUser,
+    InstructorAccessService instructorAccess)
 {
     public const int WarningWindowDays = 7;
     public const int WarningRepeatHours = 24;
+
+    public async Task<MembershipPaymentDto> RecordPaymentForCurrentInstructorAsync(
+        int studentId,
+        RecordMembershipPaymentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await RecordPaymentAsync(instructorId, studentId, request, cancellationToken);
+    }
 
     public async Task<MembershipPaymentDto> RecordPaymentAsync(
         int? instructorId,
@@ -57,6 +70,16 @@ public sealed class MembershipService(
         return Map(payment);
     }
 
+    public async Task<PagedResult<MembershipPaymentDto>> GetPaymentsForCurrentInstructorAsync(
+        int studentId,
+        MembershipPaymentSearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetPaymentsAsync(instructorId, studentId, search, cancellationToken);
+    }
+
     public async Task<PagedResult<MembershipPaymentDto>> GetPaymentsAsync(
         int? instructorId,
         int studentId,
@@ -73,6 +96,16 @@ public sealed class MembershipService(
                 Map,
                 query => query.OrderByDescending(p => p.PaidAt),
                 cancellationToken);
+    }
+
+    public async Task SendWarningForCurrentInstructorAsync(
+        int studentId,
+        SendMembershipWarningRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        await SendWarningAsync(instructorId, studentId, request, cancellationToken);
     }
 
     public async Task SendWarningAsync(

@@ -10,4 +10,5 @@ public sealed class MusicStoreDto
     public int? AddressId { get; init; }
     public string? AddressStreet { get; init; }
     public string? AddressCity { get; init; }
+    public string? DeleteBlockedReason { get; init; }
 }

@@ -23,7 +23,11 @@ public sealed class InstrumentService(
         MonthlyFee = x.InstrumentType.MonthlyFee,
         MusicStore = x.MusicStore.StoreName,
         IsAvailable = x.IsActive && !x.InstrumentRentals.Any(r =>
+            InstrumentRentalStatusExtensions.BlockingStatuses.Contains(r.RentalStatus)),
+        DeleteBlockedReason = x.InstrumentRentals.Any(r =>
             InstrumentRentalStatusExtensions.BlockingStatuses.Contains(r.RentalStatus))
+            ? Messages.InstrumentDeleteBlocked
+            : null
     };
 
     public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -69,8 +73,9 @@ public sealed class InstrumentService(
     public async Task<InstrumentDto> CreateAsync(InstrumentRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync(cancellationToken);
-        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
-        await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
+        var type = await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
+        var manufacturer = await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
+        var store = await LoadStoreAsync(employee.MusicStoreId, cancellationToken);
 
         var entity = new Instrument(
             request.Model.Trim(),
@@ -83,7 +88,7 @@ public sealed class InstrumentService(
         context.Set<Instrument>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
 
-        return await ReloadAsync(entity.Id, cancellationToken);
+        return BuildDto(entity, type, manufacturer, store, hasBlockingRental: false);
     }
 
     public async Task<InstrumentDto> UpdateAsync(int id, InstrumentRequest request, CancellationToken cancellationToken = default)
@@ -92,11 +97,12 @@ public sealed class InstrumentService(
 
         var entity = await context.Set<Instrument>()
             .WhereActive()
+            .Include(x => x.MusicStore)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
-        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
-        await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
+        var type = await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
+        var manufacturer = await EnsureManufacturerExistsAsync(request.ManufacturerId, cancellationToken);
 
         entity.UpdateDetails(
             request.Model.Trim(),
@@ -107,7 +113,7 @@ public sealed class InstrumentService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return await ReloadAsync(entity.Id, cancellationToken);
+        return BuildDto(entity, type, manufacturer, entity.MusicStore, await HasBlockingRentalAsync(entity.Id, cancellationToken));
     }
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string contentType, CancellationToken ct = default)
@@ -116,6 +122,9 @@ public sealed class InstrumentService(
 
         var entity = await context.Set<Instrument>()
             .WhereActive()
+            .Include(x => x.InstrumentType)
+            .Include(x => x.Manufacturer)
+            .Include(x => x.MusicStore)
             .FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
@@ -127,7 +136,7 @@ public sealed class InstrumentService(
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
-        return await ReloadAsync(entity.Id, ct);
+        return BuildDto(entity, entity.InstrumentType, entity.Manufacturer, entity.MusicStore, await HasBlockingRentalAsync(entity.Id, ct));
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -141,9 +150,17 @@ public sealed class InstrumentService(
 
         await context.ExecuteInTransactionAsync(async () =>
         {
-            if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))
+            var blockedReason = await context.Set<Instrument>()
+                .AsNoTracking()
+                .WhereActive()
+                .Where(x => x.Id == id)
+                .Select(ProjectToDto)
+                .Select(x => x.DeleteBlockedReason)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (blockedReason is not null)
             {
-                throw new BusinessException(Messages.InstrumentDeleteBlocked);
+                throw new BusinessException(blockedReason);
             }
 
             await rentalCommands.RejectPendingForArchivedInstrumentAsync(id, employee.AppUserId, cancellationToken);
@@ -159,22 +176,35 @@ public sealed class InstrumentService(
     private static string? NormalizeDescription(string? description) =>
         string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
-    private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
-    {
-        if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId, cancellationToken))
-        {
-            throw new BusinessException(Messages.InstrumentTypeNotFound);
-        }
-    }
+    private async Task<InstrumentType> EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken) =>
+        await context.Set<InstrumentType>().FirstOrDefaultAsync(x => x.Id == instrumentTypeId, cancellationToken)
+        ?? throw new BusinessException(Messages.InstrumentTypeNotFound);
 
-    private async Task EnsureManufacturerExistsAsync(int manufacturerId, CancellationToken cancellationToken)
-    {
-        if (!await context.Set<Manufacturer>().AnyAsync(x => x.Id == manufacturerId, cancellationToken))
-        {
-            throw new BusinessException(Messages.ManufacturerNotFound);
-        }
-    }
+    private async Task<Manufacturer> EnsureManufacturerExistsAsync(int manufacturerId, CancellationToken cancellationToken) =>
+        await context.Set<Manufacturer>().FirstOrDefaultAsync(x => x.Id == manufacturerId, cancellationToken)
+        ?? throw new BusinessException(Messages.ManufacturerNotFound);
 
-    private Task<InstrumentDto> ReloadAsync(int id, CancellationToken cancellationToken) =>
-        context.Set<Instrument>().AsNoTracking().WhereActive().Where(x => x.Id == id).Select(ProjectToDto).FirstAsync(cancellationToken);
+    private async Task<MusicStore> LoadStoreAsync(int storeId, CancellationToken cancellationToken) =>
+        await context.Set<MusicStore>().FirstAsync(x => x.Id == storeId, cancellationToken);
+
+    private Task<bool> HasBlockingRentalAsync(int instrumentId, CancellationToken cancellationToken) =>
+        context.Set<InstrumentRental>()
+            .WhereBlockingStatus()
+            .AnyAsync(r => r.InstrumentId == instrumentId, cancellationToken);
+
+    private static InstrumentDto BuildDto(Instrument entity, InstrumentType type, Manufacturer manufacturer, MusicStore store, bool hasBlockingRental) => new()
+    {
+        Id = entity.Id,
+        Model = entity.Model,
+        ManufacturerId = entity.ManufacturerId,
+        ManufacturerName = manufacturer.Name,
+        Description = entity.Description,
+        ImagePath = entity.ImagePath,
+        InstrumentTypeId = entity.InstrumentTypeId,
+        InstrumentType = type.Type,
+        MonthlyFee = type.MonthlyFee,
+        MusicStore = store.StoreName,
+        IsAvailable = entity.IsActive && !hasBlockingRental,
+        DeleteBlockedReason = hasBlockingRental ? Messages.InstrumentDeleteBlocked : null
+    };
 }

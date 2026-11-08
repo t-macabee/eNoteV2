@@ -13,6 +13,8 @@ InstrumentRentalDto _rental({
   bool isPaid = false,
   String? requestNote = 'Trebam za kurs gitare',
   String? note,
+  String? decisionNote,
+  DateTime? canceledAt,
   DateTime? pickupDeadline,
   DateTime? dueAt,
 }) {
@@ -31,6 +33,8 @@ InstrumentRentalDto _rental({
     if (dueAt != null) 'dueAt': dueAt.toIso8601String(),
     'requestNote': ?requestNote,
     'note': ?note,
+    'decisionNote': ?decisionNote,
+    if (canceledAt != null) 'canceledAt': canceledAt.toIso8601String(),
     'requestedAt': '2026-09-01T10:12:00',
     'approvedAt': '2026-09-02T09:00:00',
     'rejectedAt': '2026-09-02T09:30:00',
@@ -92,7 +96,7 @@ void main() {
       tester,
       _rental(
         status: InstrumentRentalStatus.approved,
-        note: 'Preuzimanje radnim danima',
+        decisionNote: 'Preuzimanje radnim danima',
       ),
     );
 
@@ -181,7 +185,7 @@ void main() {
       tester,
       _rental(
         status: InstrumentRentalStatus.rejected,
-        note: 'Instrument je rezervisan',
+        decisionNote: 'Instrument je rezervisan',
       ),
     );
 
@@ -199,7 +203,7 @@ void main() {
     expect(label.style?.color, AppTheme.error);
   });
 
-  testWidgets('canceled is terminal, has no timestamp and names the student', (
+  testWidgets('canceled is terminal, shows canceledAt and names the student', (
     tester,
   ) async {
     await _pump(
@@ -207,12 +211,14 @@ void main() {
       _rental(
         status: InstrumentRentalStatus.canceled,
         note: 'Nije mi više potrebno',
+        canceledAt: DateTime(2026, 9, 4, 8, 15),
       ),
     );
 
     expect(find.text('Otkazano'), findsOneWidget);
+    expect(find.text('04.09.2026. 08:15'), findsOneWidget);
     expect(find.text('Vi · „Nije mi više potrebno"'), findsOneWidget);
-    expect(find.text('—'), findsOneWidget);
+    expect(find.text('—'), findsNothing);
     expect(_filledDots(tester), 2);
     expect(_hollowDots(tester), 0);
   });

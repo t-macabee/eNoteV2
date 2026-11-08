@@ -77,7 +77,7 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ChangeNotifierProvider<NotificationController>(
           create: (_) => NotificationController(
             apiClient: widget.apiClient,
-            endpoint: 'student/notifications',
+            endpoint: 'notifications',
           ),
           lazy: false,
         ),

@@ -17,6 +17,7 @@ public class InstrumentRentalDto
     public InstrumentRentalStatus RentalStatus { get; set; }
     public string? RequestNote { get; set; }
     public string? Note { get; set; }
+    public string? DecisionNote { get; set; }
 
     public DateTime RequestedAt { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -29,6 +30,8 @@ public class InstrumentRentalDto
 
     public int? ApprovedById { get; set; }
     public int? RejectedById { get; set; }
+    public int? CanceledById { get; set; }
+    public DateTime? CanceledAt { get; set; }
 
     public decimal Fee { get; set; }
     public decimal? DailyFee { get; set; }

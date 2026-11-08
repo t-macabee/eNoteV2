@@ -215,6 +215,7 @@ class AdminUserListItemDto {
   final DateTime? enrollmentDate;
   final String? storeName;
   final bool? isManager;
+  final String? deleteBlockedReason;
 
   AdminUserListItemDto({
     required this.appUserId,
@@ -228,6 +229,7 @@ class AdminUserListItemDto {
     this.enrollmentDate,
     this.storeName,
     this.isManager,
+    this.deleteBlockedReason,
   });
 
   factory AdminUserListItemDto.fromJson(Map<String, dynamic> json) {
@@ -243,6 +245,7 @@ class AdminUserListItemDto {
       enrollmentDate: parseDate(json['enrollmentDate']),
       storeName: json['storeName'] as String?,
       isManager: json['isManager'] as bool?,
+      deleteBlockedReason: json['deleteBlockedReason'] as String?,
     );
   }
 

@@ -53,7 +53,7 @@ void main() {
       authState: authState,
       notifications: NotificationController(
         apiClient: apiClient,
-        endpoint: 'student/notifications',
+        endpoint: 'notifications',
       ),
     );
 
@@ -119,7 +119,7 @@ void main() {
         authState: authState,
         notifications: NotificationController(
           apiClient: apiClient,
-          endpoint: 'student/notifications',
+          endpoint: 'notifications',
         ),
       );
 

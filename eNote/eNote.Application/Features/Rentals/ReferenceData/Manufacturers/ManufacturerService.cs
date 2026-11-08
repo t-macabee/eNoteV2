@@ -1,18 +1,22 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Constants;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Manufacturers;
 
 public sealed class ManufacturerService(IAppDbContext context) : ReferenceDataCrudService<Manufacturer, ManufacturerDto, ManufacturerRequest, ManufacturerSearchObject>(context)
 {
+    protected override Expression<Func<Manufacturer, ManufacturerDto>> Projection => x => new ManufacturerDto
+    {
+        Id = x.Id,
+        Name = x.Name,
+        DeleteBlockedReason = Db.Set<Instrument>().IgnoreQueryFilters().Any(i => i.ManufacturerId == x.Id)
+            ? Messages.ManufacturerDeleteBlocked
+            : null
+    };
+
     protected override (string IndexName, string Message)? UniqueConflict =>
         (DbConstraintNames.ManufacturerNameUniqueIndex, Messages.ManufacturerAlreadyExists);
-
-    protected override ManufacturerDto Map(Manufacturer entity) => new()
-    {
-        Id = entity.Id,
-        Name = entity.Name
-    };
 
     protected override Manufacturer CreateEntity(ManufacturerRequest request) => new()
     {
@@ -38,9 +42,16 @@ public sealed class ManufacturerService(IAppDbContext context) : ReferenceDataCr
 
     protected override async Task EnsureDeletableAsync(Manufacturer entity, CancellationToken ct)
     {
-        if (await Db.Set<Instrument>().IgnoreQueryFilters().AnyAsync(x => x.ManufacturerId == entity.Id, ct))
+        var reason = await Db.Set<Manufacturer>()
+            .AsNoTracking()
+            .Where(x => x.Id == entity.Id)
+            .Select(Projection)
+            .Select(x => x.DeleteBlockedReason)
+            .FirstOrDefaultAsync(ct);
+
+        if (reason is not null)
         {
-            throw new BusinessException(Messages.ManufacturerDeleteBlocked);
+            throw new BusinessException(reason);
         }
     }
 }

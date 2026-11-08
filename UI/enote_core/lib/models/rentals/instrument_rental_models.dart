@@ -17,9 +17,11 @@ class InstrumentRentalDto {
   final InstrumentRentalStatus rentalStatus;
   final String? requestNote;
   final String? note;
+  final String? decisionNote;
   final DateTime requestedAt;
   final DateTime? approvedAt;
   final DateTime? rejectedAt;
+  final DateTime? canceledAt;
   final DateTime? pickedUpAt;
   final DateTime? returnedAt;
   final DateTime? pickupDeadline;
@@ -54,9 +56,11 @@ class InstrumentRentalDto {
     required this.rentalStatus,
     this.requestNote,
     this.note,
+    this.decisionNote,
     required this.requestedAt,
     this.approvedAt,
     this.rejectedAt,
+    this.canceledAt,
     this.pickedUpAt,
     this.returnedAt,
     this.pickupDeadline,
@@ -95,9 +99,11 @@ class InstrumentRentalDto {
       ),
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
+      decisionNote: json['decisionNote'] as String?,
       requestedAt: parseDate(json['requestedAt']) ?? DateTime.now(),
       approvedAt: parseDate(json['approvedAt']),
       rejectedAt: parseDate(json['rejectedAt']),
+      canceledAt: parseDate(json['canceledAt']),
       pickedUpAt: parseDate(json['pickedUpAt']),
       returnedAt: parseDate(json['returnedAt']),
       pickupDeadline: parseDate(json['pickupDeadline']),
@@ -134,9 +140,11 @@ class InstrumentRentalDto {
     'rentalStatus': rentalStatus.toJson(),
     if (requestNote != null) 'requestNote': requestNote,
     if (note != null) 'note': note,
+    if (decisionNote != null) 'decisionNote': decisionNote,
     'requestedAt': requestedAt.toIso8601String(),
     if (approvedAt != null) 'approvedAt': approvedAt!.toIso8601String(),
     if (rejectedAt != null) 'rejectedAt': rejectedAt!.toIso8601String(),
+    if (canceledAt != null) 'canceledAt': canceledAt!.toIso8601String(),
     if (pickedUpAt != null) 'pickedUpAt': pickedUpAt!.toIso8601String(),
     if (returnedAt != null) 'returnedAt': returnedAt!.toIso8601String(),
     if (pickupDeadline != null)

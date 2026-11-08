@@ -69,10 +69,10 @@ public sealed class InstructorAnnouncementServiceTests
         var activeEnrollment = new Enrollment(active.Id, course.Id, EnrollmentStatus.Active);
         var paidCanceledEnrollment = new Enrollment(paidCanceled.Id, course.Id, EnrollmentStatus.Active);
         paidCanceledEnrollment.ExtendPaidUntil(Now, 1);
-        paidCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var expiredCanceledEnrollment = new Enrollment(expiredCanceled.Id, course.Id, EnrollmentStatus.Active);
         expiredCanceledEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
-        expiredCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        expiredCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Context.Set<Enrollment>().AddRange(activeEnrollment, paidCanceledEnrollment, expiredCanceledEnrollment);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));

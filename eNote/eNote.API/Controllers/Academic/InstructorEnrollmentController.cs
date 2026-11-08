@@ -41,9 +41,19 @@ public sealed class InstructorEnrollmentController(InstructorEnrollmentService s
     [ProducesResponseType(typeof(CourseEnrollmentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<CourseEnrollmentDto>> RejectEnrollment(int courseId, int enrollmentId, [FromBody] EnrollmentRejectRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<CourseEnrollmentDto>> RejectEnrollment(int courseId, int enrollmentId, [FromBody] EnrollmentReasonRequest request, CancellationToken cancellationToken)
     {
         var dto = await service.RejectAsync(courseId, enrollmentId, request, cancellationToken);
+        return Ok(dto);
+    }
+
+    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/enrollments/{enrollmentId:int}/cancel")]
+    [ProducesResponseType(typeof(CourseEnrollmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CourseEnrollmentDto>> CancelEnrollment(int courseId, int enrollmentId, [FromBody] EnrollmentReasonRequest request, CancellationToken cancellationToken)
+    {
+        var dto = await service.CancelAsync(courseId, enrollmentId, request, cancellationToken);
         return Ok(dto);
     }
 

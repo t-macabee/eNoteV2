@@ -60,6 +60,7 @@ class _ManufacturerListScreenState extends State<ManufacturerListScreen> {
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>
             'Da li ste sigurni da želite da obrišete proizvođača "${item.name}"?',
+        deleteDisabledReasonOf: (item) => item.deleteBlockedReason,
         deletedMessage: 'Proizvođač je obrisan.',
         onDelete: (context, item) async {
           await context.read<ManufacturerProvider>().remove(item.id);

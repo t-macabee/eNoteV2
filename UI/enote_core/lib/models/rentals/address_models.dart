@@ -4,6 +4,7 @@ class AddressReferenceDto {
   final String city;
   final String street;
   final String number;
+  final String? deleteBlockedReason;
 
   AddressReferenceDto({
     required this.id,
@@ -11,6 +12,7 @@ class AddressReferenceDto {
     required this.city,
     required this.street,
     required this.number,
+    this.deleteBlockedReason,
   });
 
   factory AddressReferenceDto.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class AddressReferenceDto {
       city: json['city'] as String? ?? '',
       street: json['street'] as String? ?? '',
       number: json['number'] as String? ?? '',
+      deleteBlockedReason: json['deleteBlockedReason'] as String?,
     );
   }
 
@@ -29,6 +32,7 @@ class AddressReferenceDto {
     'city': city,
     'street': street,
     'number': number,
+    if (deleteBlockedReason != null) 'deleteBlockedReason': deleteBlockedReason,
   };
 }
 

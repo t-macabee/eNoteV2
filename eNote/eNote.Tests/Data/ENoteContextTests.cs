@@ -284,6 +284,8 @@ public sealed class ENoteContextTests
         Assert.Equal(200, context.Model.FindEntityType(typeof(Course))!.FindProperty(nameof(Course.Name))!.GetMaxLength());
         Assert.Equal(500, context.Model.FindEntityType(typeof(InstrumentRental))!.FindProperty(nameof(InstrumentRental.Note))!.GetMaxLength());
         Assert.Equal(500, context.Model.FindEntityType(typeof(InstrumentRental))!.FindProperty(nameof(InstrumentRental.RequestNote))!.GetMaxLength());
+        Assert.Equal(500, context.Model.FindEntityType(typeof(InstrumentRental))!.FindProperty(nameof(InstrumentRental.DecisionNote))!.GetMaxLength());
+        Assert.Equal(500, context.Model.FindEntityType(typeof(Enrollment))!.FindProperty(nameof(Enrollment.CancellationReason))!.GetMaxLength());
         Assert.Equal(500, context.Model.FindEntityType(typeof(Lecture))!.FindProperty(nameof(Lecture.CancellationReason))!.GetMaxLength());
         Assert.Equal(30, context.Model.FindEntityType(typeof(MusicStore))!.FindProperty(nameof(MusicStore.PhoneNumber))!.GetMaxLength());
         Assert.Equal(4000, context.Model.FindEntityType(typeof(Announcement))!.FindProperty(nameof(Announcement.Content))!.GetMaxLength());

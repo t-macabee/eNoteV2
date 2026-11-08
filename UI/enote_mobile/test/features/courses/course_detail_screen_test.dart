@@ -120,9 +120,9 @@ ScriptedClient _client({
     switch ('${request.method} $path') {
       case 'GET /api/v1/users/me':
         body = meJson(paidUntil: paidUntil);
-      case 'GET /api/v1/student/notifications/unread-count':
+      case 'GET /api/v1/notifications/unread-count':
         body = {'unreadCount': 0};
-      case 'GET /api/v1/student/notifications':
+      case 'GET /api/v1/notifications':
         body = {'items': []};
       case 'GET /api/v1/student/courses/2':
         body = _courseJson(
@@ -198,7 +198,7 @@ class _Harness {
       authState: authState,
       notifications: NotificationController(
         apiClient: apiClient,
-        endpoint: 'student/notifications',
+        endpoint: 'notifications',
       ),
     );
     await session.bootstrap();

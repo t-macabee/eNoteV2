@@ -127,7 +127,11 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
         ),
         const SizedBox(width: AppSpacing.sm),
         IconButton(
-          onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging
+          onPressed:
+              widget.item.deleteBlockedReason != null ||
+                  _isDeleting ||
+                  _isLoadingProfile ||
+                  _isStatusChanging
               ? null
               : _handleDelete,
           icon: _isDeleting
@@ -137,7 +141,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.delete_outline),
-          tooltip: 'Trajno obriši',
+          tooltip: widget.item.deleteBlockedReason ?? 'Trajno obriši',
           style: IconButton.styleFrom(
             foregroundColor: AppTheme.error,
             hoverColor: AppTheme.error.withValues(alpha: 0.1),

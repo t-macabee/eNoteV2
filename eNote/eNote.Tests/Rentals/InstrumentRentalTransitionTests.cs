@@ -26,7 +26,8 @@ public sealed class InstrumentRentalTransitionTests
         Assert.Equal(InstrumentRentalStatus.Rejected, rental.RentalStatus);
         Assert.NotNull(rental.RejectedAt);
         Assert.Equal(10, rental.RejectedById);
-        Assert.Equal("Instrument je na servisu.", rental.Note);
+        Assert.Equal("Instrument je na servisu.", rental.DecisionNote);
+        Assert.Null(rental.Note);
     }
 
     [Theory]
@@ -74,6 +75,41 @@ public sealed class InstrumentRentalTransitionTests
         Assert.Equal(InstrumentRentalStatus.Canceled, rental.RentalStatus);
         Assert.Equal("Nije mi više potrebno.", rental.Note);
         Assert.Null(rental.ReturnedAt);
+    }
+
+    [Fact]
+    public void Approve_ThenPickup_KeepsApprovalNoteAsDecisionNote()
+    {
+        var rental = new InstrumentRental(1, 1, 1, Now, null);
+        var approve = new RentalTransitionContext
+        {
+            UserId = 10,
+            Actor = RentalActor.StoreEmployee,
+            HasInstrumentLockConflict = false,
+            IsInstrumentInactive = false,
+            MonthlyFee = 50m, OverduePenaltyMultiplier = 0.5m,
+            ResponseNote = "A"
+        };
+        rental.Transition(RentalTrigger.Approve, approve, Now);
+
+        var result = rental.Transition(RentalTrigger.Pickup, approve with { ResponseNote = "B" }, Now.AddDays(1));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("A", rental.DecisionNote);
+        Assert.Equal("B", rental.Note);
+    }
+
+    [Fact]
+    public void Cancel_FromPending_RecordsCancelerAndTime()
+    {
+        var rental = new InstrumentRental(1, 1, 1, Now, null);
+        var context = CreateStudentContext() with { ResponseNote = "Nije mi više potrebno." };
+
+        var result = rental.Transition(RentalTrigger.Cancel, context, Now.AddHours(2));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(10, rental.CanceledById);
+        Assert.Equal(Now.AddHours(2), rental.CanceledAt);
     }
 
     [Theory]
@@ -227,7 +263,8 @@ public sealed class InstrumentRentalTransitionTests
         Assert.Equal(InstrumentRentalStatus.Rejected, rental.RentalStatus);
         Assert.Equal(Now, rental.RejectedAt);
         Assert.Null(rental.RejectedById);
-        Assert.Equal("Nije preuzet.", rental.Note);
+        Assert.Equal("Nije preuzet.", rental.DecisionNote);
+        Assert.Null(rental.Note);
         Assert.Equal(10, rental.ApprovedById);
     }
 

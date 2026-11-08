@@ -9,17 +9,20 @@ class EntityRowActions extends StatelessWidget {
   final List<Widget> extraWidgets;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final String? deleteDisabledReason;
 
   const EntityRowActions({
     super.key,
     this.extraWidgets = const <Widget>[],
     this.onEdit,
     this.onDelete,
+    this.deleteDisabledReason,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasEditDelete = onEdit != null || onDelete != null;
+    final hasDelete = onDelete != null || deleteDisabledReason != null;
+    final hasEditDelete = onEdit != null || hasDelete;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -34,12 +37,12 @@ class EntityRowActions extends StatelessWidget {
             visualDensity: VisualDensity.compact,
             onPressed: onEdit,
           ),
-        if (onDelete != null)
+        if (hasDelete)
           IconButton(
             icon: const Icon(Icons.delete, size: 18, color: AppTheme.error),
-            tooltip: 'Obriši',
+            tooltip: deleteDisabledReason ?? 'Obriši',
             visualDensity: VisualDensity.compact,
-            onPressed: onDelete,
+            onPressed: deleteDisabledReason == null ? onDelete : null,
           ),
       ],
     );
@@ -63,6 +66,7 @@ class EntityListTiles<T> extends StatelessWidget {
     final hasActions =
         config.onEdit != null ||
         config.onDelete != null ||
+        config.deleteDisabledReasonOf != null ||
         config.extraActions != null;
     final isEmbedded = config.presentation == EntityListPresentation.embedded;
 
@@ -121,7 +125,9 @@ class EntityListTiles<T> extends StatelessWidget {
         final extraWidgets =
             config.extraActions?.call(context, item) ?? const <Widget>[];
         return ListTile(
-          leading: config.rowIcon != null ? Icon(config.rowIcon) : null,
+          leading:
+              config.leadingOf?.call(context, item) ??
+              (config.rowIcon != null ? Icon(config.rowIcon) : null),
           title: Text(
             title,
             style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
@@ -138,6 +144,9 @@ class EntityListTiles<T> extends StatelessWidget {
                   onDelete: config.onDelete != null
                       ? () => onDelete(item)
                       : null,
+                  deleteDisabledReason: config.deleteDisabledReasonOf?.call(
+                    item,
+                  ),
                 )
               : null,
         );
@@ -231,6 +240,9 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
                   onDelete: config.onDelete != null
                       ? () => widget.onDelete(item)
                       : null,
+                  deleteDisabledReason: config.deleteDisabledReasonOf?.call(
+                    item,
+                  ),
                 ),
               ),
             ),
@@ -242,6 +254,7 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
   bool get _hasActions =>
       widget.config.onEdit != null ||
       widget.config.onDelete != null ||
+      widget.config.deleteDisabledReasonOf != null ||
       widget.config.extraActions != null;
 
   @override

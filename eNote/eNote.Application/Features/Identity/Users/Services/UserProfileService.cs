@@ -11,8 +11,20 @@ public sealed class UserProfileService(
     IPictureAccessService pictureAccess,
     IUserAccountService accountService)
 {
-    public Task<PagedResult<AdminUserListItemDto>> GetPagedAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default) =>
-        identity.SearchAsync(search, cancellationToken);
+    public async Task<PagedResult<AdminUserListItemDto>> GetPagedAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default)
+    {
+        var page = await identity.SearchAsync(search, cancellationToken);
+
+        return new PagedResult<AdminUserListItemDto>
+        {
+            Items = [.. page.Items.Select(item => item.AppUserId == currentUserService.UserId
+                ? item with { DeleteBlockedReason = Messages.CannotModifyOwnAccount }
+                : item)],
+            Page = page.Page,
+            PageSize = page.PageSize,
+            TotalCount = page.TotalCount
+        };
+    }
 
     public Task<UserProfileResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
 

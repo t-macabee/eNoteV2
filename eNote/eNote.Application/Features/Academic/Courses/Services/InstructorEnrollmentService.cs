@@ -11,7 +11,8 @@ public sealed class InstructorEnrollmentService(
     ICurrentUserContext currentUser,
     InstructorAccessService instructorAccess,
     IStudentDisplayNameService displayNames,
-    IEnrollmentNotificationDispatcher notificationDispatcher)
+    IEnrollmentNotificationDispatcher notificationDispatcher,
+    IUserIdentityService identity)
 {
     public async Task<PagedResult<CourseEnrollmentDto>> GetForCourseAsync(int courseId, CourseEnrollmentSearchObject search, CancellationToken ct = default)
     {
@@ -27,6 +28,8 @@ public sealed class InstructorEnrollmentService(
         {
             query = query.Where(e => e.EnrollmentStatus == search.EnrollmentStatus.Value);
         }
+
+        query = await ApplyStudentNameAsync(query, search.StudentName, ct);
 
         return await PageAsync(query, search, ct);
     }
@@ -50,14 +53,31 @@ public sealed class InstructorEnrollmentService(
             query = query.Where(e => e.CourseId == search.CourseId.Value);
         }
 
+        query = await ApplyStudentNameAsync(query, search.StudentName, ct);
+
         return await PageAsync(query, search, ct);
+    }
+
+    private async Task<IQueryable<Enrollment>> ApplyStudentNameAsync(IQueryable<Enrollment> query, string? studentName, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(studentName))
+        {
+            return query;
+        }
+
+        var userIds = await identity.FindUserIdsAsync(studentName, null, ct);
+
+        return query.Where(e => userIds.Contains(e.Student!.AppUserId));
     }
 
     public Task<CourseEnrollmentDto> ApproveAsync(int courseId, int enrollmentId, CancellationToken ct = default) =>
         DecideAsync(courseId, enrollmentId, EnrollmentTrigger.Approve, reason: null, ct);
 
-    public Task<CourseEnrollmentDto> RejectAsync(int courseId, int enrollmentId, EnrollmentRejectRequest request, CancellationToken ct = default) =>
+    public Task<CourseEnrollmentDto> RejectAsync(int courseId, int enrollmentId, EnrollmentReasonRequest request, CancellationToken ct = default) =>
         DecideAsync(courseId, enrollmentId, EnrollmentTrigger.Reject, request.Reason, ct);
+
+    public Task<CourseEnrollmentDto> CancelAsync(int courseId, int enrollmentId, EnrollmentReasonRequest request, CancellationToken ct = default) =>
+        DecideAsync(courseId, enrollmentId, EnrollmentTrigger.Cancel, request.Reason, ct);
 
     public Task<CourseEnrollmentDto> CompleteAsync(int courseId, int enrollmentId, CancellationToken ct = default) =>
         DecideAsync(courseId, enrollmentId, EnrollmentTrigger.Complete, reason: null, ct);
@@ -77,14 +97,14 @@ public sealed class InstructorEnrollmentService(
             throw new BusinessException(Messages.CourseEnded);
         }
 
-        var result = enrollment.Transition(trigger, currentUser.UserId, clock.UtcNow, reason);
+        var result = enrollment.Transition(trigger, EnrollmentActor.Instructor, currentUser.UserId, clock.UtcNow, reason);
 
         if (!result.IsSuccess)
         {
             throw new BusinessException(result.Error);
         }
 
-        await notificationDispatcher.DispatchStatusChangedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, result.Value, enrollment.DecisionNote);
+        await notificationDispatcher.DispatchStatusChangedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, result.Value, StatusReason(trigger, enrollment));
 
         try
         {
@@ -116,16 +136,22 @@ public sealed class InstructorEnrollmentService(
         await instructorAccess.EnsureOwnsCourseAsync(courseId, instructorId, ct);
     }
 
+    private static string? StatusReason(EnrollmentTrigger trigger, Enrollment enrollment) =>
+        trigger == EnrollmentTrigger.Cancel ? enrollment.CancellationReason : enrollment.DecisionNote;
+
     private static CourseEnrollmentDto Map(Enrollment e, string studentName) => new()
     {
         Id = e.Id,
         StudentId = e.StudentId,
+        StudentAppUserId = e.Student!.AppUserId,
         StudentName = studentName,
         CourseId = e.CourseId,
         CourseName = e.Course.Name,
         EnrollmentStatus = e.EnrollmentStatus,
         PaidUntil = e.PaidUntil,
         DecidedAt = e.DecidedAt,
-        DecisionNote = e.DecisionNote
+        DecisionNote = e.DecisionNote,
+        CanceledAt = e.CanceledAt,
+        CancellationReason = e.CancellationReason
     };
 }

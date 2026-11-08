@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.ReferenceData.Cities;
 using eNote.Tests.TestUtils;
@@ -40,6 +41,40 @@ public sealed class CityServiceTests
 
         await Assert.ThrowsAsync<DbUpdateException>(() =>
             service.CreateAsync(new CityRequest { Name = "Mostar" }));
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_SetsDeleteBlockedReason_OnlyForACityUsedByAnAddress()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var used = new City { Name = "Sarajevo" };
+        var unused = new City { Name = "Mostar" };
+        context.Set<City>().AddRange(used, unused);
+        await context.SaveChangesAsync();
+        context.Set<Address>().Add(new Address { CityId = used.Id, Street = "Main", Number = "1" });
+        await context.SaveChangesAsync();
+        var service = new CityService(context);
+
+        var page = await service.GetPagedAsync(new CitySearchObject { IncludeTotalCount = true });
+
+        Assert.Equal(Messages.CityDeleteBlocked, page.Items.Single(x => x.Id == used.Id).DeleteBlockedReason);
+        Assert.Null(page.Items.Single(x => x.Id == unused.Id).DeleteBlockedReason);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_SetsDeleteBlockedReason_ForACityUsedByAnAddress()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var used = new City { Name = "Sarajevo" };
+        context.Set<City>().Add(used);
+        await context.SaveChangesAsync();
+        context.Set<Address>().Add(new Address { CityId = used.Id, Street = "Main", Number = "1" });
+        await context.SaveChangesAsync();
+        var service = new CityService(context);
+
+        var dto = await service.GetByIdAsync(used.Id);
+
+        Assert.Equal(Messages.CityDeleteBlocked, dto.DeleteBlockedReason);
     }
 
     private static ThrowingSaveDbContext ContextFailingOn(ENoteContext context, string indexName) =>

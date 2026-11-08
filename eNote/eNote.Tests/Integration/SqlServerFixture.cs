@@ -1,6 +1,8 @@
+using eNote.Application.Common.Interfaces;
 using eNote.Tests.TestUtils;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Testcontainers.MsSql;
 
 namespace eNote.Tests.Integration;
@@ -27,7 +29,7 @@ public sealed class SqlServerFixture : IAsyncLifetime
 
     public async Task<SqlServerDatabase> CreateDatabaseAsync()
     {
-        var database = new SqlServerDatabase(BuildOptions($"enote_test_{Guid.NewGuid():N}"));
+        var database = new SqlServerDatabase(BuildConnectionString($"enote_test_{Guid.NewGuid():N}"));
 
         await using var context = database.CreateMigrationContext();
         await context.Database.MigrateAsync();
@@ -35,29 +37,34 @@ public sealed class SqlServerFixture : IAsyncLifetime
         return database;
     }
 
-    private DbContextOptions<ENoteContext> BuildOptions(string databaseName)
-    {
-        var connectionString = new SqlConnectionStringBuilder(_container.GetConnectionString())
+    public SqlServerDatabase CreateUnmigratedDatabase() =>
+        new(BuildConnectionString($"enote_test_{Guid.NewGuid():N}"));
+
+    private string BuildConnectionString(string databaseName) =>
+        new SqlConnectionStringBuilder(_container.GetConnectionString())
         {
             InitialCatalog = databaseName
         }.ConnectionString;
-
-        return new DbContextOptionsBuilder<ENoteContext>().UseSqlServer(connectionString).Options;
-    }
 }
 
-public sealed class SqlServerDatabase(DbContextOptions<ENoteContext> options)
+public sealed class SqlServerDatabase(string connectionString)
 {
     private static readonly DateTime Now = new(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc);
 
-    public ENoteContext CreateContext()
+    public ENoteContext CreateContext() =>
+        CreateContext(Now, new StubCurrentActor(isAuthenticated: false));
+
+    public ENoteContext CreateContext(DateTime now, ICurrentUserContext currentUser, params IInterceptor[] interceptors)
     {
-        var context = CreateMigrationContext();
+        var builder = new DbContextOptionsBuilder<ENoteContext>().UseSqlServer(connectionString);
+        builder.AddInterceptors(interceptors);
+
+        var context = new ENoteContext(builder.Options, new FixedClock(now), currentUser);
         TestManufacturers.Seed(context);
 
         return context;
     }
 
     public ENoteContext CreateMigrationContext() =>
-        new(options, new FixedClock(Now), new StubCurrentActor(isAuthenticated: false));
+        new(new DbContextOptionsBuilder<ENoteContext>().UseSqlServer(connectionString).Options, new FixedClock(Now), new StubCurrentActor(isAuthenticated: false));
 }

@@ -15,4 +15,5 @@ public class InstrumentDto
     public string MusicStore { get; set; } = null!;
 
     public bool IsAvailable { get; set; }
+    public string? DeleteBlockedReason { get; set; }
 }

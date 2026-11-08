@@ -65,6 +65,7 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>
             'Da li ste sigurni da želite da obrišete tip instrumenta "${item.type}"?',
+        deleteDisabledReasonOf: (item) => item.deleteBlockedReason,
         deletedMessage: 'Tip instrumenta je obrisan.',
         onDelete: (context, item) async {
           await context.read<InstrumentTypeProvider>().remove(item.id);

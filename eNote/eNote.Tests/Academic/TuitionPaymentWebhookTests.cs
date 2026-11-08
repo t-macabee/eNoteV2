@@ -653,7 +653,7 @@ public sealed class TuitionPaymentWebhookTests
     public async Task HandleWebhook_Succeeded_CanceledEnrollment_GrantsNoAccess_AndRefunds()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
         var service = CreateWebhookService(context, gateway);

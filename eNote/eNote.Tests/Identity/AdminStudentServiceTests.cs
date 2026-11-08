@@ -25,7 +25,7 @@ public sealed class AdminStudentServiceTests
             [3] = StubUserIdentityService.User(3, "brown", "Bob", "Brown")
         });
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var result = await service.GetPagedAsync(new StudentSearchObject { Name = "Smith" });
 
@@ -45,7 +45,7 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
         var identity = new StubUserIdentityService();
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var result = await service.GetPagedAsync(new StudentSearchObject { Page = 2, PageSize = 1 });
 
@@ -69,7 +69,7 @@ public sealed class AdminStudentServiceTests
             [2] = new() { Id = 2, Username = "deactivated_stud", FirstName = "Inactive", LastName = "Student", IsActive = false }
         });
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var activeResult = await service.GetPagedAsync(new StudentSearchObject { IsActive = true });
         Assert.DoesNotContain(activeResult.Items, x => x.AppUserId == 2);
@@ -85,7 +85,7 @@ public sealed class AdminStudentServiceTests
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
-        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, new StubCurrentActor());
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(999));
     }
@@ -103,7 +103,7 @@ public sealed class AdminStudentServiceTests
             [42] = StubUserIdentityService.User(42, "jdoe", "Jane", "Doe")
         });
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var dto = await service.GetByIdAsync(1);
 
@@ -150,7 +150,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var instructor1Result = await service.GetPagedForInstructorAsync(instructor1.Id, new StudentSearchObject { IncludeTotalCount = true });
         var instructor1Item = Assert.Single(instructor1Result.Items);
@@ -199,7 +199,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var dto = await service.GetByIdForInstructorAsync(instructor1.Id, student1.Id);
 
@@ -238,7 +238,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student1.Id));
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student2.Id));
@@ -275,7 +275,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var enrollments = await service.GetEnrollmentsForInstructorAsync(
             instructor1.Id,
@@ -320,7 +320,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var first = await service.GetEnrollmentsForInstructorAsync(
             instructor.Id,
@@ -373,7 +373,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var enrollments = await service.GetEnrollmentsForInstructorAsync(
             instructor1.Id,
@@ -409,7 +409,7 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
-        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, new StubCurrentActor());
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(
             instructor1.Id, student1.Id, new StudentEnrollmentSearchObject()));
@@ -437,7 +437,7 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
 
         var rejected = new Enrollment(rejectedStudent.Id, course.Id, EnrollmentStatus.Pending);
-        rejected.Transition(EnrollmentTrigger.Reject, userId: instructor.AppUserId, now: Now, reason: "Popunjeno");
+        rejected.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, userId: instructor.AppUserId, now: Now, reason: "Popunjeno");
 
         context.Set<Enrollment>().AddRange(
             new Enrollment(activeStudent.Id, course.Id, EnrollmentStatus.Active),
@@ -453,7 +453,7 @@ public sealed class AdminStudentServiceTests
         });
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, identity, instructorAccess, new StubCurrentActor());
 
         var result = await service.GetPagedForInstructorAsync(instructor.Id, new StudentSearchObject());
 
@@ -491,7 +491,7 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
-        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, new StubCurrentActor());
 
         var result = await service.GetPagedForInstructorAsync(instructor.Id, new StudentSearchObject());
 
@@ -526,7 +526,7 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
 
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
-        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, new StubCurrentActor());
 
         var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor.Id, student.Id, new StudentEnrollmentSearchObject());
 

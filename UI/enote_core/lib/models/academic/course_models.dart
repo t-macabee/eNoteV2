@@ -21,6 +21,7 @@ class CourseDto {
   final DateTime? paidUntil;
   final EnrollmentStatus? enrollmentStatus;
   final String? enrollmentDecisionNote;
+  final String? enrollmentCancellationReason;
   final bool isFree;
   final String? imagePath;
 
@@ -43,6 +44,7 @@ class CourseDto {
     this.paidUntil,
     this.enrollmentStatus,
     this.enrollmentDecisionNote,
+    this.enrollmentCancellationReason,
     this.isFree = false,
     this.imagePath,
   });
@@ -69,6 +71,8 @@ class CourseDto {
           ? null
           : EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
       enrollmentDecisionNote: json['enrollmentDecisionNote'] as String?,
+      enrollmentCancellationReason:
+          json['enrollmentCancellationReason'] as String?,
       isFree: json['isFree'] as bool? ?? false,
       imagePath: json['imagePath'] as String?,
     );
@@ -95,6 +99,8 @@ class CourseDto {
       'enrollmentStatus': enrollmentStatus!.toJson(),
     if (enrollmentDecisionNote != null)
       'enrollmentDecisionNote': enrollmentDecisionNote,
+    if (enrollmentCancellationReason != null)
+      'enrollmentCancellationReason': enrollmentCancellationReason,
     if (isFree) 'isFree': isFree,
   };
 }
@@ -102,6 +108,7 @@ class CourseDto {
 class CourseEnrollmentDto {
   final int id;
   final int studentId;
+  final int studentAppUserId;
   final String studentName;
   final int courseId;
   final String courseName;
@@ -109,10 +116,13 @@ class CourseEnrollmentDto {
   final DateTime? paidUntil;
   final DateTime? decidedAt;
   final String? decisionNote;
+  final DateTime? canceledAt;
+  final String? cancellationReason;
 
   CourseEnrollmentDto({
     required this.id,
     required this.studentId,
+    this.studentAppUserId = 0,
     required this.studentName,
     required this.courseId,
     required this.courseName,
@@ -120,12 +130,19 @@ class CourseEnrollmentDto {
     this.paidUntil,
     this.decidedAt,
     this.decisionNote,
+    this.canceledAt,
+    this.cancellationReason,
   });
+
+  String? get statusReason => enrollmentStatus == EnrollmentStatus.canceled
+      ? cancellationReason
+      : decisionNote;
 
   factory CourseEnrollmentDto.fromJson(Map<String, dynamic> json) {
     return CourseEnrollmentDto(
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
+      studentAppUserId: json['studentAppUserId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
       courseId: json['courseId'] as int? ?? 0,
       courseName: json['courseName'] as String? ?? '',
@@ -135,6 +152,8 @@ class CourseEnrollmentDto {
       paidUntil: parseDate(json['paidUntil']),
       decidedAt: parseDate(json['decidedAt']),
       decisionNote: json['decisionNote'] as String?,
+      canceledAt: parseDate(json['canceledAt']),
+      cancellationReason: json['cancellationReason'] as String?,
     );
   }
 }
@@ -169,6 +188,7 @@ class CourseRequest {
 class CourseRankingEntryDto {
   final int rank;
   final int studentId;
+  final int studentAppUserId;
   final String studentName;
   final double? averageGrade;
   final int gradedSubmissions;
@@ -176,6 +196,7 @@ class CourseRankingEntryDto {
   CourseRankingEntryDto({
     required this.rank,
     required this.studentId,
+    this.studentAppUserId = 0,
     required this.studentName,
     this.averageGrade,
     required this.gradedSubmissions,
@@ -185,6 +206,7 @@ class CourseRankingEntryDto {
     return CourseRankingEntryDto(
       rank: json['rank'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
+      studentAppUserId: json['studentAppUserId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
       averageGrade: (json['averageGrade'] as num?)?.toDouble(),
       gradedSubmissions: json['gradedSubmissions'] as int? ?? 0,

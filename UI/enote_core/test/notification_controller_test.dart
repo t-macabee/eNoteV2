@@ -85,7 +85,7 @@ NotificationController _controller(_PagedFakeClient client) {
   );
   return NotificationController(
     apiClient: api,
-    endpoint: 'student/notifications',
+    endpoint: 'notifications',
   );
 }
 

@@ -34,7 +34,7 @@ ScriptedClient _client({
     final path = request.url.path;
     Object body;
     int status = 200;
-    if (path.endsWith('/instruments/public/$_instrumentId')) {
+    if (path.endsWith('/instruments/$_instrumentId')) {
       body = {
         'id': _instrumentId,
         'model': 'C40',
@@ -93,7 +93,7 @@ class _Harness {
       authState: authState,
       notifications: NotificationController(
         apiClient: apiClient,
-        endpoint: 'student/notifications',
+        endpoint: 'notifications',
       ),
     );
   }

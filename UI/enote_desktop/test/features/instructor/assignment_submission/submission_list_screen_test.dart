@@ -90,8 +90,11 @@ Future<ScriptedClient> _pumpList(
 
   await tester.pumpWidget(
     MaterialApp(
-      home: ChangeNotifierProvider<SubmissionProvider>.value(
-        value: provider,
+      home: MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<SubmissionProvider>.value(value: provider),
+        ],
         child: SubmissionListScreen(
           lectureId: 1,
           assignmentId: 2,

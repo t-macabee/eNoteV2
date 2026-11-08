@@ -3,15 +3,21 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Payments;
+using eNote.Contracts.Communication;
+using eNote.Contracts.Enrollments;
+using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json;
 
 namespace eNote.Tests.Academic;
 
 public sealed class CourseEnrollmentServiceTests
 {
     private static readonly DateTime Now = new(2026, 6, 22, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
     public async Task EnrollAsync_CreatesPendingRequest_ForPublishedCourse()
@@ -71,9 +77,9 @@ public sealed class CourseEnrollmentServiceTests
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
         var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
-        enrollment.Transition(EnrollmentTrigger.Approve, userId: 77, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, userId: 77, now: Now);
         enrollment.ExtendPaidUntil(Now, 14);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now.AddDays(1));
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 77, now: Now.AddDays(1));
         context.Set<Enrollment>().Add(enrollment);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -94,9 +100,9 @@ public sealed class CourseEnrollmentServiceTests
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
         var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
-        enrollment.Transition(EnrollmentTrigger.Approve, userId: 77, now: Now.AddDays(-31));
+        enrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, userId: 77, now: Now.AddDays(-31));
         enrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now.AddDays(-30));
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 77, now: Now.AddDays(-30));
         context.Set<Enrollment>().Add(enrollment);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -165,7 +171,7 @@ public sealed class CourseEnrollmentServiceTests
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
         var rejected = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
-        rejected.Transition(EnrollmentTrigger.Reject, userId: 300, now: Now, reason: "Popunjeno");
+        rejected.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, userId: 300, now: Now, reason: "Popunjeno");
         context.Set<Enrollment>().Add(rejected);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -485,6 +491,79 @@ public sealed class CourseEnrollmentServiceTests
         Assert.Empty(context.Set<Enrollment>());
     }
 
+    [Fact]
+    public async Task EnrollAsync_NewRequest_EnqueuesOneNotificationForInstructor()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var outbox = Assert.Single(await context.Set<NotificationOutbox>().ToListAsync());
+        Assert.Equal(NotificationMessageTypes.InstructorEnrollmentNotification, outbox.MessageType);
+        var payload = JsonSerializer.Deserialize<InstructorEnrollmentNotification>(outbox.PayloadJson, JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(200, payload.InstructorUserId);
+        Assert.Equal(course.Id, payload.CourseId);
+        Assert.Equal("Novi zahtjev za upis", payload.Title);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_ResumedEnrollment_DoesNotNotifyInstructor()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
+        enrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, userId: 77, now: Now);
+        enrollment.ExtendPaidUntil(Now, 14);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 77, now: Now.AddDays(1));
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var status = await service.EnrollAsync(course.Id);
+
+        Assert.Equal(EnrollmentStatus.Active, status);
+        Assert.Empty(await context.Set<NotificationOutbox>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_EnqueuesOneNotificationForInstructor()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var outbox = Assert.Single(await context.Set<NotificationOutbox>().ToListAsync());
+        Assert.Equal(NotificationMessageTypes.InstructorEnrollmentNotification, outbox.MessageType);
+        var payload = JsonSerializer.Deserialize<InstructorEnrollmentNotification>(outbox.PayloadJson, JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(200, payload.InstructorUserId);
+        Assert.Equal("Student otkazao upis", payload.Title);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_RecordsStudentAsCancelerWithTime()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(student.AppUserId, stored.CanceledById);
+        Assert.Equal(Now, stored.CanceledAt);
+        Assert.Null(stored.CancellationReason);
+    }
+
     private static ENoteContext CreateContext() =>
         new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(storeId: 1, userId: 100)) { ExplicitStoreId = 1 };
 
@@ -601,6 +680,7 @@ public sealed class CourseEnrollmentServiceTests
             currentUser,
             currentUser,
             gateway ?? new FakePaymentGateway(),
+            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
             NullLogger<CourseEnrollmentService>.Instance);
     }
 }

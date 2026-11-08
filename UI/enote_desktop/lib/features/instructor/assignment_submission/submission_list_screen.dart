@@ -224,6 +224,28 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Student',
             value: (item) => item.studentName ?? 'Nepoznat korisnik',
+            cellBuilder: (context, item) {
+              final name = item.studentName ?? 'Nepoznat korisnik';
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  UserAvatar(
+                    userId: item.studentAppUserId,
+                    apiClient: context.read<ApiClient>(),
+                    radius: 12,
+                    placeholder: () => InitialsAvatar(text: name),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Predato',

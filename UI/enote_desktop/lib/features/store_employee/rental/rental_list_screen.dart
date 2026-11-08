@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/async_dropdown.dart';
+import '../../../widgets/async_search_field.dart';
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
@@ -110,14 +110,13 @@ class _RentalListScreenState extends State<RentalListScreen> {
   }
 
   Widget _buildFilterBar() {
-    return AsyncDropdown<InstrumentDto>(
+    return AsyncSearchField<InstrumentDto>(
       label: 'Instrument',
       width: _instrumentFilterWidth,
-      emptyOptionLabel: 'Svi instrumenti',
+      hint: 'Svi instrumenti',
       value: _selectedInstrumentId,
-      fetcher: () => fetchAllPages(
-        (query) => context.read<InstrumentProvider>().search(query),
-      ),
+      search: (query) => context.read<InstrumentProvider>().search(query),
+      searchField: 'search',
       itemLabel: (instrument) => instrument.model,
       itemId: (instrument) => instrument.id,
       onChanged: (value, _) => _onInstrumentChanged(value as int?),

@@ -80,6 +80,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>
             'Da li ste sigurni da želite da obrišete adresu "${item.street} ${item.number}"?',
+        deleteDisabledReasonOf: (item) => item.deleteBlockedReason,
         deletedMessage: 'Adresa je obrisana.',
         onDelete: (context, item) async {
           await context.read<AddressProvider>().remove(item.id);

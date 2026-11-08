@@ -15,6 +15,7 @@ public sealed class EnrollmentNotificationDispatcher(
         {
             EnrollmentStatus.Active => ("Upis odobren", $"Vaš zahtjev za upis na kurs '{courseName}' je odobren."),
             EnrollmentStatus.Rejected => ("Upis odbijen", $"Vaš zahtjev za upis na kurs '{courseName}' je odbijen. Razlog: {reason}"),
+            EnrollmentStatus.Canceled => ("Upis otkazan", $"Instruktor je otkazao vaš upis na kurs '{courseName}'. Razlog: {reason}"),
             EnrollmentStatus.Completed => ("Kurs položen", $"Instruktor je označio da ste položili kurs '{courseName}'."),
             _ => throw new ArgumentOutOfRangeException(nameof(newStatus), newStatus, null)
         };
@@ -24,6 +25,12 @@ public sealed class EnrollmentNotificationDispatcher(
 
         return Task.CompletedTask;
     }
+
+    public Task DispatchRequestedAsync(int enrollmentId, int courseId, int instructorUserId, string courseName) =>
+        EnqueueInstructorAsync(enrollmentId, courseId, instructorUserId, "Novi zahtjev za upis", $"Student je poslao zahtjev za upis na kurs '{courseName}'.");
+
+    public Task DispatchStudentCanceledAsync(int enrollmentId, int courseId, int instructorUserId, string courseName) =>
+        EnqueueInstructorAsync(enrollmentId, courseId, instructorUserId, "Student otkazao upis", $"Student je otkazao upis na kurs '{courseName}'.");
 
     public Task DispatchTuitionPaidAsync(int enrollmentId, int courseId, int studentUserId, string courseName, long amountCents, string currency, DateTime paidUntil)
     {
@@ -35,6 +42,14 @@ public sealed class EnrollmentNotificationDispatcher(
     {
         var body = $"Uplata školarine za kurs '{courseName}' je vraćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
         return EnqueueTuitionAsync(enrollmentId, courseId, studentUserId, "Školarina vraćena", body);
+    }
+
+    private Task EnqueueInstructorAsync(int enrollmentId, int courseId, int instructorUserId, string title, string body)
+    {
+        var message = new InstructorEnrollmentNotification(enrollmentId, courseId, instructorUserId, title, body, clock.UtcNow);
+        NotificationOutboxWriter.Enqueue(context, message);
+
+        return Task.CompletedTask;
     }
 
     private Task EnqueueTuitionAsync(int enrollmentId, int courseId, int studentUserId, string title, string body)

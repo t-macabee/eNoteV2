@@ -284,6 +284,8 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
               _timelineRow('Odobreno', rental.approvedAt!),
             if (rental.rejectedAt != null)
               _timelineRow('Odbijeno', rental.rejectedAt!),
+            if (rental.canceledAt != null)
+              _timelineRow('Otkazano', rental.canceledAt!),
             if (rental.pickedUpAt != null)
               _timelineRow('Preuzeto', rental.pickedUpAt!),
             if (rental.returnedAt != null)
@@ -317,51 +319,57 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   }
 
   Widget _buildNotesBlock(InstrumentRentalDto rental) {
+    final requestNote = rental.requestNote;
+    final decisionNote = rental.decisionNote;
+    final note = rental.note;
+    final isCanceled = rental.canceledAt != null;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (rental.requestNote != null &&
-                rental.requestNote!.isNotEmpty) ...[
-              Text(
-                'Zahtjev (student)',
-                style: Theme.of(context).textTheme.titleSmall,
+            if (requestNote != null && requestNote.isNotEmpty)
+              _noteText('Zahtjev (student)', requestNote),
+            if (decisionNote != null && decisionNote.isNotEmpty)
+              _noteText('Odgovor', decisionNote),
+            if (note != null && note.isNotEmpty)
+              _noteText(
+                isCanceled ? 'Razlog otkazivanja' : 'Napomena',
+                note,
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.outline),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(rental.requestNote!),
-              ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            if (rental.note != null && rental.note!.isNotEmpty) ...[
-              Text('Odgovor', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.outline),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(rental.note!),
-              ),
-            ],
-            if ((rental.requestNote == null || rental.requestNote!.isEmpty) &&
-                (rental.note == null || rental.note!.isEmpty))
+            if ((requestNote == null || requestNote.isEmpty) &&
+                (decisionNote == null || decisionNote.isEmpty) &&
+                (note == null || note.isEmpty))
               const Text(
                 'Nema napomena.',
                 style: TextStyle(color: AppTheme.textSecondary),
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _noteText(String title, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.xs),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppTheme.outline),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(text),
+          ),
+        ],
       ),
     );
   }

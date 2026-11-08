@@ -15,6 +15,19 @@ public sealed class UserProfileServiceTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task GetPagedAsync_BlocksDeleteOnlyForTheCurrentUser()
+    {
+        var identity = new StubUserIdentityService(
+            users: new Dictionary<int, UserIdentityDto> { [15] = ActiveUser(15), [16] = ActiveUser(16) });
+        var service = CreateService(identity, currentUserId: 15);
+
+        var page = await service.GetPagedAsync(new AdminUserSearchObject());
+
+        Assert.Equal(Messages.CannotModifyOwnAccount, page.Items.Single(x => x.AppUserId == 15).DeleteBlockedReason);
+        Assert.Null(page.Items.Single(x => x.AppUserId == 16).DeleteBlockedReason);
+    }
+
+    [Fact]
     public async Task GetCurrentUserAsync_UsesCurrentUserId()
     {
         var identity = Identity(ActiveUser(15), AppRoles.Administrator);

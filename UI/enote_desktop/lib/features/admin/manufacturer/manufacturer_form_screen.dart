@@ -54,6 +54,7 @@ class _ManufacturerFormScreenState extends State<ManufacturerFormScreen>
           ? 'Dodaj proizvođača'
           : 'Uredi proizvođača',
       isEditMode: widget.existing != null,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
         FormSection(

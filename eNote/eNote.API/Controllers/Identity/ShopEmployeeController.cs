@@ -26,16 +26,16 @@ public sealed class ShopEmployeeController(
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(UserCreatedResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> Create(
+    public async Task<ActionResult<UserCreatedResponse>> Create(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
         var userId = await provisioningService.ProvisionEmployeeByManagerAsync(request, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, new { userId });
+        return StatusCode(StatusCodes.Status201Created, new UserCreatedResponse(userId));
     }
 
     [HttpPut("{id:int}/status")]

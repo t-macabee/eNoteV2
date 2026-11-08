@@ -1,9 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,17 +11,13 @@ namespace eNote.API.Controllers.Rentals;
 
 [Authorize(Roles = AppRoles.StoreEmployee)]
 [Route("api/v{version:apiVersion}/shop/store")]
-public sealed class ShopStoreController(
-    MusicStoreService storeService,
-    ShopEmployeeService employeeService,
-    IStoreContext stores) : CoreController
+public sealed class ShopStoreController(MusicStoreService storeService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(MusicStoreDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<MusicStoreDto>> GetOwnStore(CancellationToken ct)
     {
-        var storeId = await stores.GetCurrentStoreIdAsync(ct);
-        return Ok(await storeService.GetByIdAsync(storeId, ct));
+        return Ok(await storeService.GetOwnStoreAsync(ct));
     }
 
     [HttpPut]
@@ -33,8 +27,7 @@ public sealed class ShopStoreController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MusicStoreDto>> UpdateOwnStore([FromBody] ShopStoreUpdateRequest request, CancellationToken ct)
     {
-        var storeId = await employeeService.GetCurrentManagerStoreIdAsync(ct);
-        return Ok(await storeService.UpdateOperationalDetailsAsync(storeId, request.BusinessHours, request.PhoneNumber, ct));
+        return Ok(await storeService.UpdateOwnStoreAsync(request, ct));
     }
 
     [HttpPost("image")]
@@ -45,9 +38,5 @@ public sealed class ShopStoreController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MusicStoreDto>> UploadOwnStoreImage(IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, async (stream, contentType, token) =>
-        {
-            var storeId = await employeeService.GetCurrentManagerStoreIdAsync(token);
-            return await storeService.UploadImageAsync(storeId, stream, contentType, token);
-        }, ct);
+        await UploadAsync(file, (stream, contentType, token) => storeService.UploadOwnStoreImageAsync(stream, contentType, token), ct);
 }

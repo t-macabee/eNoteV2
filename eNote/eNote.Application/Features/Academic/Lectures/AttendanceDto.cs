@@ -4,6 +4,7 @@ public class AttendanceDto
 {
     public int Id { get; set; }
     public int StudentId { get; set; }
+    public int StudentAppUserId { get; set; }
 
     public string StudentName { get; set; } = null!;
     public AttendanceStatus AttendanceStatus { get; set; }

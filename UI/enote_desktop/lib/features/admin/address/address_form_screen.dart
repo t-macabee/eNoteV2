@@ -7,17 +7,22 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
+import '../city/city_form_screen.dart';
 import '../city/city_provider.dart';
 import 'address_provider.dart';
 
 class AddressFormScreen extends StatefulWidget {
   final AddressReferenceDto? existing;
   final EntityFormPresentation presentation;
+  final bool closeAfterAdd;
+  final void Function(AddressReferenceDto created)? onCreated;
 
   const AddressFormScreen({
     super.key,
     this.existing,
     this.presentation = EntityFormPresentation.page,
+    this.closeAfterAdd = false,
+    this.onCreated,
   });
 
   @override
@@ -49,8 +54,29 @@ class _AddressFormScreenState extends State<AddressFormScreen>
       number: _numberController.text.trim(),
     );
 
-    await provider.save(id: widget.existing?.id, request: request.toJson());
+    final created = await provider.save(
+      id: widget.existing?.id,
+      request: request.toJson(),
+    );
+    if (widget.existing == null && created != null) {
+      widget.onCreated?.call(created);
+    }
     return true;
+  }
+
+  Future<CityDto?> _createCity(BuildContext context) async {
+    CityDto? created;
+
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => CityFormScreen(
+        presentation: EntityFormPresentation.dialog,
+        closeAfterAdd: true,
+        onCreated: (city) => created = city,
+      ),
+    );
+
+    return created;
   }
 
   @override
@@ -60,6 +86,8 @@ class _AddressFormScreenState extends State<AddressFormScreen>
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj adresu' : 'Uredi adresu',
       isEditMode: widget.existing != null,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
+      closeAfterAdd: widget.closeAfterAdd,
       onReset: () {
         clearTextControllers();
         setState(() => _selectedCityId = null);
@@ -85,6 +113,8 @@ class _AddressFormScreenState extends State<AddressFormScreen>
                 if (value == null) return 'Grad je obavezan';
                 return null;
               },
+              onCreate: _createCity,
+              createTooltip: 'Dodaj grad',
             ),
             FormFieldRow(
               children: [

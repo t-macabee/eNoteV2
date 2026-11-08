@@ -48,6 +48,11 @@ class InstructorEnrollmentProvider
     String reason,
   ) => _decide(enrollment, 'reject', body: {'reason': reason});
 
+  Future<CourseEnrollmentDto> cancel(
+    CourseEnrollmentDto enrollment,
+    String reason,
+  ) => _decide(enrollment, 'cancel', body: {'reason': reason});
+
   Future<CourseEnrollmentDto> complete(CourseEnrollmentDto enrollment) =>
       _decide(enrollment, 'complete');
 

@@ -1,21 +1,26 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Constants;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.ReferenceData.Addresses;
 
 public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context)
 {
+    protected override Expression<Func<Address, AddressReferenceDto>> Projection => x => new AddressReferenceDto
+    {
+        Id = x.Id,
+        CityId = x.CityId,
+        City = x.City.Name,
+        Street = x.Street,
+        Number = x.Number,
+        DeleteBlockedReason = Db.Set<Event>().Any(e => e.AddressId == x.Id)
+            || Db.Set<MusicStore>().Any(s => s.AddressId == x.Id)
+            ? Messages.AddressDeleteBlocked
+            : null
+    };
+
     protected override (string IndexName, string Message)? UniqueConflict =>
         (DbConstraintNames.AddressCityStreetNumberUniqueIndex, Messages.AddressAlreadyExists);
-
-    protected override AddressReferenceDto Map(Address entity) => new()
-    {
-        Id = entity.Id,
-        CityId = entity.CityId,
-        City = entity.City.Name,
-        Street = entity.Street,
-        Number = entity.Number
-    };
 
     protected override Address CreateEntity(AddressRequest request) => new()
     {
@@ -51,20 +56,6 @@ public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudSer
         }
     }
 
-    public override async Task<PagedResult<AddressReferenceDto>> GetPagedAsync(AddressSearchObject search, CancellationToken cancellationToken = default)
-    {
-        IQueryable<Address> query = Db.Set<Address>().AsNoTracking().Include(a => a.City);
-        query = ApplySearch(query, search);
-        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
-    }
-
-    public override async Task<AddressReferenceDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<Address>().AsNoTracking().Include(a => a.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-        return Map(entity);
-    }
-
     protected override IQueryable<Address> ApplySearch(IQueryable<Address> query, AddressSearchObject search)
     {
         return query.ApplySearch(search);
@@ -79,12 +70,16 @@ public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudSer
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct)
     {
-        var inUse = await Db.Set<Event>().AnyAsync(x => x.AddressId == entity.Id, ct)
-            || await Db.Set<MusicStore>().AnyAsync(x => x.AddressId == entity.Id, ct);
+        var reason = await Db.Set<Address>()
+            .AsNoTracking()
+            .Where(x => x.Id == entity.Id)
+            .Select(Projection)
+            .Select(x => x.DeleteBlockedReason)
+            .FirstOrDefaultAsync(ct);
 
-        if (inUse)
+        if (reason is not null)
         {
-            throw new BusinessException(Messages.AddressDeleteBlocked);
+            throw new BusinessException(reason);
         }
     }
 }

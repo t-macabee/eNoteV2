@@ -112,4 +112,48 @@ void main() {
 
     expect(selected, isNull);
   });
+
+  testWidgets('onCreate reloads the items and selects the created item', (
+    tester,
+  ) async {
+    var items = <String>['Sarajevo'];
+    Object? selected;
+    var fetchCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) => AsyncDropdown<String>(
+              label: 'Grad',
+              value: selected,
+              fetcher: () async {
+                fetchCalls++;
+                return items;
+              },
+              itemLabel: (item) => item,
+              itemId: (item) => item,
+              onChanged: (id, _) => setState(() => selected = id),
+              createTooltip: 'Dodaj grad',
+              onCreate: (_) async {
+                items = ['Sarajevo', 'Mostar'];
+                return 'Mostar';
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Dodaj grad'), findsOneWidget);
+    expect(fetchCalls, 1);
+
+    await tester.tap(find.byTooltip('Dodaj grad'));
+    await tester.pumpAndSettle();
+
+    expect(selected, 'Mostar');
+    expect(fetchCalls, 2);
+    expect(find.text('Mostar'), findsOneWidget);
+  });
 }

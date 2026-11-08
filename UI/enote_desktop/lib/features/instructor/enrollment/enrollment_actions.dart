@@ -6,12 +6,13 @@ import '../../../widgets/workflow_actions.dart';
 
 import 'instructor_enrollment_provider.dart';
 
-enum EnrollmentAction { approve, reject, complete }
+enum EnrollmentAction { approve, reject, complete, cancel }
 
 String enrollmentSuccessMessage(EnrollmentAction action) => switch (action) {
   EnrollmentAction.approve => 'Upis odobren.',
   EnrollmentAction.reject => 'Upis odbijen.',
   EnrollmentAction.complete => 'Upis označen kao položen.',
+  EnrollmentAction.cancel => 'Upis otkazan.',
 };
 
 Future<void> runEnrollmentAction(
@@ -27,6 +28,8 @@ Future<void> runEnrollmentAction(
       await provider.reject(item, note ?? '');
     case EnrollmentAction.complete:
       await provider.complete(item);
+    case EnrollmentAction.cancel:
+      await provider.cancel(item, note ?? '');
   }
 }
 
@@ -46,35 +49,49 @@ List<StatusFilterOption<EnrollmentStatus?>> enrollmentStatusFilterOptions({
 
 List<WorkflowAction<EnrollmentAction>> enrollmentActions(
   CourseEnrollmentDto item,
-) => switch (item.enrollmentStatus) {
-  EnrollmentStatus.pending => [
-    WorkflowAction(
-      trigger: EnrollmentAction.approve,
-      label: 'Odobri',
-      icon: Icons.check_circle_outline,
-      tone: StatusTone.success,
-      dialogTitle: 'Odobri upis',
-      confirmMessage: 'Odobriti upis za studenta ${item.studentName}?',
-    ),
-    const WorkflowAction(
-      trigger: EnrollmentAction.reject,
-      label: 'Odbij',
-      icon: Icons.cancel_outlined,
-      tone: StatusTone.danger,
-      requiresNote: true,
-      dialogTitle: 'Odbij upis',
-    ),
-  ],
-  EnrollmentStatus.active => [
-    WorkflowAction(
-      trigger: EnrollmentAction.complete,
-      label: 'Položio',
-      icon: Icons.school_outlined,
-      dialogTitle: 'Označi kao položen',
-      confirmMessage:
-          'Označiti da je student ${item.studentName} položio kurs? '
-          'Student time gubi pristup sadržaju kursa.',
-    ),
-  ],
-  _ => const [],
-};
+) {
+  final cancelAction = WorkflowAction(
+    trigger: EnrollmentAction.cancel,
+    label: 'Otkaži upis',
+    icon: Icons.event_busy_outlined,
+    tone: StatusTone.danger,
+    requiresNote: true,
+    confirmMessage: 'Otkazati upis studenta ${item.studentName}?',
+    dialogTitle: 'Otkaži upis',
+  );
+
+  return switch (item.enrollmentStatus) {
+    EnrollmentStatus.pending => [
+      WorkflowAction(
+        trigger: EnrollmentAction.approve,
+        label: 'Odobri',
+        icon: Icons.check_circle_outline,
+        tone: StatusTone.success,
+        dialogTitle: 'Odobri upis',
+        confirmMessage: 'Odobriti upis za studenta ${item.studentName}?',
+      ),
+      const WorkflowAction(
+        trigger: EnrollmentAction.reject,
+        label: 'Odbij',
+        icon: Icons.cancel_outlined,
+        tone: StatusTone.danger,
+        requiresNote: true,
+        dialogTitle: 'Odbij upis',
+      ),
+      cancelAction,
+    ],
+    EnrollmentStatus.active => [
+      WorkflowAction(
+        trigger: EnrollmentAction.complete,
+        label: 'Položio',
+        icon: Icons.school_outlined,
+        dialogTitle: 'Označi kao položen',
+        confirmMessage:
+            'Označiti da je student ${item.studentName} položio kurs? '
+            'Student time gubi pristup sadržaju kursa.',
+      ),
+      cancelAction,
+    ],
+    _ => const [],
+  };
+}

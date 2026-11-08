@@ -151,6 +151,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             EnrollmentDecisionNote = c.Enrollments
                 .Where(e => e.StudentId == studentId)
                 .Select(e => e.DecisionNote)
+                .FirstOrDefault(),
+            EnrollmentCancellationReason = c.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => e.CancellationReason)
                 .FirstOrDefault()
         };
 
@@ -216,6 +220,16 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         else
         {
             query = query.Where(c => c.IsPublished);
+        }
+
+        if (search.TuitionDueOnly)
+        {
+            query = query.Where(c =>
+                c.Price != 0
+                && c.Enrollments.Any(e =>
+                    e.StudentId == studentId
+                    && e.EnrollmentStatus == EnrollmentStatus.Active
+                    && (e.PaidUntil == null || e.PaidUntil < now)));
         }
 
         int? total = null;

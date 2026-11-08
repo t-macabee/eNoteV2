@@ -1,10 +1,33 @@
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Academic.StudentDirectory;
 
-public sealed class StudentDirectoryService(IAppDbContext context, IUserIdentityService identityService)
+public sealed class StudentDirectoryService(
+    IAppDbContext context,
+    IUserIdentityService identityService,
+    ICurrentUserContext currentUser,
+    InstructorAccessService instructorAccess)
 {
+    public async Task<PagedResult<StudentDirectoryEntryDto>> GetPagedForCurrentInstructorAsync(
+        StudentDirectorySearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetPagedAsync(search, cancellationToken);
+    }
+
+    public async Task<StudentProfileDto> GetProfileForCurrentInstructorAsync(
+        int studentId,
+        CancellationToken cancellationToken = default)
+    {
+        await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetProfileAsync(studentId, cancellationToken);
+    }
+
     public async Task<PagedResult<StudentDirectoryEntryDto>> GetPagedAsync(
         StudentDirectorySearchObject search,
         CancellationToken cancellationToken = default)

@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/enrollment/instructor_enrollment_provider.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_form_screen.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
+import 'package:enote_desktop/widgets/async_search_field.dart';
 import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 import 'package:enote_desktop/widgets/entity_text_field.dart';
 
@@ -143,13 +144,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      client.getUrls.singleWhere((url) => url.contains('/enrollments')),
-      contains('enrollmentStatus=Active'),
+      client.getUrls.where((url) => url.contains('/enrollments')),
+      isEmpty,
     );
     expect(find.text('Student'), findsOneWidget);
 
     expect(
-      find.widgetWithText(DropdownButtonFormField<int>, 'Student'),
+      find.byType(AsyncSearchField<CourseEnrollmentDto>),
       findsOneWidget,
     );
 

@@ -5,7 +5,7 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
   static const int pageSize = 20;
 
   InstrumentProvider({required super.apiClient})
-    : super(endpoint: 'instruments/public');
+    : super(endpoint: 'instruments');
 
   @override
   InstrumentDto fromJson(Map<String, dynamic> json) =>

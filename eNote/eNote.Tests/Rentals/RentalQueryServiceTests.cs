@@ -194,6 +194,40 @@ public sealed class RentalQueryServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForStudentAsync_FiltersBySeveralStatuses()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context, appUserId: 100);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var otherInstruments = new[]
+        {
+            new Instrument("Approved", TestManufacturers.Id("Second Maker"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId),
+            new Instrument("Active", TestManufacturers.Id("Second Maker"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId),
+            new Instrument("Completed", TestManufacturers.Id("Second Maker"), null, null, instrument.InstrumentTypeId, instrument.MusicStoreId)
+        };
+        context.Set<Instrument>().AddRange(otherInstruments);
+        await context.SaveChangesAsync();
+
+        var pending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-5), null);
+        var approved = new InstrumentRental(otherInstruments[0].Id, student.Id, instrument.MusicStoreId, Now.AddDays(-4), null);
+        RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now);
+        var active = new InstrumentRental(otherInstruments[1].Id, student.Id, instrument.MusicStoreId, Now.AddDays(-3), null);
+        RentalTestData.AdvanceTo(active, InstrumentRentalStatus.Active, Now);
+        var completed = new InstrumentRental(otherInstruments[2].Id, student.Id, instrument.MusicStoreId, Now.AddDays(-2), null);
+        RentalTestData.AdvanceTo(completed, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
+        context.Set<InstrumentRental>().AddRange(pending, approved, active, completed);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var result = await service.GetPagedForStudentAsync(new InstrumentRentalSearchObject
+        {
+            RentalStatuses = [InstrumentRentalStatus.Approved, InstrumentRentalStatus.Active]
+        });
+
+        Assert.Equal(new[] { approved.Id, active.Id }.Order(), result.Items.Select(x => x.Id).Order());
+    }
+
+    [Fact]
     public async Task GetPagedForStudentAsync_OrdersByRequestedAtDescending_ThenById_AndPages()
     {
         await using var context = RentalTestData.CreateContext(Now);

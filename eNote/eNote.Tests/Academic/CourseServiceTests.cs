@@ -533,9 +533,9 @@ public sealed class CourseServiceTests
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var enrollment = await harness.Context.Set<Enrollment>()
             .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
-        enrollment.Transition(EnrollmentTrigger.Request, userId: 1, now: Now);
-        enrollment.Transition(EnrollmentTrigger.Reject, userId: 1, now: Now, reason: "Popunjeno");
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Request, EnrollmentActor.Student, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, userId: 1, now: Now, reason: "Popunjeno");
         await harness.Context.SaveChangesAsync();
         var actor = new StubCurrentActor(student: harness.Student);
         var service = CreateService(harness.Context, harness.Instructor, actor);
@@ -693,6 +693,34 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForStudentAsync_TuitionDueOnly_ReturnsOnlyActiveCoursesWithDueTuition()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var unpaid = new Course("Unpaid", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        unpaid.SetPublishedStatus(true);
+        var expired = new Course("Expired", null, 80m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        expired.SetPublishedStatus(true);
+        var free = new Course("Free", null, 0m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        free.SetPublishedStatus(true);
+        harness.Context.Set<Course>().AddRange(unpaid, expired, free);
+        await harness.Context.SaveChangesAsync();
+
+        var expiredEnrollment = new Enrollment(harness.Student.Id, expired.Id, EnrollmentStatus.Active);
+        expiredEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
+        harness.Context.Set<Enrollment>().AddRange(
+            new Enrollment(harness.Student.Id, unpaid.Id, EnrollmentStatus.Active),
+            expiredEnrollment,
+            new Enrollment(harness.Student.Id, free.Id, EnrollmentStatus.Active));
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject { EnrolledOnly = true, TuitionDueOnly = true });
+
+        Assert.Equal(new[] { unpaid.Id, expired.Id }.Order(), result.Items.Select(c => c.Id).Order());
+    }
+
+    [Fact]
     public async Task GetPagedForStudentAsync_WithoutEnrolledOnly_ExcludesUnpublishedCourse()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -711,7 +739,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 7)), Now.AddDays(-40));
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var secondLecture = new Lecture("Second lesson", "Room 2", 45, Now.AddDays(1), LectureType.Practical, 20, harness.Course.Id);
         harness.Context.Set<Lecture>().Add(secondLecture);
         await harness.Context.SaveChangesAsync();
@@ -771,7 +799,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var student = new Student(appUserId: 51, enrollmentDate: Now.AddDays(-90));
         harness.Context.Set<Student>().Add(student);
         var endingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Active);
@@ -790,7 +818,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var student = new Student(appUserId: 51, enrollmentDate: Now.AddDays(-90));
         harness.Context.Set<Student>().Add(student);
         var expiredEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Active);
@@ -849,7 +877,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
@@ -872,7 +900,7 @@ public sealed class CourseServiceTests
         await harness.Context.SaveChangesAsync();
         var canceledEnrollment = new Enrollment(student.Id, secondCourse.Id, EnrollmentStatus.Active);
         canceledEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
-        canceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        canceledEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Context.Set<Enrollment>().Add(canceledEnrollment);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
@@ -894,9 +922,9 @@ public sealed class CourseServiceTests
         harness.Context.Set<Student>().Add(student);
         await harness.Context.SaveChangesAsync();
         var completedEnrollment = new Enrollment(student.Id, secondCourse.Id, EnrollmentStatus.Pending);
-        completedEnrollment.Transition(EnrollmentTrigger.Approve, userId: 1, now: Now);
+        completedEnrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, userId: 1, now: Now);
         completedEnrollment.ExtendPaidUntil(Now, 30);
-        completedEnrollment.Transition(EnrollmentTrigger.Complete, userId: 1, now: Now);
+        completedEnrollment.Transition(EnrollmentTrigger.Complete, EnrollmentActor.Instructor, userId: 1, now: Now);
         harness.Context.Set<Enrollment>().Add(completedEnrollment);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
@@ -912,7 +940,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Course.SetPublishedStatus(false);
         await harness.Context.SaveChangesAsync();
         var actor = new StubCurrentActor(student: harness.Student);
@@ -932,7 +960,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Course.SetPublishedStatus(false);
         await harness.Context.SaveChangesAsync();
         var actor = new StubCurrentActor(student: harness.Student);
@@ -951,10 +979,10 @@ public sealed class CourseServiceTests
         await harness.Context.SaveChangesAsync();
         var expiredEnrollment = new Enrollment(harness.Student.Id, expiredCourse.Id, EnrollmentStatus.Active);
         expiredEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
-        expiredEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        expiredEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         harness.Context.Set<Enrollment>().Add(expiredEnrollment);
         var seededEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
-        seededEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        seededEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         await harness.Context.SaveChangesAsync();
         var actor = new StubCurrentActor(student: harness.Student);
         var service = CreateService(harness.Context, harness.Instructor, actor);
@@ -970,7 +998,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var otherCourse = new Course("Other course", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
         otherCourse.SetPublishedStatus(true);
         harness.Context.Set<Course>().Add(otherCourse);
@@ -995,7 +1023,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var otherCourse = new Course("Other course", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
         otherCourse.SetPublishedStatus(true);
         harness.Context.Set<Course>().Add(otherCourse);
@@ -1023,7 +1051,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var otherCourse = new Course("Other course", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
         otherCourse.SetPublishedStatus(true);
         harness.Context.Set<Course>().Add(otherCourse);
@@ -1065,7 +1093,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var student = new Student(appUserId: 51, enrollmentDate: Now);
         harness.Context.Set<Student>().Add(student);
         var pendingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Pending);
@@ -1092,7 +1120,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var student = new Student(appUserId: 51, enrollmentDate: Now);
         harness.Context.Set<Student>().Add(student);
         var pendingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Pending);
@@ -1119,7 +1147,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var student = new Student(appUserId: 51, enrollmentDate: Now);
         harness.Context.Set<Student>().Add(student);
         var pendingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Pending);
@@ -1146,7 +1174,7 @@ public sealed class CourseServiceTests
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
         var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
-        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 1, now: Now);
         var firstStudent = new Student(appUserId: 51, enrollmentDate: Now);
         var secondStudent = new Student(appUserId: 52, enrollmentDate: Now);
         harness.Context.Set<Student>().AddRange(firstStudent, secondStudent);

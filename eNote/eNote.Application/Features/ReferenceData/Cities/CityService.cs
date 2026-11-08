@@ -1,18 +1,22 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Constants;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.ReferenceData.Cities;
 
 public sealed class CityService(IAppDbContext context) : ReferenceDataCrudService<City, CityDto, CityRequest, CitySearchObject>(context)
 {
+    private static readonly Expression<Func<City, CityDto>> ProjectToDto = x => new CityDto
+    {
+        Id = x.Id,
+        Name = x.Name,
+        DeleteBlockedReason = x.Addresses.Any() ? Messages.CityDeleteBlocked : null
+    };
+
+    protected override Expression<Func<City, CityDto>> Projection => ProjectToDto;
+
     protected override (string IndexName, string Message)? UniqueConflict =>
         (DbConstraintNames.CityNameUniqueIndex, Messages.CityAlreadyExists);
-
-    protected override CityDto Map(City entity) => new()
-    {
-        Id = entity.Id,
-        Name = entity.Name
-    };
 
     protected override City CreateEntity(CityRequest request) => new()
     {
@@ -38,9 +42,16 @@ public sealed class CityService(IAppDbContext context) : ReferenceDataCrudServic
 
     protected override async Task EnsureDeletableAsync(City entity, CancellationToken ct)
     {
-        if (await Db.Set<Address>().AnyAsync(x => x.CityId == entity.Id, ct))
+        var reason = await Db.Set<City>()
+            .AsNoTracking()
+            .Where(x => x.Id == entity.Id)
+            .Select(ProjectToDto)
+            .Select(x => x.DeleteBlockedReason)
+            .FirstOrDefaultAsync(ct);
+
+        if (reason is not null)
         {
-            throw new BusinessException(Messages.CityDeleteBlocked);
+            throw new BusinessException(reason);
         }
     }
 }

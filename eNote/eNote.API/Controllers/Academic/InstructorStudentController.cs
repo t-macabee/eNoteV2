@@ -1,8 +1,6 @@
 using eNote.API.Controllers.Base;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -16,9 +14,7 @@ namespace eNote.API.Controllers.Academic;
 public sealed class InstructorStudentController(
     AdminStudentService studentService,
     MembershipService membershipService,
-    IUserProvisioningService provisioningService,
-    ICurrentUserContext currentUser,
-    InstructorAccessService instructorAccess) : CoreController
+    IUserProvisioningService provisioningService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<StudentDto>), StatusCodes.Status200OK)]
@@ -26,8 +22,7 @@ public sealed class InstructorStudentController(
         [FromQuery] StudentSearchObject search,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var result = await studentService.GetPagedForInstructorAsync(instructorId, search, cancellationToken);
+        var result = await studentService.GetPagedForCurrentInstructorAsync(search, cancellationToken);
         return Ok(result);
     }
 
@@ -35,8 +30,7 @@ public sealed class InstructorStudentController(
     [ProducesResponseType(typeof(StudentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<StudentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var dto = await studentService.GetByIdForInstructorAsync(instructorId, id, cancellationToken);
+        var dto = await studentService.GetByIdForCurrentInstructorAsync(id, cancellationToken);
         return Ok(dto);
     }
 
@@ -47,8 +41,7 @@ public sealed class InstructorStudentController(
         [FromQuery] StudentEnrollmentSearchObject search,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, search, cancellationToken);
+        var result = await studentService.GetEnrollmentsForCurrentInstructorAsync(id, search, cancellationToken);
         return Ok(result);
     }
 
@@ -59,8 +52,7 @@ public sealed class InstructorStudentController(
         [FromQuery] MembershipPaymentSearchObject search,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var result = await membershipService.GetPaymentsAsync(instructorId, id, search, cancellationToken);
+        var result = await membershipService.GetPaymentsForCurrentInstructorAsync(id, search, cancellationToken);
         return Ok(result);
     }
 
@@ -72,8 +64,7 @@ public sealed class InstructorStudentController(
         [FromBody] RecordMembershipPaymentRequest request,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var payment = await membershipService.RecordPaymentAsync(instructorId, id, request, cancellationToken);
+        var payment = await membershipService.RecordPaymentForCurrentInstructorAsync(id, request, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, payment);
     }
 
@@ -85,20 +76,19 @@ public sealed class InstructorStudentController(
         [FromBody] SendMembershipWarningRequest request,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        await membershipService.SendWarningAsync(instructorId, id, request, cancellationToken);
+        await membershipService.SendWarningForCurrentInstructorAsync(id, request, cancellationToken);
         return NoContent();
     }
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(UserCreatedResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> Create(
+    public async Task<ActionResult<UserCreatedResponse>> Create(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
         var userId = await provisioningService.ProvisionStudentByInstructorAsync(request, cancellationToken);
 
-        return StatusCode(StatusCodes.Status201Created, new { userId });
+        return StatusCode(StatusCodes.Status201Created, new UserCreatedResponse(userId));
     }
 }

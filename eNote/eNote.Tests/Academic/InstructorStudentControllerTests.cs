@@ -1,12 +1,14 @@
 using eNote.API.Controllers.Academic;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace eNote.Tests.Academic;
 
@@ -97,8 +99,15 @@ public sealed class InstructorStudentControllerTests
             LastName = "User"
         }, CancellationToken.None);
 
-        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(201, statusCodeResult.StatusCode);
+
+        var response = Assert.IsType<UserCreatedResponse>(statusCodeResult.Value);
+        Assert.Equal(42, response.UserId);
+
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var json = JsonSerializer.Serialize(statusCodeResult.Value, jsonOptions);
+        Assert.Equal(response, JsonSerializer.Deserialize<UserCreatedResponse>(json, jsonOptions));
     }
 
     [Fact]
@@ -257,23 +266,26 @@ public sealed class InstructorStudentControllerTests
         IUserProvisioningService? provisioning = null)
     {
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
-        var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
+        var actor = new StubCurrentActor(userId: harness.Instructor.AppUserId);
+        var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess, actor);
 
         return new InstructorStudentController(
             studentService,
-            CreateMembershipService(ctx, studentService),
-            provisioning ?? new StubProvisioningService(),
-            new StubCurrentActor(userId: harness.Instructor.AppUserId),
-            instructorAccess);
+            CreateMembershipService(ctx, studentService, instructorAccess, actor),
+            provisioning ?? new StubProvisioningService());
     }
 
     private static MembershipService CreateMembershipService(
         ENoteContext context,
-        AdminStudentService students) => new(
+        AdminStudentService students,
+        InstructorAccessService instructorAccess,
+        StubCurrentActor actor) => new(
             context,
             students,
             new FixedClock(Now),
-            new RecordingMembershipWarningDispatcher());
+            new RecordingMembershipWarningDispatcher(),
+            actor,
+            instructorAccess);
 
     private sealed class StubProvisioningService : IUserProvisioningService
     {

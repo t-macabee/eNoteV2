@@ -12,6 +12,7 @@ public static class NotificationMessageTypes
     public const string AnnouncementPublished = nameof(AnnouncementPublished);
     public const string EnrollmentStatusChanged = nameof(EnrollmentStatusChanged);
     public const string TuitionPayment = nameof(TuitionPayment);
+    public const string InstructorEnrollmentNotification = nameof(InstructorEnrollmentNotification);
     public const string MembershipWarning = nameof(MembershipWarning);
     public const string PasswordResetRequested = nameof(PasswordResetRequested);
 
@@ -24,6 +25,7 @@ public static class NotificationMessageTypes
         (typeof(eNote.Contracts.Communication.AnnouncementPublished), AnnouncementPublished),
         (typeof(eNote.Contracts.Enrollments.EnrollmentStatusChanged), EnrollmentStatusChanged),
         (typeof(eNote.Contracts.Enrollments.TuitionPaymentNotification), TuitionPayment),
+        (typeof(eNote.Contracts.Enrollments.InstructorEnrollmentNotification), InstructorEnrollmentNotification),
         (typeof(eNote.Contracts.Identity.MembershipWarning), MembershipWarning),
         (typeof(eNote.Contracts.Identity.PasswordResetRequested), PasswordResetRequested)
     ];

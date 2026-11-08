@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace eNote.Application.Validation.Academic;
 
-public sealed class EnrollmentRejectRequestValidator : AbstractValidator<EnrollmentRejectRequest>
+public sealed class EnrollmentReasonRequestValidator : AbstractValidator<EnrollmentReasonRequest>
 {
-    public EnrollmentRejectRequestValidator()
+    public EnrollmentReasonRequestValidator()
     {
         RuleFor(x => x.Reason).MaximumLength(Enrollment.DecisionNoteMaxLength);
     }

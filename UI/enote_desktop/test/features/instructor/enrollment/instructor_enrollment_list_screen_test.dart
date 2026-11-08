@@ -22,6 +22,7 @@ Map<String, dynamic> _enrollmentJson({
 }) => {
   'id': id,
   'studentId': id,
+  'studentAppUserId': id + 100,
   'studentName': studentName,
   'courseId': courseId,
   'courseName': courseName,
@@ -95,6 +96,7 @@ ScriptedClient _client(List<Map<String, dynamic>> rows) =>
         final newStatus = switch (segments.last) {
           'approve' => 'Active',
           'reject' => 'Rejected',
+          'cancel' => 'Canceled',
           _ => 'Completed',
         };
         final row = rows.firstWhere((row) => row['id'] == id);
@@ -188,6 +190,36 @@ void main() {
     expect(_actionButton('Položio'), findsNothing);
   });
 
+  testWidgets('pending row shows Otkaži upis', (tester) async {
+    await pumpQueue(tester, _client(_rows()));
+
+    expect(_actionButton('Otkaži upis'), findsOneWidget);
+  });
+
+  testWidgets('Otkaži upis confirms, asks for a reason, then POSTs the cancel route with the reason', (tester) async {
+    final httpClient = _client(_rows());
+    await pumpQueue(tester, httpClient);
+
+    await tester.ensureVisible(_actionButton('Otkaži upis'));
+    await tester.tap(_actionButton('Otkaži upis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Otkazati upis studenta Student Enote?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Kurs se ukida.');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      httpClient.postUrls.single,
+      endsWith('/instructor/courses/7/enrollments/11/cancel'),
+    );
+    final post = httpClient.recorded.singleWhere((r) => r.method == 'POST');
+    expect(post.body, {'reason': 'Kurs se ukida.'});
+    expect(find.text('Upis otkazan.'), findsOneWidget);
+  });
+
   testWidgets('Odobri POSTs to the course route of the row', (tester) async {
     final httpClient = _client(_rows());
     await pumpQueue(tester, httpClient);
@@ -228,6 +260,19 @@ void main() {
     final lastList = Uri.parse(_listRequests(httpClient).last.url);
     expect(lastList.queryParameters['page'], '1');
     expect(lastList.queryParameters.containsKey('enrollmentStatus'), isFalse);
+  });
+
+  testWidgets('each row shows the student avatar next to the name', (
+    tester,
+  ) async {
+    await pumpQueue(tester, _client(_rows()));
+
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(UserAvatar), findsNWidgets(2));
+    expect(find.text('Student Enote'), findsOneWidget);
+    expect(find.text('Aktivni Student'), findsOneWidget);
   });
 
   testWidgets('row tap opens the course detail on the Upisi tab', (

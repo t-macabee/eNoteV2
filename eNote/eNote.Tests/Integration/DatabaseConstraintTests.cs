@@ -505,11 +505,15 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var database = await fixture.CreateDatabaseAsync();
 
         int enrollmentId;
+        int studentUserId;
+        int instructorUserId;
 
         await using (var seedContext = database.CreateContext())
         {
-            var (_, _, _, enrollment) = await SeedCourseEnrollmentAsync(seedContext);
+            var (student, instructor, _, enrollment) = await SeedCourseEnrollmentAsync(seedContext);
             enrollmentId = enrollment.Id;
+            studentUserId = student.AppUserId;
+            instructorUserId = instructor.AppUserId;
         }
 
         await using var firstContext = database.CreateContext();
@@ -518,8 +522,8 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var first = await firstContext.Set<Enrollment>().SingleAsync(e => e.Id == enrollmentId);
         var second = await secondContext.Set<Enrollment>().SingleAsync(e => e.Id == enrollmentId);
 
-        Assert.True(first.Transition(EnrollmentTrigger.Cancel, 20, Now).IsSuccess);
-        Assert.True(second.Transition(EnrollmentTrigger.Complete, 20, Now).IsSuccess);
+        Assert.True(first.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, studentUserId, Now).IsSuccess);
+        Assert.True(second.Transition(EnrollmentTrigger.Complete, EnrollmentActor.Instructor, instructorUserId, Now).IsSuccess);
 
         await firstContext.SaveChangesAsync();
 

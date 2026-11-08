@@ -4,6 +4,7 @@ public class CourseEnrollmentDto
 {
     public int Id { get; set; }
     public int StudentId { get; set; }
+    public int StudentAppUserId { get; set; }
     public string StudentName { get; set; } = null!;
     public int CourseId { get; set; }
     public string CourseName { get; set; } = null!;
@@ -11,4 +12,6 @@ public class CourseEnrollmentDto
     public DateTime? PaidUntil { get; set; }
     public DateTime? DecidedAt { get; set; }
     public string? DecisionNote { get; set; }
+    public DateTime? CanceledAt { get; set; }
+    public string? CancellationReason { get; set; }
 }

@@ -17,6 +17,9 @@ public class Enrollment : AuditableEntity
     public int? DecidedById { get; private set; }
     public DateTime? DecidedAt { get; private set; }
     public string? DecisionNote { get; private set; }
+    public int? CanceledById { get; private set; }
+    public DateTime? CanceledAt { get; private set; }
+    public string? CancellationReason { get; private set; }
     public byte[] Version { get; private set; } = null!;
 
     public ICollection<CoursePayment> Payments { get; private set; } = [];
@@ -45,7 +48,7 @@ public class Enrollment : AuditableEntity
             [(EnrollmentStatus.Canceled, EnrollmentTrigger.Resume)] = EnrollmentStatus.Active,
         };
 
-    public Result<EnrollmentStatus> Transition(EnrollmentTrigger trigger, int userId, DateTime now, string? reason = null)
+    public Result<EnrollmentStatus> Transition(EnrollmentTrigger trigger, EnrollmentActor actor, int userId, DateTime now, string? reason = null)
     {
         if (!Transitions.TryGetValue((EnrollmentStatus, trigger), out var target))
         {
@@ -55,6 +58,11 @@ public class Enrollment : AuditableEntity
         if (trigger == EnrollmentTrigger.Reject && string.IsNullOrWhiteSpace(reason))
         {
             return Result<EnrollmentStatus>.Failure(EnrollmentRejectReasonRequiredMessage);
+        }
+
+        if (trigger == EnrollmentTrigger.Cancel && actor == EnrollmentActor.Instructor && string.IsNullOrWhiteSpace(reason))
+        {
+            return Result<EnrollmentStatus>.Failure(EnrollmentCancelReasonRequiredMessage);
         }
 
         if (trigger == EnrollmentTrigger.Resume && !CanResume(now))
@@ -81,6 +89,19 @@ public class Enrollment : AuditableEntity
             DecidedById = null;
             DecidedAt = null;
             DecisionNote = null;
+        }
+        else if (trigger == EnrollmentTrigger.Cancel)
+        {
+            CanceledById = userId;
+            CanceledAt = now;
+            CancellationReason = string.IsNullOrWhiteSpace(reason) ? null : reason.Trim();
+        }
+
+        if (trigger is EnrollmentTrigger.Request or EnrollmentTrigger.Resume)
+        {
+            CanceledById = null;
+            CanceledAt = null;
+            CancellationReason = null;
         }
 
         return Result<EnrollmentStatus>.Success(EnrollmentStatus);
@@ -153,4 +174,5 @@ public class Enrollment : AuditableEntity
     private const string EnrollmentResumeCanceledOnlyMessage = "Nastaviti se može samo otkazani upis.";
     private const string EnrollmentResumeRequiresPaidTimeMessage = "Pretplata se može nastaviti samo dok plaćeni period traje.";
     private const string EnrollmentRejectReasonRequiredMessage = "Razlog odbijanja je obavezan.";
+    private const string EnrollmentCancelReasonRequiredMessage = "Razlog otkazivanja je obavezan.";
 }

@@ -305,11 +305,15 @@ public sealed class MembershipServiceTests
             context,
             new StubUserProfileLookup(instructor: instructor));
 
+        var actor = new StubCurrentActor(userId: instructor?.AppUserId);
+
         return new MembershipService(
             context,
-            new AdminStudentService(context, new StubUserIdentityService(), instructorAccess),
+            new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, actor),
             new FixedClock(Now),
-            notifications);
+            notifications,
+            actor,
+            instructorAccess);
     }
 
     private static async Task<(Instructor Instructor, Student Student)> SeedInstructorAndEnrolledStudentAsync(ENoteContext context)

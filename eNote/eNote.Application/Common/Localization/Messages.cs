@@ -159,6 +159,7 @@ public static class Messages
     public const string PasswordsDoNotMatch = "Lozinke se ne podudaraju.";
 
     public const string FileNotProvided = "Fajl nije priložen.";
+    public const string InvalidFileName = "Naziv fajla nije ispravan.";
     public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
     public const string FileNotReadable = "Fajl nije moguće pročitati. Pokušajte ponovo.";
     public const string StorageQuotaExceeded = "Prekoračen je maksimalni prostor od 500 MB za slike prodavnice.";

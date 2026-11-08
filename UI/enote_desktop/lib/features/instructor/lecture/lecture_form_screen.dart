@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../widgets/async_search_field.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
@@ -41,7 +42,6 @@ class _LectureFormScreenState extends State<LectureFormScreen>
   DateTime? _lectureTime;
   bool _isIndividual = false;
   int? _studentId;
-  List<CourseEnrollmentDto>? _courseStudents;
 
   bool get _isCancelled => widget.existing?.isCancelled ?? false;
   bool get _isEditMode => widget.existing != null;
@@ -61,30 +61,6 @@ class _LectureFormScreenState extends State<LectureFormScreen>
       _studentId = existing.studentId;
       _studentNameController.text = existing.studentName ?? '';
     }
-
-    if (_isIndividual && !_isEditMode) {
-      _loadCourseStudents();
-    }
-  }
-
-  Future<void> _loadCourseStudents() async {
-    try {
-      final courseId = widget.courseId;
-      final students = await fetchAllPages(
-        (query) => context.read<InstructorEnrollmentProvider>().getForCourse(
-          courseId,
-          params: query,
-        ),
-        filters: {'enrollmentStatus': EnrollmentStatus.active.toJson()},
-      );
-      if (mounted) {
-        setState(() => _courseStudents = students);
-      }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    }
   }
 
   void _setIndividual(bool isIndividual) {
@@ -93,9 +69,6 @@ class _LectureFormScreenState extends State<LectureFormScreen>
       _studentId = null;
       _capacityController.text = isIndividual ? '1' : '';
     });
-    if (isIndividual) {
-      _loadCourseStudents();
-    }
   }
 
   Future<bool> _save() async {
@@ -256,24 +229,21 @@ class _LectureFormScreenState extends State<LectureFormScreen>
                       required: false,
                       enabled: false,
                     )
-                  : DropdownButtonFormField<int>(
-                      initialValue: _studentId,
-                      decoration: const InputDecoration(
-                        labelText: 'Student',
-                        border: OutlineInputBorder(),
-                        errorMaxLines: 3,
-                      ),
-                      items: [
-                        for (final enrollment
-                            in _courseStudents ?? <CourseEnrollmentDto>[])
-                          DropdownMenuItem(
-                            value: enrollment.studentId,
-                            child: Text(enrollment.studentName),
-                          ),
-                      ],
-                      onChanged: enabled
-                          ? (value) => setState(() => _studentId = value)
-                          : null,
+                  : AsyncSearchField<CourseEnrollmentDto>(
+                      label: 'Student',
+                      enabled: enabled,
+                      value: _studentId,
+                      search: (query) =>
+                          context.read<InstructorEnrollmentProvider>()
+                              .getForCourse(widget.courseId, params: query),
+                      searchField: 'studentName',
+                      filters: {
+                        'enrollmentStatus': EnrollmentStatus.active.toJson(),
+                      },
+                      itemLabel: (enrollment) => enrollment.studentName,
+                      itemId: (enrollment) => enrollment.studentId,
+                      onChanged: (id, _) =>
+                          setState(() => _studentId = id as int?),
                       validator: enabled
                           ? (value) =>
                                 value == null ? 'Student je obavezan.' : null

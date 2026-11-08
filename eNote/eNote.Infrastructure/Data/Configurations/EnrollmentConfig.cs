@@ -26,10 +26,16 @@ public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
                .HasForeignKey(x => x.DecidedById)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.CanceledById)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique().HasDatabaseName(DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex);
         builder.Property(e => e.EnrollmentStatus).HasConversion<int>();
         builder.Property(e => e.PaidUntil);
         builder.Property(e => e.DecisionNote).HasMaxLength(Enrollment.DecisionNoteMaxLength);
+        builder.Property(e => e.CancellationReason).HasMaxLength(Enrollment.DecisionNoteMaxLength);
         builder.Property(e => e.Version).IsRowVersion();
     }
 }

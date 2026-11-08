@@ -63,6 +63,27 @@ public sealed class InstrumentTypeServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_Blocked_WhenAnInstrumentOfAnotherStoreUsesTheType()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = new InstrumentTypeService(ctx);
+        var created = await service.CreateAsync(new InstrumentTypeRequest { Type = "Guitar", MonthlyFee = 50m });
+        var ownStore = new MusicStore("Own Shop", "09-17");
+        var otherStore = new MusicStore("Other Shop", "09-17");
+        ctx.Set<MusicStore>().AddRange(ownStore, otherStore);
+        await ctx.SaveChangesAsync();
+        Assert.NotEqual(ctx.ExplicitStoreId, otherStore.Id);
+        ctx.Set<Instrument>().Add(new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, created.Id, otherStore.Id));
+        await ctx.SaveChangesAsync();
+
+        var dto = await service.GetByIdAsync(created.Id);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(created.Id));
+
+        Assert.Equal(Messages.InstrumentTypeDeleteBlocked, dto.DeleteBlockedReason);
+        Assert.Equal(Messages.InstrumentTypeDeleteBlocked, ex.Message);
+    }
+
+    [Fact]
     public async Task CreateAsync_TrimsName()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);

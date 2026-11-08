@@ -49,7 +49,7 @@ class RentalTimeline extends StatelessWidget {
       label: 'Odobreno',
       at: rental.approvedAt,
       actor: store,
-      note: rental.note,
+      note: rental.decisionNote,
     );
     final pickedUp = RentalTimelineStep(
       label: 'Preuzeto',
@@ -110,7 +110,7 @@ class RentalTimeline extends StatelessWidget {
           label: 'Odbijeno',
           at: rental.rejectedAt,
           actor: store,
-          note: rental.note,
+          note: rental.decisionNote,
           isTerminalFailure: true,
         ),
       ],
@@ -118,6 +118,7 @@ class RentalTimeline extends StatelessWidget {
         requested,
         RentalTimelineStep(
           label: 'Otkazano',
+          at: rental.canceledAt,
           actor: _me,
           note: rental.note,
           isTerminalFailure: true,

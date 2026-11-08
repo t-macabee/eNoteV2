@@ -10,8 +10,11 @@ Future<bool> ensureReferenceData<T>(
   final PagedResult<T> page;
   try {
     page = await fetchFirstPage();
-  } catch (_) {
-    return true;
+  } catch (e) {
+    if (context.mounted) {
+      ErrorBanner.show(context, message: userMessage(e));
+    }
+    return false;
   }
 
   if (page.items.isNotEmpty) {

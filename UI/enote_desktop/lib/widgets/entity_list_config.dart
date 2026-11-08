@@ -44,6 +44,7 @@ class EntityListConfig<T> {
   final bool showAddButton;
   final bool showDeleteConfirmation;
   final String Function(T item)? deleteConfirmMessageOf;
+  final String? Function(T item)? deleteDisabledReasonOf;
   final String? deletedMessage;
   final bool showSearchBar;
   final Widget? filterBar;
@@ -55,6 +56,8 @@ class EntityListConfig<T> {
   final EntityListStyle listStyle;
 
   final IconData? rowIcon;
+
+  final Widget? Function(BuildContext context, T item)? leadingOf;
 
   final List<int>? tileSubtitleColumns;
 
@@ -76,6 +79,7 @@ class EntityListConfig<T> {
     this.showAddButton = true,
     this.showDeleteConfirmation = true,
     this.deleteConfirmMessageOf,
+    this.deleteDisabledReasonOf,
     this.deletedMessage,
     this.showSearchBar = true,
     this.filterBar,
@@ -83,6 +87,7 @@ class EntityListConfig<T> {
     this.presentation = EntityListPresentation.page,
     this.listStyle = EntityListStyle.table,
     this.rowIcon,
+    this.leadingOf,
     this.tileSubtitleColumns,
     this.onRowTap,
     this.rowColor,

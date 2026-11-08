@@ -151,7 +151,7 @@ public sealed class RentalNotificationDispatcherTests
         var dto = CreateRentalDto();
         dto.InstrumentModel = "Les Paul";
         dto.RentalStatus = InstrumentRentalStatus.Rejected;
-        dto.Note = "Zahtjev je odbijen jer instrument nije preuzet u roku.";
+        dto.DecisionNote = "Zahtjev je odbijen jer instrument nije preuzet u roku.";
 
         await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.ExpirePickup, actorUserId: null);
         await context.SaveChangesAsync();
@@ -172,7 +172,7 @@ public sealed class RentalNotificationDispatcherTests
         await using var context = TestDbContextFactory.CreateContext(Now);
         var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
         var dto = CreateRentalDto();
-        dto.Note = "Not in stock";
+        dto.DecisionNote = "Not in stock";
 
         await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Reject, actorUserId: 9);
         await context.SaveChangesAsync();

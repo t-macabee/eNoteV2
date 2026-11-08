@@ -1,22 +1,23 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Features.ReferenceData.Addresses;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Communication.Events;
 
 public sealed class EventService(IAppDbContext context) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
 {
-    protected override EventDto Map(Event entity) => new()
+    protected override Expression<Func<Event, EventDto>> Projection => x => new EventDto
     {
-        Id = entity.Id,
-        Title = entity.Title,
-        Description = entity.Description,
-        StartsAt = entity.StartsAt,
-        EndsAt = entity.EndsAt,
-        AddressId = entity.AddressId,
-        AddressStreet = entity.Address?.Street,
-        AddressCity = entity.Address?.City?.Name,
-        CreatedAt = entity.CreatedAt,
-        UpdatedAt = entity.UpdatedAt
+        Id = x.Id,
+        Title = x.Title,
+        Description = x.Description,
+        StartsAt = x.StartsAt,
+        EndsAt = x.EndsAt,
+        AddressId = x.AddressId,
+        AddressStreet = x.Address != null ? x.Address.Street : null,
+        AddressCity = x.Address != null ? x.Address.City.Name : null,
+        CreatedAt = x.CreatedAt,
+        UpdatedAt = x.UpdatedAt
     };
 
     protected override Event CreateEntity(EventRequest request) => new(
@@ -34,27 +35,6 @@ public sealed class EventService(IAppDbContext context) : ReferenceDataCrudServi
             request.StartsAt,
             request.EndsAt,
             request.AddressId);
-    }
-
-    public override async Task<PagedResult<EventDto>> GetPagedAsync(EventSearchObject search, CancellationToken cancellationToken = default)
-    {
-        IQueryable<Event> query = Db.Set<Event>()
-            .AsNoTracking()
-            .Include(e => e.Address).ThenInclude(a => a!.City);
-
-        query = ApplySearch(query, search);
-        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
-    }
-
-    public override async Task<EventDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<Event>()
-            .AsNoTracking()
-            .Include(e => e.Address).ThenInclude(a => a!.City)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-
-        return Map(entity);
     }
 
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)

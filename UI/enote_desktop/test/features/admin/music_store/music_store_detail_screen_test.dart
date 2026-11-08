@@ -41,7 +41,7 @@ ScriptedClient _client() => ScriptedClient((request) {
     }, 200);
   }
 
-  if (url.contains('instruments/public')) {
+  if (url.contains('instruments')) {
     return jsonResponse(const {
       'items': [
         {
@@ -192,7 +192,7 @@ void main() {
       expect(
         httpClient.requestedUrls.any(
           (url) =>
-              url.contains('instruments/public') &&
+              url.contains('instruments') &&
               url.contains('search.musicStoreId=1') &&
               url.contains('search.page=1') &&
               url.contains('search.pageSize=24') &&
@@ -212,7 +212,7 @@ void main() {
       expect(
         httpClient.requestedUrls.any(
           (url) =>
-              url.contains('instruments/public') &&
+              url.contains('instruments') &&
               url.contains('search.musicStoreId=1') &&
               url.contains('search.instrumentTypeId=2'),
         ),
@@ -226,7 +226,7 @@ void main() {
       expect(
         httpClient.requestedUrls.any(
           (url) =>
-              url.contains('instruments/public') &&
+              url.contains('instruments') &&
               url.contains('search.musicStoreId=1') &&
               url.contains('search.search=Yamaha'),
         ),

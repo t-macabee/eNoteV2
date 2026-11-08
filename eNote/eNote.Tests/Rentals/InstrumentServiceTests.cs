@@ -469,7 +469,8 @@ public sealed class InstrumentServiceTests
         if (status == InstrumentRentalStatus.Pending)
         {
             Assert.Equal(InstrumentRentalStatus.Rejected, stored.RentalStatus);
-            Assert.Equal(Messages.RentalRejectedInstrumentArchived, stored.Note);
+            Assert.Equal(Messages.RentalRejectedInstrumentArchived, stored.DecisionNote);
+            Assert.Null(stored.Note);
             Assert.Equal(Now, stored.RejectedAt);
 
             var notification = Assert.Single(recorder.TransitionCalls);

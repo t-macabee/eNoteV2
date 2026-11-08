@@ -206,7 +206,7 @@ public sealed class AcademicGatingTests
         var enrollment = await context.Set<Enrollment>()
             .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
         Assert.Equal(Now.AddHours(1), enrollment.PaidUntil);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 77, now: Now);
         await context.SaveChangesAsync();
 
         var assignment = new Assignment("Homework", "Do exercises", Now.AddDays(7), harness.Lecture.Id);
@@ -236,7 +236,7 @@ public sealed class AcademicGatingTests
         var enrollment = await context.Set<Enrollment>()
             .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
         Assert.Equal(Now.AddSeconds(-1), enrollment.PaidUntil);
-        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId: 77, now: Now);
         await context.SaveChangesAsync();
 
         var assignment = new Assignment("Homework", "Do exercises", Now.AddDays(7), harness.Lecture.Id);

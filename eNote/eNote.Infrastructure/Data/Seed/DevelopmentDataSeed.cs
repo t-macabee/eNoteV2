@@ -373,7 +373,7 @@ internal static class EnrollmentSeed
             if (students.TryGetValue("student1", out var student1))
             {
                 var rejected = new Enrollment(student1.Id, requestCourse.Id, EnrollmentStatus.Pending);
-                rejected.Transition(EnrollmentTrigger.Reject, requestCourse.Instructor.AppUserId, clock.UtcNow, "Grupa za ovaj termin je popunjena. Prijavite se ponovo za sljedeći termin.");
+                rejected.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, requestCourse.Instructor.AppUserId, clock.UtcNow, "Grupa za ovaj termin je popunjena. Prijavite se ponovo za sljedeći termin.");
                 enrollments.Add(rejected);
             }
         }

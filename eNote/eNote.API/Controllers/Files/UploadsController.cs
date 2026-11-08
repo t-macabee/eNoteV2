@@ -1,13 +1,11 @@
 using eNote.API.Controllers.Base;
-using eNote.Application.Common.Files;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Files.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Files;
 
 [Route("api/v{version:apiVersion}/uploads")]
-public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserContext currentUser) : CoreController
+public sealed class UploadsController(IFileDownloadService fileDownload) : CoreController
 {
     [HttpGet("instruments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -46,35 +44,15 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAssignment(string fileName, CancellationToken cancellationToken)
     {
-        if (!IsSafeFileName(fileName))
-        {
-            return BadRequest();
-        }
+        var (data, contentType) = await fileDownload.GetAssignmentAsync(fileName, cancellationToken);
 
-        if (!await fileAccess.CanAccessAssignmentFileAsync(currentUser.UserId, fileName, cancellationToken))
-        {
-            return Forbid();
-        }
-
-        return Serve("assignments", fileName);
+        return File(data, contentType, enableRangeProcessing: true);
     }
 
     private IActionResult Serve(string subfolder, string fileName)
     {
-        if (!IsSafeFileName(fileName))
-        {
-            return BadRequest();
-        }
+        var (data, contentType) = fileDownload.Get(subfolder, fileName);
 
-        var (data, contentType) = fileStorage.OpenRead($"{UploadPaths.RoutePrefix}/{subfolder}/{fileName}");
-
-        if (data is null)
-        {
-            return NotFound();
-        }
-
-        return File(data, contentType!, enableRangeProcessing: true);
+        return File(data, contentType, enableRangeProcessing: true);
     }
-
-    private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
 }

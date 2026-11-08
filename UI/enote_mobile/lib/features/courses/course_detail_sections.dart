@@ -198,6 +198,15 @@ class CourseDetailSummary extends StatelessWidget {
               '${course.enrollmentDecisionNote ?? '-'}',
           tone: StatusTone.danger,
         ),
+      if (status == EnrollmentStatus.canceled &&
+          course.enrollmentCancellationReason != null)
+        StatusBanner(
+          icon: Icons.info_outline,
+          message:
+              'Instruktor je otkazao vaš upis: '
+              '${course.enrollmentCancellationReason}',
+          tone: StatusTone.danger,
+        ),
       if (status == EnrollmentStatus.canceled && course.hasContentAccess)
         StatusBanner(
           icon: Icons.event_available,

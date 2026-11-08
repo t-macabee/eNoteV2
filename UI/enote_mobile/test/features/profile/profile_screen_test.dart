@@ -67,7 +67,7 @@ class _Harness {
       authState: authState,
       notifications: NotificationController(
         apiClient: apiClient,
-        endpoint: 'student/notifications',
+        endpoint: 'notifications',
       ),
     );
   }

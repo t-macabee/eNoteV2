@@ -83,8 +83,8 @@ Future<ScriptedClient> _pumpHome(
       '/api/v1/users/me' => meJson(paidUntil: paidUntil),
       '/api/v1/student/home' => home,
       '/api/v1/student/lectures/11' => _lecture(),
-      '/api/v1/student/notifications/unread-count' => {'unreadCount': 0},
-      '/api/v1/student/notifications' => {'items': [], 'totalCount': 0},
+      '/api/v1/notifications/unread-count' => {'unreadCount': 0},
+      '/api/v1/notifications' => {'items': [], 'totalCount': 0},
       _ => {'items': [], 'page': 1, 'pageSize': 20, 'totalCount': 0},
     };
     return jsonResponse(jsonEncode(body), 200);
@@ -104,7 +104,7 @@ Future<ScriptedClient> _pumpHome(
     authState: authState,
     notifications: NotificationController(
       apiClient: apiClient,
-      endpoint: 'student/notifications',
+      endpoint: 'notifications',
     ),
   );
   await session.bootstrap();

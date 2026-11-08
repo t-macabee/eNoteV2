@@ -144,7 +144,7 @@ public sealed class UserSelfService(
 
         foreach (var enrollment in enrollments)
         {
-            var result = enrollment.Transition(EnrollmentTrigger.Cancel, userId, clock.UtcNow);
+            var result = enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, userId, clock.UtcNow);
 
             if (!result.IsSuccess)
             {

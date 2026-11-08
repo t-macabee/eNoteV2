@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
@@ -124,6 +125,68 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
     }
 
     [Fact]
+    public async Task DeleteUserAsync_RejectsUserWhoCreatedLecture()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var userId = await SeedAsync(database, async context =>
+        {
+            var creator = await AddUserAsync(context, "creator");
+            var (_, _, _, course) = await SeedCourseStudentAsync(context);
+
+            context.Set<Lecture>().Add(
+                new Lecture("First lesson", "Room 1", 60, Now, LectureType.Theoretical, 30, course.Id) { CreatedById = creator.Id });
+            await context.SaveChangesAsync();
+
+            return creator.Id;
+        });
+
+        await AssertDeleteIsBlockedAsync(database, userId);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_RejectsInstructorWhoseOnlyCourseIsArchived()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var userId = await SeedAsync(database, async context =>
+        {
+            var instructorUser = await AddUserAsync(context, "archived-instructor");
+            var instructor = new Instructor(instructorUser.Id);
+            context.Set<Instructor>().Add(instructor);
+            await context.SaveChangesAsync();
+
+            var course = new Course("Violin", null, 100m, Now, Now.AddMonths(6), instructor.Id);
+            context.Set<Course>().Add(course);
+            await context.SaveChangesAsync();
+
+            course.SoftDelete();
+            await context.SaveChangesAsync();
+
+            return instructorUser.Id;
+        });
+
+        await AssertDeleteIsBlockedAsync(database, userId);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_RemovesStudentWhoOnlyUpdatedTheOwnProfile()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var userId = await SeedAsync(database, async context =>
+        {
+            var studentUser = await AddUserAsync(context, "self-updating");
+            context.Set<Student>().Add(new Student(studentUser.Id, Now) { UpdatedById = studentUser.Id });
+            await context.SaveChangesAsync();
+
+            return studentUser.Id;
+        });
+
+        await AssertDeleteSucceedsAsync(database, userId);
+    }
+
+    [Fact]
     public async Task DeleteUserAsync_RemovesStudentWithoutReferences()
     {
         var database = await fixture.CreateDatabaseAsync();
@@ -136,6 +199,8 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
 
             return studentUser.Id;
         });
+
+        Assert.Null(await ListedDeleteBlockedReasonAsync(database, userId));
 
         await using var deleteContext = database.CreateContext();
         await CreateService(deleteContext).DeleteUserAsync(userId);
@@ -164,6 +229,8 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
 
             return employeeUser.Id;
         });
+
+        Assert.Null(await ListedDeleteBlockedReasonAsync(database, userId));
 
         await using var deleteContext = database.CreateContext();
         await CreateService(deleteContext).DeleteUserAsync(userId);
@@ -195,6 +262,8 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
             return user.Id;
         });
 
+        Assert.Null(await ListedDeleteBlockedReasonAsync(database, userId));
+
         await using var deleteContext = database.CreateContext();
         await CreateService(deleteContext).DeleteUserAsync(userId);
 
@@ -212,6 +281,8 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
 
     private static async Task AssertDeleteIsBlockedAsync(SqlServerDatabase database, int userId)
     {
+        Assert.Equal(Messages.UserDeleteBlocked, await ListedDeleteBlockedReasonAsync(database, userId));
+
         await using var deleteContext = database.CreateContext();
 
         var exception = await Assert.ThrowsAsync<ConflictException>(() => CreateService(deleteContext).DeleteUserAsync(userId));
@@ -221,6 +292,28 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
         await using var verifyContext = database.CreateContext();
 
         Assert.True(await verifyContext.Set<AppUser>().AnyAsync(u => u.Id == userId));
+    }
+
+    private static async Task AssertDeleteSucceedsAsync(SqlServerDatabase database, int userId)
+    {
+        Assert.Null(await ListedDeleteBlockedReasonAsync(database, userId));
+
+        await using var deleteContext = database.CreateContext();
+        await CreateService(deleteContext).DeleteUserAsync(userId);
+
+        await using var verifyContext = database.CreateContext();
+
+        Assert.False(await verifyContext.Set<AppUser>().AnyAsync(u => u.Id == userId));
+    }
+
+    private static async Task<string?> ListedDeleteBlockedReasonAsync(SqlServerDatabase database, int userId)
+    {
+        await using var context = database.CreateContext();
+        var service = new UserIdentityService(IdentityTestHarness.Create(context).UserManager, context);
+
+        var page = await service.SearchAsync(new AdminUserSearchObject { PageSize = 100 });
+
+        return page.Items.Single(x => x.AppUserId == userId).DeleteBlockedReason;
     }
 
     private static UserProvisioningService CreateService(ENoteContext context)

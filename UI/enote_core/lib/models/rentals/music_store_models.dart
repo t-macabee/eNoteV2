@@ -7,6 +7,7 @@ class MusicStoreDto {
   final int? addressId;
   final String? addressStreet;
   final String? addressCity;
+  final String? deleteBlockedReason;
 
   MusicStoreDto({
     required this.id,
@@ -17,6 +18,7 @@ class MusicStoreDto {
     this.addressId,
     this.addressStreet,
     this.addressCity,
+    this.deleteBlockedReason,
   });
 
   factory MusicStoreDto.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class MusicStoreDto {
       addressId: json['addressId'] as int?,
       addressStreet: json['addressStreet'] as String?,
       addressCity: json['addressCity'] as String?,
+      deleteBlockedReason: json['deleteBlockedReason'] as String?,
     );
   }
 
@@ -41,6 +44,7 @@ class MusicStoreDto {
     if (addressId != null) 'addressId': addressId,
     if (addressStreet != null) 'addressStreet': addressStreet,
     if (addressCity != null) 'addressCity': addressCity,
+    if (deleteBlockedReason != null) 'deleteBlockedReason': deleteBlockedReason,
   };
 
   String get addressText {

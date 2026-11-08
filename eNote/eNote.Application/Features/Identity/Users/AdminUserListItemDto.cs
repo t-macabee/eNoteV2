@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Identity.Users;
 
-public sealed class AdminUserListItemDto
+public sealed record AdminUserListItemDto
 {
     public int AppUserId { get; init; }
     public string Username { get; init; } = null!;
@@ -13,4 +13,5 @@ public sealed class AdminUserListItemDto
     public DateTime? EnrollmentDate { get; init; }
     public string? StoreName { get; init; }
     public bool? IsManager { get; init; }
+    public string? DeleteBlockedReason { get; init; }
 }

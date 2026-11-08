@@ -116,7 +116,7 @@ public sealed class InstructorEnrollmentServiceTests
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentRejectRequest { Reason = "Kurs je završen" });
+        var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentReasonRequest { Reason = "Kurs je završen" });
 
         Assert.Equal(EnrollmentStatus.Rejected, dto.EnrollmentStatus);
     }
@@ -129,7 +129,7 @@ public sealed class InstructorEnrollmentServiceTests
         var service = CreateService(harness.Context, harness.Instructor);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentRejectRequest { Reason = null }));
+            service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentReasonRequest { Reason = null }));
 
         Assert.Equal("Razlog odbijanja je obavezan.", ex.Message);
         var stored = await harness.Context.Set<Enrollment>().SingleAsync(e => e.Id == pending.Id);
@@ -144,7 +144,7 @@ public sealed class InstructorEnrollmentServiceTests
         var (student, pending) = await AddPendingStudentAsync(harness);
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentRejectRequest { Reason = "  Popunjeno  " });
+        var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentReasonRequest { Reason = "  Popunjeno  " });
 
         Assert.Equal(EnrollmentStatus.Rejected, dto.EnrollmentStatus);
         Assert.Equal("Popunjeno", dto.DecisionNote);
@@ -158,6 +158,71 @@ public sealed class InstructorEnrollmentServiceTests
         Assert.Equal(student.AppUserId, payload.StudentUserId);
         Assert.Equal("Upis odbijen", payload.Title);
         Assert.Contains("Popunjeno", payload.Body);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Throws_WithoutReason()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CancelAsync(harness.Course.Id, pending.Id, new EnrollmentReasonRequest { Reason = " " }));
+
+        Assert.Equal("Razlog otkazivanja je obavezan.", ex.Message);
+        var stored = await harness.Context.Set<Enrollment>().SingleAsync(e => e.Id == pending.Id);
+        Assert.Equal(EnrollmentStatus.Pending, stored.EnrollmentStatus);
+        Assert.Empty(await harness.Context.Set<NotificationOutbox>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task CancelAsync_SetsCanceled_RecordsAudit_AndNotificationBodyContainsReason()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (student, pending) = await AddPendingStudentAsync(harness);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.CancelAsync(harness.Course.Id, pending.Id, new EnrollmentReasonRequest { Reason = "  Kurs se ukida.  " });
+
+        Assert.Equal(EnrollmentStatus.Canceled, dto.EnrollmentStatus);
+        Assert.Equal("Kurs se ukida.", dto.CancellationReason);
+        Assert.Equal(Now, dto.CanceledAt);
+
+        var stored = await harness.Context.Set<Enrollment>().SingleAsync(e => e.Id == pending.Id);
+        Assert.Equal(harness.Instructor.AppUserId, stored.CanceledById);
+        Assert.Equal(Now, stored.CanceledAt);
+
+        var outbox = Assert.Single(await harness.Context.Set<NotificationOutbox>().ToListAsync());
+        Assert.Equal(NotificationMessageTypes.EnrollmentStatusChanged, outbox.MessageType);
+        var payload = JsonSerializer.Deserialize<EnrollmentStatusChanged>(outbox.PayloadJson, JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(student.AppUserId, payload.StudentUserId);
+        Assert.Equal("Upis otkazan", payload.Title);
+        Assert.Contains("Kurs se ukida.", payload.Body);
+    }
+
+    [Fact]
+    public async Task CancelAsync_ForeignCourse_ThrowsSameError_AsRejectAsync()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness);
+        var foreignInstructor = new Instructor(appUserId: 999);
+        harness.Context.Set<Instructor>().Add(foreignInstructor);
+        await harness.Context.SaveChangesAsync();
+        var foreignCourse = new Course("Foreign", null, 10m, null, null, foreignInstructor.Id);
+        harness.Context.Set<Course>().Add(foreignCourse);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+        var request = new EnrollmentReasonRequest { Reason = "Razlog" };
+
+        var rejectEx = await Assert.ThrowsAsync<AuthorizationException>(() => service.RejectAsync(foreignCourse.Id, pending.Id, request));
+        var cancelEx = await Assert.ThrowsAsync<AuthorizationException>(() => service.CancelAsync(foreignCourse.Id, pending.Id, request));
+
+        Assert.Equal(Messages.CourseNotOwned, rejectEx.Message);
+        Assert.Equal(rejectEx.Message, cancelEx.Message);
+        var stored = await harness.Context.Set<Enrollment>().SingleAsync(e => e.Id == pending.Id);
+        Assert.Equal(EnrollmentStatus.Pending, stored.EnrollmentStatus);
     }
 
     [Fact]
@@ -375,6 +440,7 @@ public sealed class InstructorEnrollmentServiceTests
             currentUser,
             instructorAccess,
             new StubDisplayNameService(),
-            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)));
+            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
+            new StubUserIdentityService());
     }
 }

@@ -5,4 +5,5 @@ public sealed class InstrumentTypeDto
     public int Id { get; init; }
     public string Type { get; init; } = null!;
     public decimal MonthlyFee { get; init; }
+    public string? DeleteBlockedReason { get; init; }
 }

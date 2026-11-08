@@ -64,6 +64,30 @@ public sealed class ManufacturerServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_Blocked_WhenAnInstrumentOfAnotherStoreUsesTheManufacturer()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        await SeedManufacturerAsync(ctx, "Fender");
+        var manufacturer = await ctx.Set<Manufacturer>().SingleAsync(x => x.Name == "Fender");
+        var service = new ManufacturerService(ctx);
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        var ownStore = new MusicStore("Own Shop", "09-17");
+        var otherStore = new MusicStore("Other Shop", "09-17");
+        ctx.Set<InstrumentType>().Add(type);
+        ctx.Set<MusicStore>().AddRange(ownStore, otherStore);
+        await ctx.SaveChangesAsync();
+        Assert.NotEqual(ctx.ExplicitStoreId, otherStore.Id);
+        ctx.Set<Instrument>().Add(new Instrument("Stratocaster", manufacturer.Id, null, null, type.Id, otherStore.Id));
+        await ctx.SaveChangesAsync();
+
+        var dto = await service.GetByIdAsync(manufacturer.Id);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(manufacturer.Id));
+
+        Assert.Equal(Messages.ManufacturerDeleteBlocked, dto.DeleteBlockedReason);
+        Assert.Equal(Messages.ManufacturerDeleteBlocked, ex.Message);
+    }
+
+    [Fact]
     public async Task DeleteAsync_RemovesUnusedManufacturer()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);

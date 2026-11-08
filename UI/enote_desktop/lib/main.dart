@@ -166,7 +166,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<NotificationController>(
           create: (_) => NotificationController(
             apiClient: apiClient,
-            endpoint: 'student/notifications',
+            endpoint: 'notifications',
           ),
         ),
         Provider<RankingProvider>(

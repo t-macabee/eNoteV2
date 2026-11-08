@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Files;
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Files.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;
@@ -10,145 +11,101 @@ public sealed class UploadsControllerTests
     [Fact]
     public void GetInstrument_ReturnsFileStream_WhenFileExists()
     {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1, 2, 3]), "image/webp")
-        };
-        var controller = CreateController(storage);
+        var files = new StubFileDownloadService();
+        var controller = new UploadsController(files);
 
         var result = controller.GetInstrument("strat.webp");
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("image/webp", fileResult.ContentType);
         Assert.True(fileResult.EnableRangeProcessing);
-        Assert.Equal(["/api/v1/uploads/instruments/strat.webp"], storage.OpenReadCalls);
+        Assert.Equal([("instruments", "strat.webp")], files.Calls);
     }
 
     [Fact]
     public void GetMusicStore_ReturnsFileStream_WhenFileExists()
     {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1, 2, 3]), "image/webp")
-        };
-        var controller = CreateController(storage);
+        var files = new StubFileDownloadService();
+        var controller = new UploadsController(files);
 
         var result = controller.GetMusicStore("store.webp");
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("image/webp", fileResult.ContentType);
         Assert.True(fileResult.EnableRangeProcessing);
-        Assert.Equal(["/api/v1/uploads/music-stores/store.webp"], storage.OpenReadCalls);
+        Assert.Equal([("music-stores", "store.webp")], files.Calls);
     }
 
     [Fact]
     public void GetAnnouncement_ReturnsFileStream_WhenFileExists()
     {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1, 2, 3]), "image/webp")
-        };
-        var controller = CreateController(storage);
+        var files = new StubFileDownloadService();
+        var controller = new UploadsController(files);
 
         var result = controller.GetAnnouncement("news.webp");
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("image/webp", fileResult.ContentType);
         Assert.True(fileResult.EnableRangeProcessing);
-        Assert.Equal(["/api/v1/uploads/announcements/news.webp"], storage.OpenReadCalls);
-    }
-
-    [Fact]
-    public void GetInstrument_ReturnsNotFound_WhenFileMissing()
-    {
-        var storage = new RecordingFileStorageService { OpenReadResult = (null, null) };
-        var controller = CreateController(storage);
-
-        var result = controller.GetInstrument("missing.webp");
-
-        Assert.IsType<NotFoundResult>(result);
-    }
-
-    [Theory]
-    [InlineData("../secrets.txt")]
-    [InlineData("sub/dir.webp")]
-    [InlineData("")]
-    public void GetInstrument_ReturnsBadRequest_ForUnsafeFileNames(string fileName)
-    {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1]), "image/webp")
-        };
-        var controller = CreateController(storage);
-
-        var result = controller.GetInstrument(fileName);
-
-        Assert.IsType<BadRequestResult>(result);
-        Assert.Empty(storage.OpenReadCalls);
-    }
-
-    [Fact]
-    public async Task GetAssignment_ReturnsForbid_WhenAccessDenied()
-    {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1]), "application/pdf")
-        };
-        var controller = CreateController(storage, canAccessAssignment: false);
-
-        var result = await controller.GetAssignment("hw.pdf", CancellationToken.None);
-
-        Assert.IsType<ForbidResult>(result);
-        Assert.Empty(storage.OpenReadCalls);
-    }
-
-    [Fact]
-    public async Task GetAssignment_ReturnsBadRequest_ForUnsafeFileName_BeforeCheckingAccess()
-    {
-        var storage = new RecordingFileStorageService();
-        var accessService = new StubFileAccessService(canAccess: true);
-        var controller = CreateController(storage, accessService);
-
-        var result = await controller.GetAssignment("../hw.pdf", CancellationToken.None);
-
-        Assert.IsType<BadRequestResult>(result);
-        Assert.Equal(0, accessService.CallCount);
+        Assert.Equal([("announcements", "news.webp")], files.Calls);
     }
 
     [Fact]
     public async Task GetAssignment_ReturnsFileStream_WhenAccessGranted()
     {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1, 2, 3, 4]), "application/pdf")
-        };
-        var controller = CreateController(storage, canAccessAssignment: true);
+        var files = new StubFileDownloadService { ContentType = "application/pdf" };
+        var controller = new UploadsController(files);
 
         var result = await controller.GetAssignment("hw.pdf", CancellationToken.None);
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("application/pdf", fileResult.ContentType);
-        Assert.Equal(["/api/v1/uploads/assignments/hw.pdf"], storage.OpenReadCalls);
+        Assert.True(fileResult.EnableRangeProcessing);
+        Assert.Equal(["hw.pdf"], files.AssignmentCalls);
     }
 
     [Fact]
-    public async Task GetAssignment_ReturnsNotFound_WhenAccessGrantedButFileMissing()
+    public void GetInstrument_PropagatesTheServiceFailure()
     {
-        var storage = new RecordingFileStorageService { OpenReadResult = (null, null) };
-        var controller = CreateController(storage, canAccessAssignment: true);
+        var files = new StubFileDownloadService { Error = new NotFoundException(Messages.NotFound) };
+        var controller = new UploadsController(files);
 
-        var result = await controller.GetAssignment("hw.pdf", CancellationToken.None);
-
-        Assert.IsType<NotFoundResult>(result);
+        Assert.Throws<NotFoundException>(() => controller.GetInstrument("missing.webp"));
     }
 
-    private static UploadsController CreateController(
-        RecordingFileStorageService storage,
-        bool canAccessAssignment = true) =>
-        CreateController(storage, new StubFileAccessService(canAccessAssignment));
+    [Fact]
+    public async Task GetAssignment_PropagatesTheServiceFailure()
+    {
+        var files = new StubFileDownloadService { Error = new AuthorizationException(Messages.Forbidden) };
+        var controller = new UploadsController(files);
 
-    private static UploadsController CreateController(
-        RecordingFileStorageService storage,
-        IFileAccessService accessService) =>
-        new(storage, accessService, new StubCurrentActor(userId: 1));
+        await Assert.ThrowsAsync<AuthorizationException>(() => controller.GetAssignment("hw.pdf", CancellationToken.None));
+    }
+
+    private sealed class StubFileDownloadService : IFileDownloadService
+    {
+        public Stream Data { get; } = new MemoryStream([1, 2, 3]);
+        public string ContentType { get; set; } = "image/webp";
+        public Exception? Error { get; set; }
+        public List<(string Subfolder, string FileName)> Calls { get; } = [];
+        public List<string> AssignmentCalls { get; } = [];
+
+        public (Stream Data, string ContentType) Get(string subfolder, string fileName)
+        {
+            Calls.Add((subfolder, fileName));
+
+            return Error is null ? (Data, ContentType) : throw Error;
+        }
+
+        public Task<(Stream Data, string ContentType)> GetAssignmentAsync(
+            string fileName,
+            CancellationToken cancellationToken = default)
+        {
+            AssignmentCalls.Add(fileName);
+
+            return Error is null
+                ? Task.FromResult((Data, ContentType))
+                : Task.FromException<(Stream Data, string ContentType)>(Error);
+        }
+    }
 }

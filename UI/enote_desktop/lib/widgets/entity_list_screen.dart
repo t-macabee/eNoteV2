@@ -54,6 +54,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       _controller.refresh(resetPage: resetPage);
 
   Future<void> _deleteItem(T item) async {
+    if (widget.config.deleteDisabledReasonOf?.call(item) != null) return;
+
     if (widget.config.showDeleteConfirmation) {
       final confirmed = await confirmDialog(
         context: context,

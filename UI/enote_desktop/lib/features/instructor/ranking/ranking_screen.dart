@@ -119,7 +119,25 @@ class _RankingViewState extends State<RankingView> {
                         '${item.rank}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      title: Text(item.studentName),
+                      title: Row(
+                        children: [
+                          UserAvatar(
+                            userId: item.studentAppUserId,
+                            apiClient: context.read<ApiClient>(),
+                            radius: 12,
+                            placeholder: () =>
+                                InitialsAvatar(text: item.studentName),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              item.studentName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                       subtitle: Text(
                         'Prosjek: $avg · Ocijenjeno: ${item.gradedSubmissions}',
                       ),

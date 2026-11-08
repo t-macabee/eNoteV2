@@ -1,5 +1,6 @@
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Shared.Base;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Common.Crud;
 
@@ -16,23 +17,23 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
 
     protected virtual (string IndexName, string Message)? UniqueConflict => null;
 
+    protected abstract Expression<Func<TEntity, TDto>> Projection { get; }
+
     public virtual async Task<PagedResult<TDto>> GetPagedAsync(TSearch search, CancellationToken cancellationToken = default)
     {
         var query = Db.Set<TEntity>().AsNoTracking();
         query = ApplySearch(query, search);
 
-        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
+        return await query.ToProjectedPagedResultAsync(search, Projection, ApplyDefaultOrder, cancellationToken);
     }
 
-    public virtual async Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<TEntity>()
+    public virtual async Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        await Db.Set<TEntity>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-
-        return Map(entity);
-    }
+            .Where(x => x.Id == id)
+            .Select(Projection)
+            .FirstOrDefaultAsync(cancellationToken)
+        ?? throw new NotFoundException(NotFoundMessage);
 
     public virtual async Task<TDto> CreateAsync(TRequest request, CancellationToken cancellationToken = default)
     {
@@ -67,8 +68,6 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
         Db.Set<TEntity>().Remove(entity);
         await Db.SaveChangesAsync(cancellationToken);
     }
-
-    protected abstract TDto Map(TEntity entity);
 
     protected abstract TEntity CreateEntity(TRequest request);
 

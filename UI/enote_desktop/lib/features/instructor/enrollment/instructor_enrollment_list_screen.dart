@@ -110,6 +110,25 @@ class _InstructorEnrollmentListScreenState
             label: 'Student',
             value: (item) => item.studentName,
             maxWidth: 180,
+            cellBuilder: (context, item) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                UserAvatar(
+                  userId: item.studentAppUserId,
+                  apiClient: context.read<ApiClient>(),
+                  radius: 12,
+                  placeholder: () => InitialsAvatar(text: item.studentName),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Text(
+                    item.studentName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Kurs',

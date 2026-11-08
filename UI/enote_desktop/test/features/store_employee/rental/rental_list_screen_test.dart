@@ -8,7 +8,7 @@ import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
-import 'package:enote_desktop/widgets/async_dropdown.dart';
+import 'package:enote_desktop/widgets/async_search_field.dart';
 
 import '../../../helpers.dart';
 
@@ -152,24 +152,17 @@ List<Uri> _countRequests(ScriptedClient client) => client.getUrls
     .toList();
 
 void main() {
-  testWidgets(
-    'F4-04: instrument filter query matches pagedQuery(1, 100) output',
-    (tester) async {
-      final client = _client();
-      await _pumpList(tester, client);
+  testWidgets('the instrument filter loads no instruments before a search', (
+    tester,
+  ) async {
+    final client = _client();
+    await _pumpList(tester, client);
 
-      final instrumentUrls = client.getUrls
-          .where((u) => u.contains('shop/instruments'))
-          .toList();
-      expect(instrumentUrls, isNotEmpty);
-      final expected = pagedQuery(
-        1,
-        100,
-        '',
-      ).map((k, v) => MapEntry(k, v.toString()));
-      expect(Uri.parse(instrumentUrls.first).queryParameters, equals(expected));
-    },
-  );
+    final instrumentUrls = client.getUrls
+        .where((u) => u.contains('shop/instruments'))
+        .toList();
+    expect(instrumentUrls, isEmpty);
+  });
 
   testWidgets('F4-05: fee column renders with the KM suffix', (tester) async {
     final client = _client();
@@ -193,58 +186,44 @@ void main() {
     },
   );
 
-  testWidgets('the instrument filter loads every page of instruments', (
-    tester,
-  ) async {
-    final client = ScriptedClient((request) {
-      final path = request.url.path;
-      if (path.contains('shop/instruments')) {
-        final page = int.parse(request.url.queryParameters['page'] ?? '1');
-        return jsonResponse({
-          'items': [
-            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
-              {
-                'id': page * 1000 + i,
-                'model': 'Instrument ${page * 1000 + i}',
-                'manufacturerId': 1, 'manufacturerName': 'Fender',
-                'instrumentTypeId': 1,
-                'instrumentType': 'Gitara',
-                'musicStore': 'Shop',
-                'isAvailable': true,
-              },
-          ],
-          'page': page,
-          'pageSize': 100,
-          'totalCount': 150,
-        }, 200);
-      }
-      if (path.contains('shop/rentals')) {
-        return jsonResponse(const {
-          'items': [],
-          'page': 1,
-          'pageSize': 20,
-          'totalCount': 0,
-        }, 200);
-      }
-      return jsonResponse(const {}, 200);
-    });
+  testWidgets(
+    'the instrument filter sends the typed term with page size 20',
+    (tester) async {
+      final client = _statusClient(
+        instruments: [
+          {
+            'id': 1,
+            'model': 'Stratocaster',
+            'manufacturerId': 1,
+            'manufacturerName': 'Fender',
+            'instrumentTypeId': 1,
+            'instrumentType': 'Gitara',
+            'musicStore': 'Shop',
+            'isAvailable': true,
+          },
+        ],
+      );
 
-    await _pumpList(tester, client);
+      await _pumpList(tester, client);
 
-    final instrumentUrls = client.getUrls
-        .where((u) => u.contains('shop/instruments'))
-        .toList();
-    expect(instrumentUrls, hasLength(2));
-    expect(instrumentUrls.first, contains('page=1'));
-    expect(instrumentUrls.last, contains('page=2'));
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AsyncSearchField<InstrumentDto>),
+          matching: find.byType(TextField),
+        ),
+        'Strato',
+      );
+      await pumpPastDebounce(tester);
+      await tester.pumpAndSettle();
 
-    final dropdown = tester.widget<DropdownButton<Object>>(
-      find.byType(DropdownButton<Object>),
-    );
-    expect(dropdown.items, hasLength(151));
-    expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
-    expect((dropdown.items!.last.child as Text).data, 'Instrument 2049');
-  });
+      final instrumentUrl = client.getUrls
+          .map(Uri.parse)
+          .singleWhere((u) => u.path.contains('shop/instruments'));
+      expect(instrumentUrl.queryParameters['page'], '1');
+      expect(instrumentUrl.queryParameters['pageSize'], '20');
+      expect(instrumentUrl.queryParameters['search'], 'Strato');
+    },
+  );
 
   testWidgets(
     'overdue active row appends the overdue days in the danger chip',
@@ -321,11 +300,30 @@ void main() {
     );
     await _pumpList(tester, client, size: const Size(1280, 800));
 
-    await tester.tap(find.byType(DropdownButton<Object>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Stratocaster').last);
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AsyncSearchField<InstrumentDto>),
+        matching: find.byType(TextField),
+      ),
+      'Strato',
+    );
+    await pumpPastDebounce(tester);
     await tester.pumpAndSettle();
 
+    await tester.tap(find.widgetWithText(ListTile, 'Stratocaster'));
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(
+      find.descendant(
+        of: find.byType(AsyncSearchField<InstrumentDto>),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(field.controller?.text, 'Stratocaster');
+    expect(
+      _listRequests(client).last.queryParameters['instrumentId'],
+      '1',
+    );
     expect(_countRequests(client).last.queryParameters['instrumentId'], '1');
   });
 
@@ -430,7 +428,13 @@ void main() {
     );
     expect(confirmButton.onPressed, isNull);
 
-    await tester.enterText(find.byType(TextField), 'Instrument je oštećen');
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      'Instrument je oštećen',
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
     await tester.pumpAndSettle();
@@ -462,7 +466,7 @@ void main() {
     await _pumpList(tester, _statusClient(), size: const Size(1280, 800));
 
     final dropdownBottom = tester
-        .getRect(find.byType(AsyncDropdown<InstrumentDto>))
+        .getRect(find.byType(AsyncSearchField<InstrumentDto>))
         .bottom;
     final chipsTop = find
         .byType(ChoiceChip)

@@ -83,4 +83,23 @@ void main() {
     expect(queries.single['studentId'], 5);
     expect(maxPageSize, 100);
   });
+
+  test('throws after ten pages of an endless source', () async {
+    var calls = 0;
+
+    await expectLater(
+      fetchAllPages<int>((query) async {
+        calls++;
+        return PagedResult<int>(
+          items: const [1],
+          page: query['page'] as int,
+          pageSize: maxPageSize,
+          totalCount: 1000000,
+        );
+      }),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(calls, 10);
+  });
 }

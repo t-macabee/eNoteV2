@@ -14,6 +14,11 @@ public static class InstrumentRentalSearchExtensions
             query = query.Where(x => x.RentalStatus == search.RentalStatus.Value);
         }
 
+        if (search.RentalStatuses is { Count: > 0 } statuses)
+        {
+            query = query.Where(x => statuses.Contains(x.RentalStatus));
+        }
+
         return query;
     }
 }

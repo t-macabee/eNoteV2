@@ -6,4 +6,5 @@ public class InstrumentRentalSearchObject : BaseSearchObject
 {
     public int? InstrumentId { get; set; }
     public InstrumentRentalStatus? RentalStatus { get; set; }
+    public IReadOnlyList<InstrumentRentalStatus>? RentalStatuses { get; set; }
 }

@@ -101,6 +101,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi instrument' : 'Dodaj instrument',
       isEditMode: _isEditMode,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
       fieldsBuilder: (_) => [
         FormSection(
           title: 'Osnovni podaci',

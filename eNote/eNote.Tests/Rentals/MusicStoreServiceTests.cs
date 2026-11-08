@@ -391,6 +391,27 @@ public sealed class MusicStoreServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_Blocked_WhenTheStoreIsOutsideTheCurrentStoreFilter()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+        await service.CreateAsync(new MusicStoreRequest { StoreName = "Own Shop", BusinessHours = "09-17" });
+        var other = await service.CreateAsync(new MusicStoreRequest { StoreName = "Other Shop", BusinessHours = "09-17" });
+        Assert.NotEqual(ctx.ExplicitStoreId, other.Id);
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        ctx.Set<InstrumentType>().Add(type);
+        await ctx.SaveChangesAsync();
+        ctx.Set<Instrument>().Add(new Instrument("Strat", TestManufacturers.Id("Fender"), null, null, type.Id, other.Id));
+        await ctx.SaveChangesAsync();
+
+        var dto = await service.GetByIdAsync(other.Id);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(other.Id));
+
+        Assert.Equal(Messages.MusicStoreDeleteBlocked, dto.DeleteBlockedReason);
+        Assert.Equal(Messages.MusicStoreDeleteBlocked, ex.Message);
+    }
+
+    [Fact]
     public async Task DeleteAsync_DeletesStoredImage()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
@@ -513,7 +534,7 @@ public sealed class MusicStoreServiceTests
     }
 
     private static MusicStoreService CreateService(IAppDbContext ctx, IFileStorageService? fileStorage = null) =>
-        new(ctx, fileStorage ?? new StubFileStorageService());
+        new(ctx, fileStorage ?? new StubFileStorageService(), new StubCurrentActor());
 
     private static async Task<City> SeedCityAsync(ENoteContext ctx, string name)
     {

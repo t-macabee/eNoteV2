@@ -7,7 +7,8 @@ namespace eNote.Application.Features.Identity.Students;
 public sealed class AdminStudentService(
     IAppDbContext context,
     IUserIdentityService identityService,
-    InstructorAccessService instructorAccess)
+    InstructorAccessService instructorAccess,
+    ICurrentUserContext currentUser)
 {
     public async Task<PagedResult<StudentDto>> GetPagedAsync(StudentSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -27,6 +28,15 @@ public sealed class AdminStudentService(
         return await BuildPagedResultAsync(query, search, cancellationToken);
     }
 
+    public async Task<PagedResult<StudentDto>> GetPagedForCurrentInstructorAsync(
+        StudentSearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetPagedForInstructorAsync(instructorId, search, cancellationToken);
+    }
+
     public async Task<StudentDto> GetByIdForInstructorAsync(
         int instructorId,
         int studentId,
@@ -37,6 +47,15 @@ public sealed class AdminStudentService(
         UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
 
         return Map(entity, user);
+    }
+
+    public async Task<StudentDto> GetByIdForCurrentInstructorAsync(
+        int studentId,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetByIdForInstructorAsync(instructorId, studentId, cancellationToken);
     }
 
     public async Task<PagedResult<StudentEnrollmentDto>> GetEnrollmentsForInstructorAsync(
@@ -71,6 +90,16 @@ public sealed class AdminStudentService(
             },
             q => q.OrderBy(e => e.Course.Name),
             cancellationToken);
+    }
+
+    public async Task<PagedResult<StudentEnrollmentDto>> GetEnrollmentsForCurrentInstructorAsync(
+        int studentId,
+        StudentEnrollmentSearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+
+        return await GetEnrollmentsForInstructorAsync(instructorId, studentId, search, cancellationToken);
     }
 
     private async Task<Student> EnsureStudentVisibleToInstructorAsync(

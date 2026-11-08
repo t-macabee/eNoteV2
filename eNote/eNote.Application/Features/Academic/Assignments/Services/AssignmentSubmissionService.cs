@@ -40,7 +40,7 @@ public sealed class AssignmentSubmissionService(
             throw;
         }
 
-        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student, ct));
+        return MapSubmission(existing, student, await displayNames.GetStudentDisplayNameAsync(student, ct));
     }
 
     public async Task<AssignmentSubmissionDto> GetOwnSubmissionAsync(int assignmentId, CancellationToken cancellationToken = default)
@@ -61,7 +61,7 @@ public sealed class AssignmentSubmissionService(
             .FirstOrDefaultAsync(x => x.AssignmentId == assignmentId && x.StudentId == student.Id, cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
-        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
+        return MapSubmission(submission, submission.Student, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
     }
 
     public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
@@ -91,7 +91,7 @@ public sealed class AssignmentSubmissionService(
             async (submissions, ct) =>
             {
                 var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), ct);
-                return submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)));
+                return submissions.Select(x => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)));
             },
             q => q.OrderBy(x => x.StudentId),
             cancellationToken);
@@ -117,7 +117,7 @@ public sealed class AssignmentSubmissionService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
+        return MapSubmission(submission, submission.Student, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
     }
 
     private async Task<(Student Student, Assignment Assignment, AssignmentSubmission? Existing)> ValidateSubmissionAsync(int assignmentId, CancellationToken cancellationToken)
@@ -163,9 +163,10 @@ public sealed class AssignmentSubmissionService(
         return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, cancellationToken: cancellationToken);
     }
 
-    private AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, string studentName)
+    private AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName)
     {
         var dto = mapper.Map<AssignmentSubmissionDto>(submission);
+        dto.StudentAppUserId = student.AppUserId;
         dto.StudentName = studentName;
         return dto;
     }

@@ -48,20 +48,20 @@ ScriptedClient _client({required List<Map<String, dynamic>> items}) {
   return ScriptedClient((request) {
     final path = request.url.path;
     if (request.method == 'PATCH' &&
-        path == '/api/v1/student/notifications/read-all') {
+        path == '/api/v1/notifications/read-all') {
       allRead = true;
     }
     if (request.method == 'GET' && path == '/api/v1/users/me') {
       return jsonResponse(meJson(), 200);
     }
     if (request.method == 'GET' &&
-        path == '/api/v1/student/notifications/unread-count') {
+        path == '/api/v1/notifications/unread-count') {
       final unread = allRead
           ? 0
           : items.where((item) => item['isRead'] == false).length;
       return jsonResponse({'unreadCount': unread}, 200);
     }
-    if (request.method == 'GET' && path == '/api/v1/student/notifications') {
+    if (request.method == 'GET' && path == '/api/v1/notifications') {
       final page = int.tryParse(request.url.queryParameters['page'] ?? '1');
       if (page != null && page > 1) {
         return jsonResponse({'items': [], 'totalCount': items.length}, 200);
@@ -106,7 +106,7 @@ class _Harness {
     );
     notifications = NotificationController(
       apiClient: apiClient,
-      endpoint: 'student/notifications',
+      endpoint: 'notifications',
     );
     hub = NotificationHubClient(
       hubUrl: NotificationHubClient.deriveHubUrl(
@@ -246,7 +246,7 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
+      harness.client.where('PATCH', '/api/v1/notifications/read-all'),
       hasLength(1),
     );
   });
@@ -311,7 +311,7 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where('PATCH', '/api/v1/student/notifications/1/read'),
+      harness.client.where('PATCH', '/api/v1/notifications/1/read'),
       hasLength(1),
     );
     expect(find.text('Obavještenja'), findsNothing);
@@ -332,7 +332,7 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where('PATCH', '/api/v1/student/notifications/2/read'),
+      harness.client.where('PATCH', '/api/v1/notifications/2/read'),
       isEmpty,
     );
     expect(find.text('Obavještenja'), findsNothing);
@@ -354,7 +354,7 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
+      harness.client.where('PATCH', '/api/v1/notifications/read-all'),
       hasLength(1),
     );
     expect(find.text('Označi sve kao pročitano'), findsNothing);
@@ -369,7 +369,7 @@ void main() {
 
     expect(find.text('Označi sve kao pročitano'), findsNothing);
     expect(
-      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
+      harness.client.where('PATCH', '/api/v1/notifications/read-all'),
       isEmpty,
     );
   });
@@ -396,7 +396,7 @@ void main() {
     final pageTwos = harness.client.requests.where(
       (r) =>
           r.method == 'GET' &&
-          r.url.path == '/api/v1/student/notifications' &&
+          r.url.path == '/api/v1/notifications' &&
           r.url.queryParameters['page'] == '2',
     );
     expect(pageTwos, hasLength(1));

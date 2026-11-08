@@ -40,8 +40,13 @@ void main() {
     );
 
     await tester.pumpWidget(
-      Provider<RankingProvider>.value(
-        value: RankingProvider(apiClient: apiClient),
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          Provider<RankingProvider>.value(
+            value: RankingProvider(apiClient: apiClient),
+          ),
+        ],
         child: const MaterialApp(
           home: Scaffold(body: RankingView(courseId: 2)),
         ),

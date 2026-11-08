@@ -75,15 +75,16 @@ void main() {
     expect(find.text(_message), findsOneWidget);
   });
 
-  testWidgets('returns true when the request fails', (
+  testWidgets('returns false and shows the error when the request fails', (
     WidgetTester tester,
   ) async {
     final result = await _runGuard(
       tester,
-      () async => throw Exception('network'),
+      () async => throw ApiException('Server nije dostupan.'),
     );
 
-    expect(result, isTrue);
+    expect(result, isFalse);
     expect(find.text(_message), findsNothing);
+    expect(find.text('Server nije dostupan.'), findsOneWidget);
   });
 }

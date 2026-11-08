@@ -10,6 +10,7 @@ class InstrumentDto {
   final double monthlyFee;
   final String musicStore;
   final bool isAvailable;
+  final String? deleteBlockedReason;
 
   InstrumentDto({
     required this.id,
@@ -23,6 +24,7 @@ class InstrumentDto {
     required this.monthlyFee,
     required this.musicStore,
     required this.isAvailable,
+    this.deleteBlockedReason,
   });
 
   factory InstrumentDto.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class InstrumentDto {
       monthlyFee: (json['monthlyFee'] as num?)?.toDouble() ?? 0.0,
       musicStore: json['musicStore'] as String? ?? '',
       isAvailable: json['isAvailable'] as bool? ?? false,
+      deleteBlockedReason: json['deleteBlockedReason'] as String?,
     );
   }
 
@@ -53,6 +56,7 @@ class InstrumentDto {
     'monthlyFee': monthlyFee,
     'musicStore': musicStore,
     'isAvailable': isAvailable,
+    if (deleteBlockedReason != null) 'deleteBlockedReason': deleteBlockedReason,
   };
 }
 

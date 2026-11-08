@@ -91,6 +91,7 @@ public sealed class RankingService(
             {
                 Rank = i + 1,
                 StudentId = x.Student.Id,
+                StudentAppUserId = x.Student.AppUserId,
                 StudentName = x.Name,
                 AverageGrade = GradedSubmissionQueries.RoundAverage(x.Average),
                 GradedSubmissions = x.Count

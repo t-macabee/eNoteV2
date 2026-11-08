@@ -13,11 +13,15 @@ class CityFormScreen extends StatefulWidget {
   final CityDto? existing;
 
   final EntityFormPresentation presentation;
+  final bool closeAfterAdd;
+  final void Function(CityDto created)? onCreated;
 
   const CityFormScreen({
     super.key,
     this.existing,
     this.presentation = EntityFormPresentation.page,
+    this.closeAfterAdd = false,
+    this.onCreated,
   });
 
   @override
@@ -41,7 +45,13 @@ class _CityFormScreenState extends State<CityFormScreen>
     final provider = context.read<CityProvider>();
     final request = CityRequest(name: _nameController.text.trim());
 
-    await provider.save(id: widget.existing?.id, request: request.toJson());
+    final created = await provider.save(
+      id: widget.existing?.id,
+      request: request.toJson(),
+    );
+    if (widget.existing == null && created != null) {
+      widget.onCreated?.call(created);
+    }
     return true;
   }
 
@@ -52,6 +62,8 @@ class _CityFormScreenState extends State<CityFormScreen>
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj grad' : 'Uredi grad',
       isEditMode: widget.existing != null,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
+      closeAfterAdd: widget.closeAfterAdd,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
         FormSection(

@@ -65,6 +65,12 @@ class _CourseEnrollmentsViewState extends State<CourseEnrollmentsView> {
         listStyle: EntityListStyle.tiles,
         showSearchBar: false,
         showAddButton: false,
+        leadingOf: (context, item) => UserAvatar(
+          userId: item.studentAppUserId,
+          apiClient: context.read<ApiClient>(),
+          radius: 16,
+          placeholder: () => InitialsAvatar(text: item.studentName),
+        ),
         columns: [
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Student',
@@ -89,8 +95,12 @@ class _CourseEnrollmentsViewState extends State<CourseEnrollmentsView> {
             value: (item) => formatDateNullable(item.decidedAt),
           ),
           ColumnSpec<CourseEnrollmentDto>(
+            label: 'Otkazano',
+            value: (item) => formatDateNullable(item.canceledAt),
+          ),
+          ColumnSpec<CourseEnrollmentDto>(
             label: 'Razlog',
-            value: (item) => item.decisionNote ?? '-',
+            value: (item) => item.statusReason ?? '-',
           ),
         ],
         statusTabs: _buildStatusTabs(),

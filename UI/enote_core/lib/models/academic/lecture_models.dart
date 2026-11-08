@@ -140,12 +140,14 @@ class LectureUpdateRequest {
 class AttendanceDto {
   final int id;
   final int studentId;
+  final int studentAppUserId;
   final String studentName;
   final AttendanceStatus attendanceStatus;
 
   AttendanceDto({
     required this.id,
     required this.studentId,
+    this.studentAppUserId = 0,
     required this.studentName,
     required this.attendanceStatus,
   });
@@ -154,6 +156,7 @@ class AttendanceDto {
     return AttendanceDto(
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
+      studentAppUserId: json['studentAppUserId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
       attendanceStatus: AttendanceStatus.fromJson(
         json['attendanceStatus'] as String?,
@@ -164,6 +167,7 @@ class AttendanceDto {
   Map<String, dynamic> toJson() => {
     'id': id,
     'studentId': studentId,
+    if (studentAppUserId != 0) 'studentAppUserId': studentAppUserId,
     'studentName': studentName,
     'attendanceStatus': attendanceStatus.toJson(),
   };

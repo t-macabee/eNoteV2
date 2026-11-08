@@ -1,5 +1,6 @@
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Shared.Base;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Common.Paging;
 
@@ -32,6 +33,41 @@ public static class PagingExtensions
         return new PagedResult<TModel>
         {
             Items = [.. items],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
+    public static async Task<PagedResult<TModel>> ToProjectedPagedResultAsync<TEntity, TSearch, TModel>(
+        this IQueryable<TEntity> query,
+        TSearch search,
+        Expression<Func<TEntity, TModel>> projection,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        CancellationToken ct = default) where TSearch : BaseSearchObject where TEntity : IEntity
+    {
+        int? total = null;
+
+        if (search.IncludeTotalCount)
+        {
+            total = await query.CountAsync(ct);
+        }
+
+        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        query = orderBy is not null
+            ? orderBy(query).ThenBy(x => x.Id)
+            : query.OrderBy(x => x.Id);
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(projection)
+            .ToListAsync(ct);
+
+        return new PagedResult<TModel>
+        {
+            Items = items,
             Page = page,
             PageSize = pageSize,
             TotalCount = total

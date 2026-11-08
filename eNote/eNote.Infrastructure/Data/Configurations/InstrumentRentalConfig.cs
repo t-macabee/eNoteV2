@@ -29,6 +29,11 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
                .HasForeignKey(x => x.RejectedById)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.CanceledById)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(x => x.MusicStoreId).IsRequired();
 
         builder.Property(x => x.Fee).HasDecimalPrecision(10).IsRequired();
@@ -58,6 +63,8 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
         builder.Property(x => x.Version).IsRowVersion();
 
         builder.Property(x => x.Note).HasMaxLength(InstrumentRental.NoteMaxLength);
+
+        builder.Property(x => x.DecisionNote).HasMaxLength(InstrumentRental.NoteMaxLength);
 
         builder.Property(x => x.RequestNote).HasMaxLength(InstrumentRental.NoteMaxLength);
     }

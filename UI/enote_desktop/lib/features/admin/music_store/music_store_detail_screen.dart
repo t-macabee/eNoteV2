@@ -152,11 +152,14 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
           icon: const Icon(Icons.edit_outlined),
           label: const Text('Uredi'),
         ),
-        TextButton.icon(
-          onPressed: _deleteStore,
-          icon: const Icon(Icons.delete_outline),
-          label: const Text('Obriši'),
-          style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+        Tooltip(
+          message: store.deleteBlockedReason ?? 'Obriši',
+          child: TextButton.icon(
+            onPressed: store.deleteBlockedReason == null ? _deleteStore : null,
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Obriši'),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+          ),
         ),
         const SizedBox(width: AppSpacing.sm),
       ],

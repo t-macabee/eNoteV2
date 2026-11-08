@@ -12,6 +12,8 @@ public sealed class RentalNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : IRentalNotificationDispatcher
 {
+    private readonly Dictionary<int, List<int>> _activeEmployeeUserIdsByStore = [];
+
     public async Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         var (title, body) = BuildCreatedContent(rental);
@@ -66,8 +68,14 @@ public sealed class RentalNotificationDispatcher(
         }
     }
 
-    private async Task<List<int>> LoadActiveEmployeeUserIdsAsync(int musicStoreId, CancellationToken cancellationToken) =>
-        await context.Set<MusicStoreEmployee>()
+    private async Task<List<int>> LoadActiveEmployeeUserIdsAsync(int musicStoreId, CancellationToken cancellationToken)
+    {
+        if (_activeEmployeeUserIdsByStore.TryGetValue(musicStoreId, out var employeeUserIds))
+        {
+            return employeeUserIds;
+        }
+
+        employeeUserIds = await context.Set<MusicStoreEmployee>()
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(x => x.MusicStoreId == musicStoreId)
@@ -76,6 +84,11 @@ public sealed class RentalNotificationDispatcher(
                 user => user.Id,
                 (employee, _) => employee.AppUserId)
             .ToListAsync(cancellationToken);
+
+        _activeEmployeeUserIdsByStore[musicStoreId] = employeeUserIds;
+
+        return employeeUserIds;
+    }
 
     public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId)
     {
@@ -165,7 +178,7 @@ public sealed class RentalNotificationDispatcher(
             RentalTrigger.Approve =>
                 ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {CurrencyAmount.Local(rental.Fee)}. Instrument preuzmite u roku od {InstrumentRental.PickupWindow.Days} dana. Za svaki dan kašnjenja nakon isteka roka plaća se penal od {CurrencyAmount.Local(rental.DailyPenaltyFee)}."),
             RentalTrigger.Reject or RentalTrigger.ExpirePickup =>
-                ("Zahtjev odbijen", string.IsNullOrWhiteSpace(rental.Note) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen. Razlog: {rental.Note}"),
+                ("Zahtjev odbijen", string.IsNullOrWhiteSpace(rental.DecisionNote) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen. Razlog: {rental.DecisionNote}"),
             RentalTrigger.Pickup =>
                 ("Instrument preuzet", $"Preuzeli ste instrument {rental.InstrumentModel}. Rok povrata je {rental.DueAt:dd.MM.yyyy}. Produženje je moguće u zadnjih {InstrumentRental.RenewalWindow.Days} dana roka."),
             RentalTrigger.Complete =>

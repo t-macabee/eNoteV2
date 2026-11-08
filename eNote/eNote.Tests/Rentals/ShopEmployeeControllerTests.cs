@@ -57,8 +57,9 @@ public sealed class ShopEmployeeControllerTests
             LastName = "User"
         }, CancellationToken.None);
 
-        var statusCodeResult = Assert.IsType<ObjectResult>(result);
+        var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
         Assert.Equal(201, statusCodeResult.StatusCode);
+        Assert.Equal(55, Assert.IsType<UserCreatedResponse>(statusCodeResult.Value).UserId);
     }
 
     [Fact]

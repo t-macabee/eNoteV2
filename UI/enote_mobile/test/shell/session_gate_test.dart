@@ -30,9 +30,9 @@ Map<String, dynamic> _gateBody(http.Request request) {
         'profile': {'id': 7},
         'hasPicture': false,
       };
-    case '/api/v1/student/notifications/unread-count':
+    case '/api/v1/notifications/unread-count':
       return {'unreadCount': 0};
-    case '/api/v1/student/notifications':
+    case '/api/v1/notifications':
       return {'items': [], 'totalCount': 0};
     default:
       return {'message': 'OK'};
@@ -61,7 +61,7 @@ Widget _gate({String? token}) {
       ChangeNotifierProvider<NotificationController>(
         create: (_) => NotificationController(
           apiClient: apiClient,
-          endpoint: 'student/notifications',
+          endpoint: 'notifications',
         ),
         lazy: false,
       ),

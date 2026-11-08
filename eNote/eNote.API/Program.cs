@@ -43,6 +43,7 @@ builder.Services
         bus.AddConsumer<AnnouncementPublishedPushConsumer>();
         bus.AddConsumer<EnrollmentStatusChangedPushConsumer>();
         bus.AddConsumer<TuitionPaymentPushConsumer>();
+        bus.AddConsumer<InstructorEnrollmentNotificationPushConsumer>();
         bus.AddConsumer<MembershipWarningPushConsumer>();
     })
     .AddApiInfrastructure(builder.Configuration)

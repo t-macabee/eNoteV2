@@ -97,6 +97,7 @@ public sealed class LectureAttendanceService(
                 {
                     Id = a.Id,
                     StudentId = a.StudentId,
+                    StudentAppUserId = a.Student!.AppUserId,
                     StudentName = names.GetValueOrDefault(a.StudentId, Messages.UnknownUserName),
                     AttendanceStatus = a.AttendanceStatus
                 });
@@ -174,6 +175,7 @@ public sealed class LectureAttendanceService(
         {
             Id = attendance.Id,
             StudentId = attendance.StudentId,
+            StudentAppUserId = student.AppUserId,
             StudentName = await displayNames.GetStudentDisplayNameAsync(student, cancellationToken),
             AttendanceStatus = attendance.AttendanceStatus
         };

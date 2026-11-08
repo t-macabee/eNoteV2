@@ -53,12 +53,15 @@ public sealed class AdminStudentControllerTests
     private static AdminStudentController CreateController(ENoteContext context)
     {
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup());
-        var studentService = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+        var actor = new StubCurrentActor();
+        var studentService = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess, actor);
         var membershipService = new MembershipService(
             context,
             studentService,
             new FixedClock(Now),
-            new RecordingMembershipWarningDispatcher());
+            new RecordingMembershipWarningDispatcher(),
+            actor,
+            instructorAccess);
 
         return new AdminStudentController(studentService, membershipService);
     }

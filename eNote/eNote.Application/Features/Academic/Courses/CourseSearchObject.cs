@@ -8,4 +8,5 @@ public class CourseSearchObject : BaseSearchObject
     public bool? IsPublished { get; set; }
     public int? InstructorId { get; set; }
     public bool? EnrolledOnly { get; set; }
+    public bool TuitionDueOnly { get; set; }
 }

@@ -29,17 +29,20 @@ Future<void> runWorkflowAction<T>(
   required WorkflowAction<T> action,
   required Future<void> Function(T trigger, {String? note}) onRun,
 }) async {
-  String? note;
-  if (action.requiresNote) {
-    note = await promptForReason(context, title: action.resolvedDialogTitle);
-    if (note == null) return;
-  } else if (action.confirmMessage != null) {
+  if (action.confirmMessage != null) {
     final confirmed = await confirmDialog(
       context: context,
       title: action.resolvedDialogTitle,
       message: action.confirmMessage!,
     );
     if (confirmed != true) return;
+  }
+
+  String? note;
+  if (action.requiresNote) {
+    if (!context.mounted) return;
+    note = await promptForReason(context, title: action.resolvedDialogTitle);
+    if (note == null) return;
   }
 
   if (!context.mounted) return;

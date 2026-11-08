@@ -65,10 +65,10 @@ class _Harness {
       if (request.method == 'GET' && path == '/api/v1/users/me') {
         body = meJson();
       } else if (request.method == 'GET' &&
-          path == '/api/v1/student/notifications/unread-count') {
+          path == '/api/v1/notifications/unread-count') {
         body = {'unreadCount': unreadCount};
       } else if (request.method == 'GET' &&
-          path == '/api/v1/student/notifications') {
+          path == '/api/v1/notifications') {
         body = {'items': [], 'totalCount': 0};
       } else if (request.method == 'GET' &&
           path == '/api/v1/student/instruments') {
@@ -104,7 +104,7 @@ class _Harness {
     );
     notifications = NotificationController(
       apiClient: apiClient,
-      endpoint: 'student/notifications',
+      endpoint: 'notifications',
     );
     hub = _FakeHub();
     session = SessionController(

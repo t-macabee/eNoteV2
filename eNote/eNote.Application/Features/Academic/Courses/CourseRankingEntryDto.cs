@@ -4,6 +4,7 @@ public class CourseRankingEntryDto
 {
     public int Rank { get; set; }
     public int StudentId { get; set; }
+    public int StudentAppUserId { get; set; }
 
     public string StudentName { get; set; } = null!;
 

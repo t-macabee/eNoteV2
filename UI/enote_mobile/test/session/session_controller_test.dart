@@ -35,8 +35,8 @@ Map<String, http.Response> _bootstrapResponses() => {
     'profile': {'id': 7},
     'hasPicture': false,
   }),
-  'GET /api/v1/student/notifications/unread-count': _json({'unreadCount': 2}),
-  'GET /api/v1/student/notifications': _json({'items': [], 'totalCount': 0}),
+  'GET /api/v1/notifications/unread-count': _json({'unreadCount': 2}),
+  'GET /api/v1/notifications': _json({'items': [], 'totalCount': 0}),
   'POST /api/v1/auth/logout': _json({'message': 'OK'}),
 };
 
@@ -48,8 +48,8 @@ Map<String, http.Response> _profileResponses(String? paidUntilIso) => {
     'profile': {'id': 7, 'membershipPaidUntil': ?paidUntilIso},
     'hasPicture': false,
   }),
-  'GET /api/v1/student/notifications/unread-count': _json({'unreadCount': 0}),
-  'GET /api/v1/student/notifications': _json({'items': [], 'totalCount': 0}),
+  'GET /api/v1/notifications/unread-count': _json({'unreadCount': 0}),
+  'GET /api/v1/notifications': _json({'items': [], 'totalCount': 0}),
   'POST /api/v1/auth/logout': _json({'message': 'OK'}),
 };
 
@@ -74,7 +74,7 @@ SessionController _controller(http.Client http) {
     authState: authState,
     notifications: NotificationController(
       apiClient: apiClient,
-      endpoint: 'student/notifications',
+      endpoint: 'notifications',
     ),
   );
 }
@@ -88,8 +88,8 @@ void main() {
         .map((r) => '${r.method} ${r.url.path}')
         .toList();
     expect(paths, contains('GET /api/v1/users/me'));
-    expect(paths, contains('GET /api/v1/student/notifications/unread-count'));
-    expect(paths, contains('GET /api/v1/student/notifications'));
+    expect(paths, contains('GET /api/v1/notifications/unread-count'));
+    expect(paths, contains('GET /api/v1/notifications'));
     expect(controller.profile?.username, 'student');
     expect(controller.profile?.profile.id, 7);
   });
@@ -223,7 +223,7 @@ void main() {
     );
     final notifications = NotificationController(
       apiClient: apiClient,
-      endpoint: 'student/notifications',
+      endpoint: 'notifications',
     );
     final controller = SessionController(
       apiClient: apiClient,

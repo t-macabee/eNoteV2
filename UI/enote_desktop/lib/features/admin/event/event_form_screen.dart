@@ -9,6 +9,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
+import '../address/address_form_screen.dart';
 import '../address/address_provider.dart';
 import 'event_provider.dart';
 
@@ -78,6 +79,21 @@ class _EventFormScreenState extends State<EventFormScreen>
     return true;
   }
 
+  Future<AddressReferenceDto?> _createAddress(BuildContext context) async {
+    AddressReferenceDto? created;
+
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => AddressFormScreen(
+        presentation: EntityFormPresentation.dialog,
+        closeAfterAdd: true,
+        onCreated: (address) => created = address,
+      ),
+    );
+
+    return created;
+  }
+
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
@@ -142,6 +158,8 @@ class _EventFormScreenState extends State<EventFormScreen>
               itemId: (address) => address.id,
               value: _addressId,
               onChanged: (id, _) => setState(() => _addressId = id as int?),
+              onCreate: _createAddress,
+              createTooltip: 'Dodaj adresu',
             ),
           ],
         ),

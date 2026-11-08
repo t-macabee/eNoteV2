@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Communication;
 
 [Authorize(Roles = $"{AppRoles.Administrator},{AppRoles.Instructor},{AppRoles.StoreEmployee},{AppRoles.Student}")]
-[Route("api/v{version:apiVersion}/student/notifications")]
-public sealed class StudentNotificationController(NotificationService notificationService) : CoreController
+[Route("api/v{version:apiVersion}/notifications")]
+public sealed class NotificationController(NotificationService notificationService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]

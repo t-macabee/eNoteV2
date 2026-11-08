@@ -63,6 +63,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
           ? 'Dodaj tip instrumenta'
           : 'Uredi tip instrumenta',
       isEditMode: widget.existing != null,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
         FormSection(

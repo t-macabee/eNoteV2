@@ -52,9 +52,9 @@ public sealed class EnrollmentTransitionTests
     public void Transition_AppliesEveryAllowedRow(EnrollmentStatus from, EnrollmentTrigger trigger, EnrollmentStatus expected)
     {
         var enrollment = new Enrollment(1, 1, from);
-        var reason = trigger == EnrollmentTrigger.Reject ? "Nema mjesta." : null;
+        var reason = trigger is EnrollmentTrigger.Reject or EnrollmentTrigger.Cancel ? "Nema mjesta." : null;
 
-        var result = enrollment.Transition(trigger, UserId, Now, reason);
+        var result = enrollment.Transition(trigger, ActorFor(trigger), UserId, Now, reason);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value);
@@ -67,7 +67,7 @@ public sealed class EnrollmentTransitionTests
     {
         var enrollment = new Enrollment(1, 1, from);
 
-        var result = enrollment.Transition(trigger, UserId, Now, "Razlog");
+        var result = enrollment.Transition(trigger, ActorFor(trigger), UserId, Now, "Razlog");
 
         Assert.False(result.IsSuccess);
         Assert.False(string.IsNullOrWhiteSpace(result.Error));
@@ -82,7 +82,7 @@ public sealed class EnrollmentTransitionTests
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
 
-        var result = enrollment.Transition(EnrollmentTrigger.Reject, UserId, Now, reason);
+        var result = enrollment.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, UserId, Now, reason);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Razlog odbijanja je obavezan.", result.Error);
@@ -94,7 +94,7 @@ public sealed class EnrollmentTransitionTests
     {
         var approved = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
 
-        approved.Transition(EnrollmentTrigger.Approve, UserId, Now);
+        approved.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, UserId, Now);
 
         Assert.Equal(UserId, approved.DecidedById);
         Assert.Equal(Now, approved.DecidedAt);
@@ -102,7 +102,7 @@ public sealed class EnrollmentTransitionTests
 
         var rejected = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
 
-        rejected.Transition(EnrollmentTrigger.Reject, UserId, Now, "  Nema mjesta.  ");
+        rejected.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, UserId, Now, "  Nema mjesta.  ");
 
         Assert.Equal(UserId, rejected.DecidedById);
         Assert.Equal(Now, rejected.DecidedAt);
@@ -113,9 +113,9 @@ public sealed class EnrollmentTransitionTests
     public void Complete_KeepsApprovalDecision()
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
-        enrollment.Transition(EnrollmentTrigger.Approve, UserId, Now);
+        enrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, UserId, Now);
 
-        enrollment.Transition(EnrollmentTrigger.Complete, 77, Now.AddHours(1));
+        enrollment.Transition(EnrollmentTrigger.Complete, EnrollmentActor.Instructor, 77, Now.AddHours(1));
 
         Assert.Equal(EnrollmentStatus.Completed, enrollment.EnrollmentStatus);
         Assert.Equal(UserId, enrollment.DecidedById);
@@ -126,9 +126,9 @@ public sealed class EnrollmentTransitionTests
     public void Request_AfterReject_ClearsDecision()
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
-        enrollment.Transition(EnrollmentTrigger.Reject, UserId, Now, "Popunjeno");
+        enrollment.Transition(EnrollmentTrigger.Reject, EnrollmentActor.Instructor, UserId, Now, "Popunjeno");
 
-        enrollment.Transition(EnrollmentTrigger.Request, 77, Now.AddHours(1));
+        enrollment.Transition(EnrollmentTrigger.Request, EnrollmentActor.Student, 77, Now.AddHours(1));
 
         Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
         Assert.Null(enrollment.DecidedById);
@@ -140,11 +140,11 @@ public sealed class EnrollmentTransitionTests
     public void Resume_FromCanceled_WithPaidTimeLeft_SetsActive_AndKeepsDecision()
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
-        enrollment.Transition(EnrollmentTrigger.Approve, 77, Now.AddDays(-20));
+        enrollment.Transition(EnrollmentTrigger.Approve, EnrollmentActor.Instructor, 77, Now.AddDays(-20));
         enrollment.ExtendPaidUntil(Now.AddDays(-20), 30);
-        enrollment.Transition(EnrollmentTrigger.Cancel, 88, Now.AddDays(-19));
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, 88, Now.AddDays(-19));
 
-        var result = enrollment.Transition(EnrollmentTrigger.Resume, 99, Now);
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, EnrollmentActor.Student, 99, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(EnrollmentStatus.Active, result.Value);
@@ -158,9 +158,9 @@ public sealed class EnrollmentTransitionTests
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
         enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
-        enrollment.Transition(EnrollmentTrigger.Cancel, UserId, Now.AddDays(-1));
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, UserId, Now.AddDays(-1));
 
-        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now);
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, EnrollmentActor.Student, UserId, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
@@ -171,9 +171,9 @@ public sealed class EnrollmentTransitionTests
     {
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
         enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
-        enrollment.Transition(EnrollmentTrigger.Cancel, UserId, Now.AddDays(-1));
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, UserId, Now.AddDays(-1));
 
-        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now.AddSeconds(1));
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, EnrollmentActor.Student, UserId, Now.AddSeconds(1));
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Pretplata se može nastaviti samo dok plaćeni period traje.", result.Error);
@@ -186,10 +186,70 @@ public sealed class EnrollmentTransitionTests
         var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Active);
         enrollment.ExtendPaidUntil(Now, 30);
 
-        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now);
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, EnrollmentActor.Student, UserId, Now);
 
         Assert.False(result.IsSuccess);
         Assert.Equal("Nastaviti se može samo otkazani upis.", result.Error);
         Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
     }
+
+    [Fact]
+    public void Cancel_ByInstructor_WithoutReason_Fails()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
+
+        var result = enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Instructor, UserId, Now, "   ");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Razlog otkazivanja je obavezan.", result.Error);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
+        Assert.Null(enrollment.CanceledById);
+        Assert.Null(enrollment.CanceledAt);
+    }
+
+    [Fact]
+    public void Cancel_ByInstructor_RecordsCancelerTimeAndTrimmedReason()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Active);
+
+        var result = enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Instructor, UserId, Now, "  Kurs se ukida.  ");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EnrollmentStatus.Canceled, enrollment.EnrollmentStatus);
+        Assert.Equal(UserId, enrollment.CanceledById);
+        Assert.Equal(Now, enrollment.CanceledAt);
+        Assert.Equal("Kurs se ukida.", enrollment.CancellationReason);
+    }
+
+    [Fact]
+    public void Cancel_ByStudent_RecordsCancelerAndTime_WithoutReason()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Active);
+
+        var result = enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Student, UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(UserId, enrollment.CanceledById);
+        Assert.Equal(Now, enrollment.CanceledAt);
+        Assert.Null(enrollment.CancellationReason);
+    }
+
+    [Fact]
+    public void Request_AfterCancel_ClearsCancellationAudit()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
+        enrollment.Transition(EnrollmentTrigger.Cancel, EnrollmentActor.Instructor, UserId, Now, "Kurs se ukida.");
+
+        enrollment.Transition(EnrollmentTrigger.Request, EnrollmentActor.Student, 77, Now.AddHours(1));
+
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
+        Assert.Null(enrollment.CanceledById);
+        Assert.Null(enrollment.CanceledAt);
+        Assert.Null(enrollment.CancellationReason);
+    }
+
+    private static EnrollmentActor ActorFor(EnrollmentTrigger trigger) =>
+        trigger is EnrollmentTrigger.Approve or EnrollmentTrigger.Reject or EnrollmentTrigger.Complete
+            ? EnrollmentActor.Instructor
+            : EnrollmentActor.Student;
 }

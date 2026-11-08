@@ -60,6 +60,21 @@ public sealed class NotificationConsumerTests
     }
 
     [Fact]
+    public async Task InstructorEnrollmentNotificationConsumer_StoresNotificationForInstructor()
+    {
+        var message = new InstructorEnrollmentNotification(31, 47, 200, "Novi zahtjev za upis", "Student je poslao zahtjev za upis na kurs 'Guitar 101'.", Now);
+
+        var notification = await ConsumeAsync<InstructorEnrollmentNotificationConsumer, InstructorEnrollmentNotification>(message);
+
+        Assert.Equal(200, notification.UserId);
+        Assert.Equal(31, notification.EnrollmentId);
+        Assert.Equal(47, notification.CourseId);
+        Assert.Equal("Novi zahtjev za upis", notification.Title);
+        Assert.Equal("Student je poslao zahtjev za upis na kurs 'Guitar 101'.", notification.Body);
+        Assert.Equal(Now, notification.CreatedAt);
+    }
+
+    [Fact]
     public async Task LectureCancelledConsumer_StoresNotificationForStudent()
     {
         var message = new LectureCancelled(3, 5, "Harmonija", "Predavanje otkazano", "Predavanje Harmonija je otkazano.", Now);

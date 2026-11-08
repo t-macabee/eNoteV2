@@ -26,6 +26,7 @@ public class CourseDto
     public DateTime? PaidUntil { get; set; }
     public EnrollmentStatus? EnrollmentStatus { get; set; }
     public string? EnrollmentDecisionNote { get; set; }
+    public string? EnrollmentCancellationReason { get; set; }
     public bool IsFree => Price == 0;
     public string ImagePath => DefaultImages.Course;
 

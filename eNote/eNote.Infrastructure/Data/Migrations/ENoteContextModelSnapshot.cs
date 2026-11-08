@@ -355,6 +355,16 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CanceledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CanceledById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("CourseId")
                         .HasColumnType("int");
 
@@ -396,6 +406,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("rowversion");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CanceledById");
 
                     b.HasIndex("CourseId");
 
@@ -1211,11 +1223,21 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("ApprovedById")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CanceledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CanceledById")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("DueAt")
                         .HasColumnType("datetime2");
@@ -1286,6 +1308,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CanceledById");
 
                     b.HasIndex("CreatedById");
 
@@ -2134,6 +2158,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Enrollment", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CanceledById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Course", "Course")
                         .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
@@ -2506,6 +2535,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CanceledById")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)

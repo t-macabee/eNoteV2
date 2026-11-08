@@ -21,6 +21,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     public InstrumentRentalStatus RentalStatus { get; private set; }
     public string? RequestNote { get; private set; }
     public string? Note { get; private set; }
+    public string? DecisionNote { get; private set; }
 
     public DateTime RequestedAt { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
@@ -37,6 +38,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     public int? ApprovedById { get; private set; }
     public int? RejectedById { get; private set; }
+    public int? CanceledById { get; private set; }
+    public DateTime? CanceledAt { get; private set; }
 
     public decimal Fee { get; private set; }
 
@@ -68,7 +71,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     {
         Fee = fee;
         OverduePenaltyMultiplier = overduePenaltyMultiplier;
-        Note = note;
+        DecisionNote = note;
         ApprovedAt = approvedAt;
         ApprovedById = approvedById;
         RentalStatus = InstrumentRentalStatus.Approved;
@@ -76,15 +79,17 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     private void Reject(DateTime rejectedAt, string? note, int? rejectedById)
     {
-        Note = note;
+        DecisionNote = note;
         RejectedAt = rejectedAt;
         RejectedById = rejectedById;
         RentalStatus = InstrumentRentalStatus.Rejected;
     }
 
-    private void Cancel(string? note)
+    private void Cancel(string? note, int? canceledById, DateTime canceledAt)
     {
         Note = note;
+        CanceledById = canceledById;
+        CanceledAt = canceledAt;
         RentalStatus = InstrumentRentalStatus.Canceled;
     }
 
@@ -226,7 +231,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
             Guard: (_, context, _) => GuardCancelReason(context),
-            Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
+            Apply: (rental, context, now) => rental.Cancel(context.ResponseNote, context.UserId, now),
             UsesInstrumentLock: false),
 
         new(
@@ -242,7 +247,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student, RentalActor.StoreEmployee],
             Guard: (_, context, _) => GuardCancelReason(context),
-            Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
+            Apply: (rental, context, now) => rental.Cancel(context.ResponseNote, context.UserId, now),
             UsesInstrumentLock: false),
 
         new(

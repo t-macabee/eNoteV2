@@ -18,6 +18,7 @@ public sealed class StudentHomeService(
 {
     private const int OpenAssignmentCount = 3;
     private const int CurrentRentalCount = 5;
+    private const int TuitionDueCourseCount = 5;
 
     public async Task<StudentHomeDto> GetAsync(CancellationToken cancellationToken = default)
     {
@@ -41,24 +42,18 @@ public sealed class StudentHomeService(
             IncludeTotalCount = false
         }, cancellationToken);
 
-        var approvedRentals = await rentals.GetPagedForStudentAsync(new InstrumentRentalSearchObject
+        var currentRentals = await rentals.GetPagedForStudentAsync(new InstrumentRentalSearchObject
         {
-            RentalStatus = InstrumentRentalStatus.Approved,
+            RentalStatuses = [InstrumentRentalStatus.Approved, InstrumentRentalStatus.Active],
             PageSize = CurrentRentalCount,
             IncludeTotalCount = false
         }, cancellationToken);
 
-        var activeRentals = await rentals.GetPagedForStudentAsync(new InstrumentRentalSearchObject
-        {
-            RentalStatus = InstrumentRentalStatus.Active,
-            PageSize = CurrentRentalCount,
-            IncludeTotalCount = false
-        }, cancellationToken);
-
-        var enrolledCourses = await courses.GetPagedForStudentAsync(new CourseSearchObject
+        var tuitionDueCourses = await courses.GetPagedForStudentAsync(new CourseSearchObject
         {
             EnrolledOnly = true,
-            PageSize = PagingLimits.MaxPageSize,
+            TuitionDueOnly = true,
+            PageSize = TuitionDueCourseCount,
             IncludeTotalCount = false
         }, cancellationToken);
 
@@ -68,11 +63,8 @@ public sealed class StudentHomeService(
         {
             NextLecture = nextLecture.Items.FirstOrDefault(),
             OpenAssignments = [.. openAssignments.Items],
-            CurrentRentals = [.. approvedRentals.Items, .. activeRentals.Items],
-            TuitionDueCourses = [.. enrolledCourses.Items.Where(c =>
-                c.EnrollmentStatus == EnrollmentStatus.Active
-                && !c.IsFree
-                && (c.PaidUntil is null || c.PaidUntil < now))],
+            CurrentRentals = [.. currentRentals.Items],
+            TuitionDueCourses = [.. tuitionDueCourses.Items],
             Debt = debt
         };
     }

@@ -338,7 +338,8 @@ public sealed class RentalCommandServiceTests
             Assert.Equal(InstrumentRentalStatus.Rejected, due.RentalStatus);
             Assert.Equal(Now, due.RejectedAt);
             Assert.Null(due.RejectedById);
-            Assert.Equal(Messages.RentalRejectedPickupExpired, due.Note);
+            Assert.Equal(Messages.RentalRejectedPickupExpired, due.DecisionNote);
+            Assert.Null(due.Note);
 
             var notDue = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == notDueId);
             Assert.Equal(InstrumentRentalStatus.Approved, notDue.RentalStatus);

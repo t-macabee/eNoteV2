@@ -10,6 +10,7 @@ import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
+import '../address/address_form_screen.dart';
 import '../address/address_provider.dart';
 import 'music_store_provider.dart';
 
@@ -89,6 +90,21 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
     return true;
   }
 
+  Future<AddressReferenceDto?> _createAddress(BuildContext context) async {
+    AddressReferenceDto? created;
+
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => AddressFormScreen(
+        presentation: EntityFormPresentation.dialog,
+        closeAfterAdd: true,
+        onCreated: (address) => created = address,
+      ),
+    );
+
+    return created;
+  }
+
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
@@ -96,6 +112,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi prodavnicu' : 'Dodaj prodavnicu',
       isEditMode: _isEditMode,
+      deleteDisabledReason: widget.existing?.deleteBlockedReason,
       onReset: () {
         clearTextControllers();
         setState(() {
@@ -148,6 +165,8 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
                   _selectedAddressId = id as int?;
                 });
               },
+              onCreate: _createAddress,
+              createTooltip: 'Dodaj adresu',
             ),
           ],
         ),

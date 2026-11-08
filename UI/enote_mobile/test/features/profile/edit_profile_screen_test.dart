@@ -20,9 +20,9 @@ Map<String, dynamic> _bodyFor(String method, String path) {
   switch ('$method $path') {
     case 'GET /api/v1/users/me':
       return meJson();
-    case 'GET /api/v1/student/notifications/unread-count':
+    case 'GET /api/v1/notifications/unread-count':
       return {'unreadCount': 0};
-    case 'GET /api/v1/student/notifications':
+    case 'GET /api/v1/notifications':
       return {'items': [], 'totalCount': 0};
     default:
       return {'message': 'OK'};
@@ -62,7 +62,7 @@ class _Harness {
       authState: authState,
       notifications: NotificationController(
         apiClient: apiClient,
-        endpoint: 'student/notifications',
+        endpoint: 'notifications',
       ),
     );
     await session.bootstrap();

@@ -123,17 +123,12 @@ public sealed class ControllerActionDiscoveryTests
     [Fact]
     public void RoleRoutePrefixes_RequireExactlyTheirRole()
     {
-        var allRoles = $"{AppRoles.Administrator},{AppRoles.Instructor},{AppRoles.StoreEmployee},{AppRoles.Student}";
         var expectedRoles = new Dictionary<string, string>
         {
             ["admin"] = AppRoles.Administrator,
             ["instructor"] = AppRoles.Instructor,
             ["shop"] = AppRoles.StoreEmployee,
             ["student"] = AppRoles.Student
-        };
-        var sharedActions = new Dictionary<string, string>
-        {
-            ["StudentNotificationController"] = allRoles
         };
         const string prefix = "api/v{version:apiVersion}/";
 
@@ -150,11 +145,6 @@ public sealed class ControllerActionDiscoveryTests
             if (!expectedRoles.TryGetValue(segment, out var expected))
             {
                 continue;
-            }
-
-            if (sharedActions.TryGetValue(action.ControllerTypeInfo.Name, out var shared))
-            {
-                expected = shared;
             }
 
             checkedActions++;
@@ -175,8 +165,8 @@ public sealed class ControllerActionDiscoveryTests
         string[] expectedAnyAuthenticatedUser =
         [
             "AuthController.Logout",
-            "InstrumentController.GetPublicById",
-            "InstrumentController.GetPublicPaged",
+            "InstrumentController.GetById",
+            "InstrumentController.GetPaged",
             "UploadsController.GetAnnouncement",
             "UploadsController.GetAssignment",
             "UploadsController.GetCourse",

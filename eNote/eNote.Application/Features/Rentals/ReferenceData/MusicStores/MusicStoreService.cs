@@ -1,21 +1,30 @@
 using eNote.Application.Common.Crud;
 using eNote.Application.Common.Files;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.ReferenceData.Addresses;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
-public sealed class MusicStoreService(IAppDbContext context, IFileStorageService fileStorage) : ReferenceDataCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context)
+public sealed class MusicStoreService(
+    IAppDbContext context,
+    IFileStorageService fileStorage,
+    ICurrentUserContext currentUser) : ReferenceDataCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context)
 {
-    protected override MusicStoreDto Map(MusicStore entity) => new()
+    protected override Expression<Func<MusicStore, MusicStoreDto>> Projection => x => new MusicStoreDto
     {
-        Id = entity.Id,
-        StoreName = entity.StoreName,
-        BusinessHours = entity.BusinessHours,
-        PhoneNumber = entity.PhoneNumber,
-        ImagePath = entity.ImagePath ?? DefaultImages.MusicStore,
-        AddressId = entity.AddressId,
-        AddressStreet = entity.Address?.Street,
-        AddressCity = entity.Address?.City?.Name
+        Id = x.Id,
+        StoreName = x.StoreName,
+        BusinessHours = x.BusinessHours,
+        PhoneNumber = x.PhoneNumber,
+        ImagePath = x.ImagePath ?? DefaultImages.MusicStore,
+        AddressId = x.AddressId,
+        AddressStreet = x.Address != null ? x.Address.Street : null,
+        AddressCity = x.Address != null ? x.Address.City.Name : null,
+        DeleteBlockedReason = Db.Set<Instrument>().IgnoreQueryFilters().Any(i => i.MusicStoreId == x.Id)
+            || Db.Set<MusicStoreEmployee>().IgnoreQueryFilters().Any(e => e.MusicStoreId == x.Id)
+            ? Messages.MusicStoreDeleteBlocked
+            : null
     };
 
     protected override MusicStore CreateEntity(MusicStoreRequest request) => new(
@@ -33,14 +42,26 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
             request.PhoneNumber?.Trim());
     }
 
-    public override async Task<PagedResult<MusicStoreDto>> GetPagedAsync(MusicStoreSearchObject search, CancellationToken cancellationToken = default)
+    public async Task<MusicStoreDto> GetOwnStoreAsync(CancellationToken cancellationToken = default)
     {
-        var query = ApplySearch(WithAddress(), search);
-        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
+        var employee = await UserProfileLookup.GetEmployeeAsync(Db, currentUser.UserId, cancellationToken);
+
+        return await GetByIdAsync(employee.MusicStoreId, cancellationToken);
     }
 
-    public override async Task<MusicStoreDto> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
-        await LoadDtoAsync(id, cancellationToken);
+    public async Task<MusicStoreDto> UpdateOwnStoreAsync(ShopStoreUpdateRequest request, CancellationToken cancellationToken = default)
+    {
+        var employee = await UserProfileLookup.EnsureManagerAsync(Db, currentUser.UserId, cancellationToken);
+
+        return await UpdateOperationalDetailsAsync(employee.MusicStoreId, request.BusinessHours, request.PhoneNumber, cancellationToken);
+    }
+
+    public async Task<MusicStoreDto> UploadOwnStoreImageAsync(Stream stream, string contentType, CancellationToken cancellationToken = default)
+    {
+        var employee = await UserProfileLookup.EnsureManagerAsync(Db, currentUser.UserId, cancellationToken);
+
+        return await UploadImageAsync(employee.MusicStoreId, stream, contentType, cancellationToken);
+    }
 
     public override async Task<MusicStoreDto> CreateAsync(MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
@@ -67,7 +88,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
         await Db.SaveChangesAsync(cancellationToken);
 
-        return await LoadDtoAsync(id, cancellationToken);
+        return await GetByIdAsync(id, cancellationToken);
     }
 
     public override async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -98,7 +119,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
         await Db.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
-        return await LoadDtoAsync(id, ct);
+        return await GetByIdAsync(id, ct);
     }
 
     protected override IQueryable<MusicStore> ApplySearch(IQueryable<MusicStore> query, MusicStoreSearchObject search)
@@ -113,25 +134,18 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     protected override string NotFoundMessage => Messages.StoreNotFound;
 
-    private IQueryable<MusicStore> WithAddress() =>
-        Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City);
-
-    private async Task<MusicStoreDto> LoadDtoAsync(int id, CancellationToken cancellationToken)
-    {
-        var entity = await WithAddress().FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-
-        return Map(entity);
-    }
-
     protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct)
     {
-        var inUse = await Db.Set<Instrument>().IgnoreQueryFilters().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
-            || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, ct);
+        var reason = await Db.Set<MusicStore>()
+            .AsNoTracking()
+            .Where(x => x.Id == entity.Id)
+            .Select(Projection)
+            .Select(x => x.DeleteBlockedReason)
+            .FirstOrDefaultAsync(ct);
 
-        if (inUse)
+        if (reason is not null)
         {
-            throw new BusinessException(Messages.MusicStoreDeleteBlocked);
+            throw new BusinessException(reason);
         }
     }
 }

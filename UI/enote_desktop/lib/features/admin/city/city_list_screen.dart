@@ -57,6 +57,7 @@ class _CityListScreenState extends State<CityListScreen> {
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>
             'Da li ste sigurni da želite da obrišete grad "${item.name}"?',
+        deleteDisabledReasonOf: (item) => item.deleteBlockedReason,
         deletedMessage: 'Grad je obrisan.',
         onDelete: (context, item) async {
           await context.read<CityProvider>().remove(item.id);

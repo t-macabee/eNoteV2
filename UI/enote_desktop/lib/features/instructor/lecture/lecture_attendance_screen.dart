@@ -75,6 +75,12 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
         listStyle: EntityListStyle.tiles,
         showSearchBar: false,
         showAddButton: false,
+        leadingOf: (context, item) => UserAvatar(
+          userId: item.studentAppUserId,
+          apiClient: context.read<ApiClient>(),
+          radius: 16,
+          placeholder: () => InitialsAvatar(text: item.studentName),
+        ),
         columns: [
           ColumnSpec<AttendanceDto>(
             label: 'Student',

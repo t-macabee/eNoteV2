@@ -133,6 +133,18 @@ public sealed class NotificationOutboxPublisherTests
     }
 
     [Fact]
+    public async Task ProcessBatch_PublishesInstructorEnrollmentNotificationPayloads()
+    {
+        var message = new InstructorEnrollmentNotification(1, 47, 200, "Novi zahtjev za upis", "Student je poslao zahtjev za upis na kurs 'Guitar 101'.", Now);
+
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.InstructorEnrollmentNotification);
+
+        Assert.Equal(1, payload.EnrollmentId);
+        Assert.Equal(47, payload.CourseId);
+        Assert.Equal(200, payload.InstructorUserId);
+    }
+
+    [Fact]
     public async Task ProcessBatch_PublishesMembershipWarningPayloads()
     {
         var message = new MembershipWarning(50, "Upozorenje o članarini", "Vaša članarina ističe.", Now);
@@ -249,6 +261,7 @@ public sealed class NotificationOutboxPublisherTests
         Type t when t == typeof(AnnouncementPublished) => new AnnouncementPublished(11, 22, "Title", "Body", Now),
         Type t when t == typeof(EnrollmentStatusChanged) => new EnrollmentStatusChanged(11, 47, 22, "Title", "Body", Now),
         Type t when t == typeof(TuitionPaymentNotification) => new TuitionPaymentNotification(11, 47, 22, "Title", "Body", Now),
+        Type t when t == typeof(InstructorEnrollmentNotification) => new InstructorEnrollmentNotification(11, 47, 22, "Title", "Body", Now),
         Type t when t == typeof(MembershipWarning) => new MembershipWarning(22, "Title", "Body", Now),
         Type t when t == typeof(PasswordResetRequested) => new PasswordResetRequested(22, Now),
         _ => throw new InvalidOperationException($"No sample message for '{messageType.FullName}'.")
@@ -292,6 +305,11 @@ public sealed class NotificationOutboxPublisherTests
                 var tuition = Assert.IsType<TuitionPaymentNotification>(published);
                 Assert.Equal(sent.EnrollmentId, tuition.EnrollmentId);
                 Assert.Equal(sent.StudentUserId, tuition.StudentUserId);
+                break;
+            case InstructorEnrollmentNotification sent:
+                var instructorEnrollment = Assert.IsType<InstructorEnrollmentNotification>(published);
+                Assert.Equal(sent.EnrollmentId, instructorEnrollment.EnrollmentId);
+                Assert.Equal(sent.InstructorUserId, instructorEnrollment.InstructorUserId);
                 break;
             case MembershipWarning sent:
                 var warning = Assert.IsType<MembershipWarning>(published);

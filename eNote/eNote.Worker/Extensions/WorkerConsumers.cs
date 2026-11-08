@@ -17,6 +17,7 @@ public static class WorkerConsumers
         bus.AddConsumer<AnnouncementPublishedConsumer>();
         bus.AddConsumer<EnrollmentStatusChangedConsumer>();
         bus.AddConsumer<TuitionPaymentConsumer>();
+        bus.AddConsumer<InstructorEnrollmentNotificationConsumer>();
         bus.AddConsumer<MembershipWarningConsumer>();
         bus.AddConsumer<MembershipWarningEmailConsumer>();
         bus.AddConsumer<PasswordResetEmailConsumer>();

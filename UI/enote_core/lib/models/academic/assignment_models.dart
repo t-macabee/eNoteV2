@@ -64,6 +64,7 @@ class AssignmentSubmissionDto {
   final int id;
   final int assignmentId;
   final int studentId;
+  final int studentAppUserId;
   final String? studentName;
   final String? filePath;
   final DateTime? submittedAt;
@@ -74,6 +75,7 @@ class AssignmentSubmissionDto {
     required this.id,
     required this.assignmentId,
     required this.studentId,
+    this.studentAppUserId = 0,
     this.studentName,
     this.filePath,
     this.submittedAt,
@@ -86,6 +88,7 @@ class AssignmentSubmissionDto {
       id: json['id'] as int? ?? 0,
       assignmentId: json['assignmentId'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
+      studentAppUserId: json['studentAppUserId'] as int? ?? 0,
       studentName: json['studentName'] as String?,
       filePath: json['filePath'] as String?,
       submittedAt: parseDate(json['submittedAt']),
@@ -98,6 +101,7 @@ class AssignmentSubmissionDto {
     'id': id,
     'assignmentId': assignmentId,
     'studentId': studentId,
+    if (studentAppUserId != 0) 'studentAppUserId': studentAppUserId,
     if (studentName != null) 'studentName': studentName,
     if (filePath != null) 'filePath': filePath,
     if (submittedAt != null) 'submittedAt': submittedAt!.toIso8601String(),

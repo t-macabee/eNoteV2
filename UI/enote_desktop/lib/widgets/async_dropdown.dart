@@ -13,6 +13,8 @@ class AsyncDropdown<T> extends StatefulWidget {
   final String hint;
   final String? emptyOptionLabel;
   final double? width;
+  final Future<T?> Function(BuildContext context)? onCreate;
+  final String? createTooltip;
 
   const AsyncDropdown({
     super.key,
@@ -27,6 +29,8 @@ class AsyncDropdown<T> extends StatefulWidget {
     this.hint = 'Odaberite...',
     this.emptyOptionLabel,
     this.width,
+    this.onCreate,
+    this.createTooltip,
   });
 
   @override
@@ -37,6 +41,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
   late Future<List<T>> _future;
   Object? _lastValue;
   int _fieldGeneration = 0;
+  bool _isCreating = false;
 
   @override
   void initState() {
@@ -62,6 +67,53 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
       _future = widget.fetcher();
     });
     await _future;
+  }
+
+  Future<void> _create() async {
+    final onCreate = widget.onCreate;
+    if (onCreate == null || _isCreating) return;
+
+    setState(() => _isCreating = true);
+    try {
+      final created = await onCreate(context);
+      if (created == null || !mounted) return;
+
+      await _reload();
+      if (!mounted) return;
+
+      setState(() => _fieldGeneration++);
+      widget.onChanged(widget.itemId(created), created);
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
+    }
+  }
+
+  Widget? _buildSuffixIcon(bool isEmpty) {
+    final buttons = <Widget>[
+      if (widget.onCreate != null)
+        IconButton(
+          icon: const Icon(Icons.add),
+          tooltip: widget.createTooltip ?? 'Dodaj',
+          onPressed: _isCreating ? null : _create,
+        ),
+      if (isEmpty)
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Pokušaj ponovo',
+          onPressed: _reload,
+        ),
+    ];
+
+    if (buttons.isEmpty) return null;
+    if (buttons.length == 1) return buttons.single;
+
+    return Row(mainAxisSize: MainAxisSize.min, children: buttons);
   }
 
   @override
@@ -122,13 +174,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
             border: const OutlineInputBorder(),
             errorMaxLines: 3,
             helperText: isEmpty ? 'Nema dostupnih opcija' : null,
-            suffixIcon: isEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.refresh),
-                    tooltip: 'Pokušaj ponovo',
-                    onPressed: _reload,
-                  )
-                : null,
+            suffixIcon: _buildSuffixIcon(isEmpty),
           ),
           hint: Text(widget.emptyOptionLabel ?? widget.hint),
           isExpanded: true,

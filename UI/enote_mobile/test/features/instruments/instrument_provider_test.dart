@@ -39,7 +39,7 @@ InstrumentProvider _provider(http.Client client) {
 
 void main() {
   test(
-    'fetchPage queries instruments/public with the catalogue filters',
+    'fetchPage queries instruments with the catalogue filters',
     () async {
       final client = RecordingHttpClient(
         body: const {
@@ -59,7 +59,7 @@ void main() {
       expect(client.requests, hasLength(1));
       final sent = client.requests.single;
       expect(sent.method, 'GET');
-      expect(sent.url.path, '/api/v1/instruments/public');
+      expect(sent.url.path, '/api/v1/instruments');
       expect(sent.url.queryParameters, {
         'search.Page': '2',
         'search.PageSize': '20',
@@ -95,13 +95,13 @@ void main() {
     expect(keys.every((k) => k.startsWith('search.')), isTrue);
   });
 
-  test('getById reads instruments/public/{id}', () async {
+  test('getById reads instruments/{id}', () async {
     final client = RecordingHttpClient(body: _instrument);
     final provider = _provider(client);
     final instrument = await provider.getById(3);
 
     expect(client.requests.single.method, 'GET');
-    expect(client.requests.single.url.path, '/api/v1/instruments/public/3');
+    expect(client.requests.single.url.path, '/api/v1/instruments/3');
     expect(instrument.model, 'Stratocaster');
   });
 
