@@ -21,7 +21,7 @@ void main() {
 
   setUp(() {
     picker = FakeSaveFilePicker();
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
   });
 
   testWidgets('lecture workspace reports attendance under a dated name', (

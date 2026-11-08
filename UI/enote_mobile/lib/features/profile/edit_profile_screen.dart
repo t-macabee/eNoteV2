@@ -76,15 +76,17 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   }
 
   Future<PickedImage?> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: allowedImageExtensions,
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return null;
-    final file = result.files.single;
-    final bytes = file.bytes;
-    if (bytes == null) return null;
+    if (file == null) return null;
+    final Uint8List bytes;
+    try {
+      bytes = await file.readAsBytes();
+    } on Exception {
+      return null;
+    }
     final picked = pickedImageOrNull(bytes, file.name);
     if (mounted) {
       setState(() => _pictureError = picked == null ? imageRulesMessage : null);

@@ -24,7 +24,7 @@ void main() {
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('enote_pdf_report');
     picker = FakeSaveFilePicker(path: '${tempDir.path}/$_fileName');
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
   });
 
   tearDown(() async {

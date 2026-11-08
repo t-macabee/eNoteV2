@@ -84,14 +84,13 @@ class _FilePickerFieldState extends State<FilePickerField> {
       candidate = await widget.pickOverride!();
       if (candidate == null || !mounted) return;
     } else {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
-        withData: true,
-      );
-      if (result == null || result.files.isEmpty || !mounted) return;
-      final file = result.files.single;
-      final bytes = file.bytes;
-      if (bytes == null) {
+      final file = await FilePicker.pickFile(type: FileType.any);
+      if (file == null || !mounted) return;
+      final Uint8List bytes;
+      try {
+        bytes = await file.readAsBytes();
+      } on Exception {
+        if (!mounted) return;
         setState(
           () => _error = 'Datoteku nije moguće pročitati. Pokušajte ponovo.',
         );

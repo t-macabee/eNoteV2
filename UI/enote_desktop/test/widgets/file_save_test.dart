@@ -14,14 +14,16 @@ const _failedMessage =
 
 class _FailingPicker extends FakeSaveFilePicker {
   @override
-  Future<String?> saveFile({
+  Future<Uri?> saveFile({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
     String? dialogTitle,
-    String? fileName,
     String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Uint8List? bytes,
-    bool lockParentWindow = false,
+    Function(FilePickerStatus)? onFileSaving,
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
   }) async => throw Exception('No file dialog is available.');
 }
 
@@ -38,7 +40,9 @@ void main() {
   }
 
   test('a location that cannot be written gives the save message', () async {
-    FilePicker.platform = FakeSaveFilePicker(path: '${folder.path}/nema/a.pdf');
+    FilePickerPlatform.instance = FakeSaveFilePicker(
+      path: '${folder.path}/nema/a.pdf',
+    );
 
     await expectLater(
       saveFileWithDialog(bytes, 'a.pdf'),
@@ -52,7 +56,7 @@ void main() {
   });
 
   test('a failed file dialog gives the save message', () async {
-    FilePicker.platform = _FailingPicker();
+    FilePickerPlatform.instance = _FailingPicker();
 
     await expectLater(
       saveFileWithDialog(bytes, 'a.pdf'),

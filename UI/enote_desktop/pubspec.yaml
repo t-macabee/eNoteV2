@@ -34,7 +34,7 @@ dependencies:
     path: ../enote_core
   provider: ^6.1.4
   printing: ^5.14.2
-  file_picker: ^10.1.0
+  file_picker: ^13.3.2
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +49,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   enote_test_support:
     path: ../enote_test_support
+  plugin_platform_interface: ^2.1.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

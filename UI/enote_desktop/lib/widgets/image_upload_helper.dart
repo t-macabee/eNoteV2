@@ -4,14 +4,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 Future<PickedImage?> pickImage(BuildContext context) async {
-  final result = await FilePicker.platform.pickFiles(
+  final file = await FilePicker.pickFile(
     type: FileType.custom,
     allowedExtensions: allowedImageExtensions,
-    withData: true,
   );
-  if (result == null || result.files.isEmpty) return null;
-  final file = result.files.first;
-  final bytes = file.bytes;
+  if (file == null) return null;
+  Uint8List? bytes;
+  try {
+    bytes = await file.readAsBytes();
+  } on Exception {
+    bytes = null;
+  }
   final picked = bytes == null ? null : pickedImageOrNull(bytes, file.name);
   if (picked == null && context.mounted) {
     ErrorBanner.show(context, message: imageRulesMessage);

@@ -22,7 +22,7 @@ void main() {
 
   setUp(() {
     picker = FakeSaveFilePicker();
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
   });
 
   testWidgets('music store list reports every store under a dated name', (

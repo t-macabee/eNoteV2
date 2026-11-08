@@ -21,7 +21,7 @@ void main() {
 
   setUp(() {
     picker = FakeSaveFilePicker();
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
   });
 
   testWidgets('ranking view reports the course ranking under a dated name', (

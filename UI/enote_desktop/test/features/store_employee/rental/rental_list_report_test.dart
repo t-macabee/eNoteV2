@@ -22,7 +22,7 @@ void main() {
 
   setUp(() {
     picker = FakeSaveFilePicker();
-    FilePicker.platform = picker;
+    FilePickerPlatform.instance = picker;
   });
 
   testWidgets('rental list reports the store rentals under a dated name', (

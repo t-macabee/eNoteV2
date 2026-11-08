@@ -1,27 +1,53 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:enote_mobile/features/assignments/file_picker_field.dart';
 
-class _NullBytesPicker extends FilePicker {
+base class _UnreadableFile extends PlatformFile {
   @override
-  Future<FilePickerResult?> pickFiles({
+  String get name => 'zadaca.pdf';
+
+  @override
+  Uri get uri => Uri.parse('file:///zadaca.pdf');
+
+  @override
+  get xFile => throw UnimplementedError();
+
+  @override
+  int? lengthSync() => null;
+
+  @override
+  Future<int?> length() async => null;
+
+  @override
+  Future<Uint8List> readAsBytes() async =>
+      throw const FileSystemException('unreadable');
+
+  @override
+  Stream<Uint8List> readAsByteStream() => throw UnimplementedError();
+}
+
+class _UnreadablePicker extends FilePickerPlatform
+    with MockPlatformInterfaceMixin {
+  @override
+  Future<PlatformFile?> pickFile({
     String? dialogTitle,
     String? initialDirectory,
     FileType type = FileType.any,
     List<String>? allowedExtensions,
     Function(FilePickerStatus)? onFileLoading,
-    bool allowCompression = false,
     int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-  }) async {
-    return FilePickerResult([PlatformFile(name: 'zadaca.pdf', size: 10)]);
-  }
+    AndroidOptions androidOptions = const AndroidOptions(),
+    DarwinOptions darwinOptions = const DarwinOptions(),
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
+  }) async => _UnreadableFile();
 }
 
 void main() {
@@ -46,20 +72,14 @@ void main() {
     expect(validateAssignmentFile('a.pdf', 5242881), isNotNull);
   });
 
-  FilePicker? realPicker;
-  try {
-    realPicker = FilePicker.platform;
-  } catch (_) {}
+  final realPicker = FilePickerPlatform.instance;
 
-  tearDown(() {
-    final real = realPicker;
-    if (real != null) FilePicker.platform = real;
-  });
+  tearDown(() => FilePickerPlatform.instance = realPicker);
 
-  testWidgets('a file with null bytes shows the unreadable-file error', (
+  testWidgets('an unreadable file shows the unreadable-file error', (
     tester,
   ) async {
-    FilePicker.platform = _NullBytesPicker();
+    FilePickerPlatform.instance = _UnreadablePicker();
 
     Object? picked = 'sentinel';
     await tester.pumpWidget(

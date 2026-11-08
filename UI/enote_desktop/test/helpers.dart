@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -5,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/pdf_report_button.dart';
@@ -24,24 +26,30 @@ String fakeJwt({
   isManager: isManager,
 );
 
-class FakeSaveFilePicker extends FilePicker {
+class FakeSaveFilePicker extends FilePickerPlatform
+    with MockPlatformInterfaceMixin {
   FakeSaveFilePicker({this.path});
 
   String? path;
   String? savedFileName;
 
   @override
-  Future<String?> saveFile({
+  Future<Uri?> saveFile({
+    required String fileName,
+    required Uint8List bytes,
+    required String mimeType,
     String? dialogTitle,
-    String? fileName,
     String? initialDirectory,
-    FileType type = FileType.any,
-    List<String>? allowedExtensions,
-    Uint8List? bytes,
-    bool lockParentWindow = false,
+    Function(FilePickerStatus)? onFileSaving,
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
   }) async {
     savedFileName = fileName;
-    return path;
+    final target = path;
+    if (target == null) return null;
+    await File(target).writeAsBytes(bytes);
+    return Uri.file(target);
   }
 }
 
