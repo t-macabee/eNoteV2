@@ -20,7 +20,8 @@ builder.Services
     .AddPersistence(builder.Configuration)
     .AddInfrastructureIdentity()
     .AddEmail(builder.Configuration)
-    .AddMessaging(builder.Configuration, WorkerConsumers.Add);
+    .AddMessaging(builder.Configuration, WorkerConsumers.Add)
+    .WaitForBusBeforeApplicationStarted();
 builder.Services.AddRentalOptions(builder.Configuration);
 builder.Services.AddRentalPickupExpiry();
 builder.Services.AddInfrastructureHealthChecks();
