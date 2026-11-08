@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
-import '../theme/app_theme.dart';
-
 enum DialogShellWidth {
   sm(480),
   md(620),
@@ -90,12 +88,7 @@ class DialogShell extends StatelessWidget {
     final maxHeight = MediaQuery.sizeOf(context).height * 0.85;
 
     return Dialog(
-      backgroundColor: AppTheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppTheme.outline),
-      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: width.value,

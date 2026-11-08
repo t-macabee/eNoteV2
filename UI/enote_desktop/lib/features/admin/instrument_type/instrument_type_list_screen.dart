@@ -55,7 +55,7 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
           ),
           ColumnSpec<InstrumentTypeDto>(
             label: 'Mjesečna naknada',
-            value: (item) => item.monthlyFee.toStringAsFixed(2),
+            value: (item) => formatKM(item.monthlyFee),
           ),
         ],
         fetcher: (page, pageSize, search) => context

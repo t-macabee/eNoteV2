@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
 void main() {
@@ -83,14 +84,18 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: desktopTheme,
         home: Scaffold(body: EntityListScreen<String>(config: config())),
       ),
     );
     await tester.pumpAndSettle();
 
-    final table = tester.widget<DataTable>(find.byType(DataTable));
+    final tableTheme = DataTableTheme.of(
+      tester.element(find.byType(DataTable)),
+    );
 
-    expect(table.columnSpacing, AppSpacing.xl);
+    expect(tableTheme.columnSpacing, AppSpacing.xl);
+    expect(tableTheme.horizontalMargin, AppSpacing.lg);
   });
 
   testWidgets('embedded list in a dialog still shrinks to its content', (

@@ -60,9 +60,14 @@ final ButtonStyle dangerOutlinedButtonStyle = OutlinedButton.styleFrom(
   side: const BorderSide(color: AppTheme.error),
 );
 
+final TextTheme _textTheme = _mobileTextTheme(AppTheme.dark.textTheme);
+
 final ThemeData mobileTheme = AppTheme.dark.copyWith(
-  textTheme: _mobileTextTheme(AppTheme.dark.textTheme),
+  textTheme: _textTheme,
   primaryTextTheme: _mobileTextTheme(AppTheme.dark.primaryTextTheme),
+  dialogTheme: AppTheme.dark.dialogTheme.copyWith(
+    titleTextStyle: _textTheme.titleLarge,
+  ),
   bottomSheetTheme: BottomSheetThemeData(
     showDragHandle: true,
     shape: RoundedRectangleBorder(

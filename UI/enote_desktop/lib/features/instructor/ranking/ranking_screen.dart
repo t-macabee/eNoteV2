@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../widgets/entity_empty_state.dart';
 import 'ranking_provider.dart';
 
 class RankingView extends StatefulWidget {
@@ -75,39 +76,23 @@ class _RankingViewState extends State<RankingView> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
     if (_allItems.isEmpty) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: Text('Nema podataka o rangiranju.')),
-      );
+      return const EntityEmptyState(searching: false);
     }
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: TextField(
-            controller: _searchController,
-            decoration: const InputDecoration(
-              labelText: 'Pretraži po imenu studenta',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
-            ),
-          ),
+        EntityToolbar(
+          searchController: _searchController,
+          showSearch: true,
+          searchHint: 'Pretraži po imenu studenta...',
+          showAdd: false,
         ),
-        Flexible(
+        Expanded(
           child: _filteredItems.isEmpty
-              ? const SizedBox(
-                  height: 200,
-                  child: Center(child: Text('Nema rezultata za pretragu.')),
-                )
+              ? const EntityEmptyState(searching: true)
               : ListView.separated(
-                  shrinkWrap: true,
                   itemCount: _filteredItems.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {

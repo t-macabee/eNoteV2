@@ -82,4 +82,13 @@ void main() {
 
     expect(find.byType(InstructorEnrollmentListScreen), findsOneWidget);
   });
+
+  testWidgets('the sidebar shows the role in Bosnian', (tester) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(_buildApp());
+    await tester.pumpAndSettle();
+
+    expect(_menuEntry('Instruktor'), findsOneWidget);
+    expect(_menuEntry('Instructor'), findsNothing);
+  });
 }

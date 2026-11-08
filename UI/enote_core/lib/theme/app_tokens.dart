@@ -32,9 +32,9 @@ final class AppSize {
   static const double minWindowHeight = 600;
   static const double contentMaxWidth = 1100;
   static const double formMaxWidth = 720;
-  static const double dialogMaxWidth = 640;
-  static const double dialogContentWidth = 520;
   static const double tableRowHeight = 48;
+  static const double tableNameColumnMaxWidth = 180;
+  static const double tableTextColumnMaxWidth = 200;
   static const double toolbarHeight = 56;
   static const double detailImageWidth = 320;
   static const double statCardWidth = 240;

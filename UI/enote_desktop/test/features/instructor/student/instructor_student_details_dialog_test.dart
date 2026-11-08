@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/features/shared/membership/membership_section.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_details_dialog.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 
 import '../../../helpers.dart';
 
-Future<void> _pumpDialog(WidgetTester tester, ScriptedClient client) async {
+Future<void> _pumpDialog(
+  WidgetTester tester,
+  ScriptedClient client, {
+  ThemeData? theme,
+}) async {
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',
     authState: AuthState(),
@@ -36,12 +43,44 @@ Future<void> _pumpDialog(WidgetTester tester, ScriptedClient client) async {
         ),
       ],
       child: MaterialApp(
+        theme: theme,
         home: Scaffold(body: InstructorStudentDetailsDialog(student: student)),
       ),
     ),
   );
   await tester.pumpAndSettle();
 }
+
+ScriptedClient _enrolledClient() => ScriptedClient((request) {
+  if (request.url.path.endsWith('/membership-payments')) {
+    return jsonResponse(_emptyPage, 200);
+  }
+  if (request.url.path.endsWith('/enrollments')) {
+    return jsonResponse({
+      'items': [
+        {
+          'courseId': 1,
+          'courseName': 'Guitar 101',
+          'instructorId': 100,
+          'instructorName': 'Ana Novak',
+        },
+      ],
+      'page': 1,
+      'pageSize': 5,
+      'totalCount': 1,
+    }, 200);
+  }
+  if (request.url.path.endsWith('/lectures')) {
+    return jsonResponse(_emptyPage, 200);
+  }
+  return jsonResponse({
+    ..._studentJson,
+    'enrollmentDate': '2026-01-10T00:00:00Z',
+  }, 200);
+});
+
+Color? _renderedColor(WidgetTester tester, String text) =>
+    tester.renderObject<RenderParagraph>(find.text(text)).text.style?.color;
 
 const _studentJson = {
   'id': 5,
@@ -55,6 +94,46 @@ const _studentJson = {
 const _emptyPage = {'items': [], 'page': 1, 'pageSize': 5, 'totalCount': 0};
 
 void main() {
+  testWidgets(
+    'an enrolled course shows the course name as primary text and the instructor below it as secondary text',
+    (tester) async {
+      await _pumpDialog(tester, _enrolledClient(), theme: desktopTheme);
+
+      expect(_renderedColor(tester, 'Guitar 101'), AppTheme.textPrimary);
+      expect(_renderedColor(tester, 'Ana Novak'), AppTheme.textSecondary);
+      expect(
+        tester.getTopLeft(find.text('Ana Novak')).dy,
+        greaterThanOrEqualTo(tester.getBottomLeft(find.text('Guitar 101')).dy),
+      );
+    },
+  );
+
+  testWidgets(
+    'the membership section has the same gap above its heading as the next section',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpDialog(tester, _enrolledClient(), theme: desktopTheme);
+
+      final enrollmentRowBottom = tester
+          .getRect(find.widgetWithText(InfoRow, 'Datum upisa'))
+          .bottom;
+      final membershipHeadingTop = tester.getRect(find.text('Članarina')).top;
+      final membershipBottom = tester
+          .getRect(find.byType(MembershipSection))
+          .bottom;
+      final coursesHeadingTop = tester
+          .getRect(find.text('Upisani kursevi'))
+          .top;
+
+      expect(membershipHeadingTop - enrollmentRowBottom, AppSpacing.lg);
+      expect(coursesHeadingTop - membershipBottom, AppSpacing.lg);
+    },
+  );
+
   testWidgets('F3-11: failed enrollments fetch shows an inline error', (
     tester,
   ) async {

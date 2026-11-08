@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
 import '../../shared/membership/membership_section.dart';
 import '../student/student_provider.dart';
@@ -189,11 +190,10 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     final item = widget.item;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: 520,
+          maxWidth: DialogShellWidth.sm.value,
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Padding(
@@ -295,8 +295,10 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                               item.enrollmentDate ?? _profile!.enrollmentDate!,
                             ),
                           ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _buildMembershipSection(item),
+                        if (item.studentId != null) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          _buildMembershipSection(item.studentId!),
+                        ],
                       ],
                       if (_isLoadingProfile) ...[
                         const SizedBox(height: AppSpacing.md),
@@ -333,10 +335,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     );
   }
 
-  Widget _buildMembershipSection(AdminUserListItemDto item) {
-    final studentId = item.studentId;
-    if (studentId == null) return const SizedBox.shrink();
-
+  Widget _buildMembershipSection(int studentId) {
     return MembershipSection(
       api: context.read<StudentProvider>(),
       studentId: studentId,

@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/detail_row.dart';
+import '../../../widgets/dialog_shell.dart';
 import 'instrument_form_screen.dart';
 import 'instrument_provider.dart';
 
@@ -76,156 +77,151 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
-    final apiClient = context.read<ApiClient>();
+    final imagePath = _instrument.imagePath;
+    final hasImage = imagePath != null && imagePath.isNotEmpty;
 
-    return AlertDialog(
-      constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-      titlePadding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        20,
-        AppSpacing.sm,
-        0,
-      ),
-      title: Row(
+    return DialogShell(
+      title: _instrument.model,
+      width: DialogShellWidth.lg,
+      onClose: () => Navigator.of(context).pop(false),
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(_instrument.model, overflow: TextOverflow.ellipsis),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hasImage) ...[
+                    _buildImage(context, imagePath),
+                    const SizedBox(width: AppSpacing.xl),
+                  ],
+                  Expanded(child: _buildFacts()),
+                ],
+              ),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Zatvori',
-            onPressed: () => Navigator.of(context).pop(false),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.md,
+              AppSpacing.xl,
+              AppSpacing.lg,
+            ),
+            child: _buildActions(),
           ),
         ],
       ),
-      contentPadding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        20,
-        AppSpacing.xl,
-        0,
-      ),
-      content: SizedBox(
-        width: 520,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_instrument.imagePath != null &&
-                  _instrument.imagePath!.isNotEmpty) ...[
-                AspectRatio(
-                  aspectRatio: 1.5,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: networkImageOrPlaceholder(
-                      _instrument.imagePath,
-                      apiClient,
-                      size: double.infinity,
-                      borderRadius: 12,
-                      placeholder: () => Container(
-                        color: AppTheme.background,
-                        child: const Center(
-                          child: Icon(
-                            Icons.music_note,
-                            size: 48,
-                            color: AppTheme.textTertiary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+    );
+  }
+
+  Widget _buildImage(BuildContext context, String imagePath) {
+    return SizedBox(
+      width: AppSize.detailImageWidth,
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: networkImageOrPlaceholder(
+            imagePath,
+            context.read<ApiClient>(),
+            size: double.infinity,
+            borderRadius: AppRadius.lg,
+            placeholder: () => Container(
+              color: AppTheme.background,
+              child: const Center(
+                child: Icon(
+                  Icons.music_note,
+                  size: AppSize.stateIcon,
+                  color: AppTheme.textTertiary,
                 ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-              DetailRow(
-                icon: Icons.music_note_outlined,
-                label: 'Model',
-                value: _instrument.model,
               ),
-              DetailRow(
-                icon: Icons.business_outlined,
-                label: 'Proizvođač',
-                value: _instrument.manufacturerName,
-              ),
-              DetailRow(
-                icon: Icons.category_outlined,
-                label: 'Tip instrumenta',
-                value: _instrument.instrumentType,
-              ),
-              DetailRow(
-                icon: Icons.description_outlined,
-                label: 'Opis',
-                value:
-                    (_instrument.description != null &&
-                        _instrument.description!.isNotEmpty)
-                    ? _instrument.description!
-                    : '-',
-              ),
-              DetailRow(
-                icon: Icons.check_circle_outline,
-                label: 'Dostupnost',
-                value: _instrument.isAvailable ? 'Dostupan' : 'Nije dostupan',
-              ),
-            ],
+            ),
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        0,
-        AppSpacing.xl,
-        AppSpacing.lg,
-      ),
-      actions: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Divider(),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Tooltip(
-                  message: _instrument.deleteBlockedReason ?? 'Obriši',
-                  child: OutlinedButton.icon(
-                    onPressed:
-                        _isDeleting || _instrument.deleteBlockedReason != null
-                        ? null
-                        : _delete,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.error,
-                      side: const BorderSide(color: AppTheme.error),
-                    ),
-                    icon: _isDeleting
-                        ? const SizedBox(
-                            width: AppSize.spinnerSm,
-                            height: AppSize.spinnerSm,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.error,
-                            ),
-                          )
-                        : const Icon(Icons.delete_outline),
-                    label: const Text('Obriši'),
-                  ),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: _isDeleting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  child: const Text('Zatvori'),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                OutlinedButton.icon(
-                  onPressed: _isDeleting ? null : _openEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Uredi'),
-                ),
-              ],
+    );
+  }
+
+  Widget _buildFacts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailRow(
+          icon: Icons.business_outlined,
+          label: 'Proizvođač',
+          value: _instrument.manufacturerName,
+        ),
+        DetailRow(
+          icon: Icons.category_outlined,
+          label: 'Tip instrumenta',
+          value: _instrument.instrumentType,
+        ),
+        DetailRow(
+          icon: Icons.payments_outlined,
+          label: 'Mjesečna naknada',
+          value: formatKM(_instrument.monthlyFee),
+        ),
+        DetailRow(
+          icon: Icons.description_outlined,
+          label: 'Opis',
+          value: orDash(_instrument.description),
+        ),
+        DetailRow(
+          icon: Icons.check_circle_outline,
+          label: 'Dostupnost',
+          value: _instrument.isAvailable ? 'Dostupan' : 'Nije dostupan',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      children: [
+        Tooltip(
+          message: _instrument.deleteBlockedReason ?? 'Obriši',
+          child: OutlinedButton.icon(
+            onPressed: _isDeleting || _instrument.deleteBlockedReason != null
+                ? null
+                : _delete,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.error,
+              side: const BorderSide(color: AppTheme.error),
             ),
-          ],
+            icon: _isDeleting
+                ? const SizedBox(
+                    width: AppSize.spinnerSm,
+                    height: AppSize.spinnerSm,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.error,
+                    ),
+                  )
+                : const Icon(Icons.delete_outline),
+            label: const Text('Obriši'),
+          ),
+        ),
+        const Spacer(),
+        TextButton(
+          onPressed: _isDeleting
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: const Text('Zatvori'),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        OutlinedButton.icon(
+          onPressed: _isDeleting ? null : _openEdit,
+          icon: const Icon(Icons.edit_outlined),
+          label: const Text('Uredi'),
         ),
       ],
     );

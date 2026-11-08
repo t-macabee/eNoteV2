@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 double _textWidth(FontWeight weight) {
@@ -46,5 +47,23 @@ void main() {
     final bold = _textWidth(FontWeight.w700);
 
     expect(semiBold, lessThan(bold));
+  });
+
+  test('dialogs use the shared dialog look and the mobile title style', () {
+    final dialogTheme = mobileTheme.dialogTheme;
+
+    expect(dialogTheme.backgroundColor, AppTheme.surfaceContainer);
+    expect(
+      dialogTheme.shape,
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppTheme.outline),
+      ),
+    );
+    expect(dialogTheme.titleTextStyle?.fontSize, 22);
+    expect(
+      dialogTheme.titleTextStyle?.fontFamily,
+      'packages/enote_core/Roboto',
+    );
   });
 }

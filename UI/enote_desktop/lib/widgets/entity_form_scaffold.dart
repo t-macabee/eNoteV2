@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
+import 'dialog_shell.dart';
 import 'entity_form_sections.dart';
 import 'form_submit_state.dart';
 
@@ -229,7 +230,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
 
     return AlertDialog(
       constraints: BoxConstraints(
-        maxWidth: AppSize.dialogMaxWidth,
+        maxWidth: DialogShellWidth.md.value,
         maxHeight: maxHeight,
       ),
       titlePadding: const EdgeInsets.fromLTRB(
@@ -240,13 +241,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
       ),
       title: Row(
         children: [
-          Expanded(
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
+          Expanded(child: Text(widget.title)),
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Zatvori',
@@ -261,7 +256,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
         0,
       ),
       content: SizedBox(
-        width: AppSize.dialogContentWidth,
+        width: double.maxFinite,
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: Form(

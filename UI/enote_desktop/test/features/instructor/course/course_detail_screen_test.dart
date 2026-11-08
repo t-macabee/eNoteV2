@@ -309,7 +309,7 @@ void main() {
     );
 
     expect(find.text('Napredni kurs gitare'), findsOneWidget);
-    expect(find.text('100.00'), findsOneWidget);
+    expect(find.text('100.00 KM'), findsOneWidget);
     expect(find.text('01.09.2026.'), findsOneWidget);
     expect(find.text('01.12.2026.'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);

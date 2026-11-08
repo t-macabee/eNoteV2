@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/file_save.dart';
@@ -107,33 +108,37 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
       builder: (_) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
           title: Text('Ocijeni — ${item.studentName ?? 'Nepoznat korisnik'}'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Ocjena (0–100)',
-                    border: OutlineInputBorder(),
-                    errorMaxLines: 3,
+          constraints: BoxConstraints(maxWidth: DialogShellWidth.md.value),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Ocjena (0–100)',
+                      border: OutlineInputBorder(),
+                      errorMaxLines: 3,
+                    ),
+                    validator: Validators.grade(0, 100),
                   ),
-                  validator: Validators.grade(0, 100),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: feedbackController,
-                  maxLines: 4,
-                  maxLength: 1000,
-                  decoration: const InputDecoration(
-                    labelText: 'Komentar (nije obavezno)',
-                    border: OutlineInputBorder(),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: feedbackController,
+                    maxLines: 4,
+                    maxLength: 1000,
+                    decoration: const InputDecoration(
+                      labelText: 'Komentar (nije obavezno)',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [

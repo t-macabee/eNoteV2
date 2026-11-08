@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/date_field.dart';
+import '../../../widgets/dialog_shell.dart';
 import 'membership_payments_api.dart';
 
 Future<MembershipPaymentDto?> showMembershipPaymentDialog(
@@ -138,18 +139,19 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Unesi potvrdu o članarini'),
+      constraints: BoxConstraints(maxWidth: DialogShellWidth.md.value),
       content: SizedBox(
-        width: 420,
+        width: double.maxFinite,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 16,
+              spacing: AppSpacing.lg,
               children: [
                 Text(
-                  'Period počinje ${formatDate(_periodStart)}.',
+                  'Period počinje ${formatDate(_periodStart)}',
                   style: Theme.of(context).textTheme.labelMedium,
                 ),
                 TextFormField(

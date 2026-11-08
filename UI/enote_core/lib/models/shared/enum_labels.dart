@@ -91,3 +91,8 @@ String userRoleLabel(UserRole role) => switch (role) {
   UserRole.student => 'Student',
   UserRole.storeEmployee => 'Uposlenik prodavnice',
 };
+
+String roleLabelOf(String role) {
+  final userRole = UserRole.fromString(role);
+  return userRole != null ? userRoleLabel(userRole) : role;
+}

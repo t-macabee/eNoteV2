@@ -109,7 +109,7 @@ class _InstructorEnrollmentListScreenState
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Student',
             value: (item) => item.studentName,
-            maxWidth: 180,
+            maxWidth: AppSize.tableNameColumnMaxWidth,
             cellBuilder: (context, item) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -133,7 +133,7 @@ class _InstructorEnrollmentListScreenState
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Kurs',
             value: (item) => item.courseName,
-            maxWidth: 200,
+            maxWidth: AppSize.tableTextColumnMaxWidth,
           ),
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Status',

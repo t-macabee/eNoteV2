@@ -106,6 +106,25 @@ int _deleteRequests(ScriptedClient client) => client.requests
     .length;
 
 void main() {
+  testWidgets('the enrollment date uses the same label as on desktop', (
+    tester,
+  ) async {
+    setPhoneSurface(tester);
+    final harness = _Harness()
+      ..meBody = {
+        ..._meBody,
+        'profile': {
+          ..._meBody['profile'] as Map<String, dynamic>,
+          'enrollmentDate': '2026-11-08T00:00:00',
+        },
+      };
+    await tester.pumpWidget(await harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Datum upisa'), findsOneWidget);
+    expect(find.text('Upisan od'), findsNothing);
+  });
+
   testWidgets('membership banner is danger when expired', (tester) async {
     setPhoneSurface(tester);
     final harness = _Harness()

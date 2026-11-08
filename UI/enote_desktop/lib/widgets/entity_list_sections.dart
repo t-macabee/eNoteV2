@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:enote_core/enote_core.dart';
-
 import '../theme/app_theme.dart';
 import 'entity_list_config.dart';
+import 'table_text_cell.dart';
 
 class EntityRowActions extends StatelessWidget {
   final List<Widget> extraWidgets;
@@ -189,24 +188,19 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
 
   Widget _cellContent(BuildContext context, ColumnSpec<T> col, T item) {
     final maxWidth = col.maxWidth;
-    final Widget content;
-    if (col.cellBuilder != null) {
-      content = col.cellBuilder!(context, item);
-    } else {
-      final text = col.value(item)?.toString() ?? '-';
-      final label = Text(
-        text,
-        style: col.style?.call(item),
-        maxLines: maxWidth != null ? 1 : null,
-        overflow: maxWidth != null ? TextOverflow.ellipsis : null,
+    final cellBuilder = col.cellBuilder;
+    if (cellBuilder != null) {
+      final content = cellBuilder(context, item);
+      if (maxWidth == null) return content;
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: content,
       );
-      content = maxWidth != null ? Tooltip(message: text, child: label) : label;
     }
-    if (maxWidth == null) return content;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: content,
-    );
+    final text = col.value(item)?.toString() ?? '-';
+    final style = col.style?.call(item);
+    if (maxWidth == null) return Text(text, style: style);
+    return TableTextCell(text: text, maxWidth: maxWidth, style: style);
   }
 
   DataRow _buildRow(BuildContext context, int index) {
@@ -270,8 +264,6 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: availableWidth),
               child: DataTable(
-                columnSpacing: AppSpacing.xl,
-                horizontalMargin: AppSpacing.lg,
                 dividerThickness: 1,
                 headingRowColor: const WidgetStatePropertyAll(
                   AppTheme.surfaceContainer,

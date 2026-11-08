@@ -54,6 +54,7 @@ class RoleMenu extends StatelessWidget {
     final authState = context.watch<AuthState>();
     final username = authState.username;
     final topRole = authState.topRole;
+    final topRoleLabel = topRole != null ? roleLabelOf(topRole) : null;
 
     return Container(
       width: AppSize.sidebarWidth,
@@ -103,7 +104,7 @@ class RoleMenu extends StatelessWidget {
               ),
               child: _UserMenu(
                 username: username,
-                topRole: topRole,
+                topRole: topRoleLabel,
                 onOpenProfile: onOpenProfile,
                 onLogout: onLogout,
                 onEditStore: onEditStore,

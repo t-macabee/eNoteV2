@@ -116,4 +116,20 @@ void main() {
       expect(tester.getTopLeft(cards.at(i)).dy, top);
     }
   });
+
+  testWidgets(
+    'the welcome line starts at the same place for two and for three cards',
+    (WidgetTester tester) async {
+      _useDesktopView(tester);
+      Widget card() => const SizedBox(width: 200, height: 100);
+
+      await tester.pumpWidget(_buildApp(cards: [card(), card()]));
+      final twoCardsLeft = tester.getTopLeft(find.textContaining('admin')).dx;
+
+      await tester.pumpWidget(_buildApp(cards: [card(), card(), card()]));
+      final threeCardsLeft = tester.getTopLeft(find.textContaining('admin')).dx;
+
+      expect(twoCardsLeft, threeCardsLeft);
+    },
+  );
 }

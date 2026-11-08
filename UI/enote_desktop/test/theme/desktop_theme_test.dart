@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/theme/app_theme.dart';
 
 double _textWidth(FontWeight weight) {
@@ -58,5 +59,21 @@ void main() {
     final bold = _textWidth(FontWeight.w700);
 
     expect(semiBold, lessThan(bold));
+  });
+
+  test('every dialog gets the dialog shell look from the theme', () {
+    final dialogTheme = desktopTheme.dialogTheme;
+
+    expect(dialogTheme.backgroundColor, AppTheme.surfaceContainer);
+    expect(
+      dialogTheme.shape,
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: const BorderSide(color: AppTheme.outline),
+      ),
+    );
+    expect(dialogTheme.titleTextStyle?.fontSize, 18);
+    expect(dialogTheme.titleTextStyle?.fontWeight, FontWeight.w600);
+    expect(dialogTheme.titleTextStyle?.color, AppTheme.textPrimary);
   });
 }

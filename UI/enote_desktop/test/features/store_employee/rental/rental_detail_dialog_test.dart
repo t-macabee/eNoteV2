@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
 import 'package:enote_desktop/theme/app_theme.dart';
+import 'package:enote_desktop/widgets/inline_error_text.dart';
 
 import '../../../helpers.dart';
 
@@ -173,7 +174,7 @@ void main() {
       'paidAt': now,
     });
 
-    expect(find.text('Iznajmljivanje - Fender'), findsOneWidget);
+    expect(find.text('Iznajmljivanje — Fender'), findsOneWidget);
     expect(find.text('Nepoznat korisnik'), findsOneWidget);
     expect(find.textContaining('#'), findsNothing);
     expect(find.text('Odobreno'), findsOneWidget);
@@ -259,7 +260,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odobri'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
@@ -454,7 +455,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odobri'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
     await tester.pumpAndSettle();
@@ -466,6 +467,85 @@ void main() {
     expect(
       find.text(rentalStatusLabel(InstrumentRentalStatus.pending)),
       findsNothing,
+    );
+  });
+
+  testWidgets(
+    'the notes block has a heading, fills the width and uses the muted empty text',
+    (tester) async {
+      await _pumpDialog(tester, {
+        'id': 5,
+        'instrumentId': 1,
+        'musicStoreId': 1,
+        'studentProfileId': 1,
+        'studentUserId': 1,
+        'instrumentModel': 'Fender',
+        'instrumentType': 'Gitara',
+        'storeName': 'Shop',
+        'rentalStatus': 'Requested',
+        'requestedAt': DateTime.now().toIso8601String(),
+        'fee': 10.0,
+        'isPaid': false,
+      });
+
+      final notesCard = find.ancestor(
+        of: find.text('Nema napomena.'),
+        matching: find.byType(Card),
+      );
+      final chargesCard = find.ancestor(
+        of: find.text('Naknade'),
+        matching: find.byType(Card),
+      );
+
+      expect(find.text('Napomene'), findsOneWidget);
+      expect(
+        tester.getSize(notesCard).width,
+        tester.getSize(chargesCard).width,
+      );
+      final empty = tester.widget<Text>(find.text('Nema napomena.'));
+      expect(empty.style?.color, AppTheme.textSecondary);
+      expect(empty.style?.fontSize, isNotNull);
+    },
+  );
+
+  testWidgets('a failed rental fetch shows the shared inline error', (
+    tester,
+  ) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse({'message': 'boom'}, 500),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost/',
+      authState: AuthState(),
+      httpClient: client,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<RentalProvider>(
+            create: (_) => RentalProvider(apiClient: apiClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => RentalDetailDialog.show(context, 5),
+                child: const Text('Otvori'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Otvori'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.widgetWithText(InlineErrorText, 'Greška pri učitavanju.'),
+      findsOneWidget,
     );
   });
 }

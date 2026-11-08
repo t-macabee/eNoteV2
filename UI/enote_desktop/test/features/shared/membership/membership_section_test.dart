@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/student/student_provider.dart';
 import 'package:enote_desktop/features/shared/membership/membership_section.dart';
+import 'package:enote_desktop/widgets/dialog_shell.dart';
 
 import '../../../helpers.dart';
 
@@ -121,6 +122,35 @@ void main() {
       expect(find.text('Unesite iznos, npr. 50.00.'), findsOneWidget);
       expect(find.text('Broj potvrde je obavezan.'), findsOneWidget);
       expect(find.text('Kraj perioda je obavezan.'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the receipt form uses the form dialog width and one period after the date',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpSection(
+        tester,
+        membershipPaidUntil: DateTime(2099, 1, 1),
+        client: _client(),
+      );
+
+      await tester.tap(find.text('Unesi potvrdu'));
+      await tester.pumpAndSettle();
+
+      final panel = find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(Material),
+          )
+          .first;
+
+      expect(tester.getSize(panel).width, DialogShellWidth.md.value);
+      expect(find.text('Period počinje 01.01.2099.'), findsOneWidget);
     },
   );
 }

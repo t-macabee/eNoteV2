@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/widgets/dialog_shell.dart';
 
 void main() {
@@ -15,6 +16,7 @@ void main() {
   Future<void> pumpShell(WidgetTester tester, Widget shell) async {
     await tester.pumpWidget(
       MaterialApp(
+        theme: desktopTheme,
         home: Scaffold(body: Center(child: shell)),
       ),
     );
@@ -117,10 +119,15 @@ void main() {
       const DialogShell(title: 'Naslov', body: Text('Tijelo')),
     );
 
-    final dialog = tester.widget<Dialog>(find.byType(Dialog));
-    final shape = dialog.shape! as RoundedRectangleBorder;
+    final panel = tester.widget<Material>(
+      find
+          .descendant(of: find.byType(Dialog), matching: find.byType(Material))
+          .first,
+    );
+    final shape = panel.shape! as RoundedRectangleBorder;
 
     expect(shape.borderRadius, BorderRadius.circular(AppRadius.lg));
+    expect(shape.side.color, AppTheme.outline);
   });
 
   testWidgets('default header uses the spacing tokens', (tester) async {

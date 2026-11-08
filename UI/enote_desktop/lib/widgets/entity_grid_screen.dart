@@ -341,12 +341,15 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          title,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(color: AppTheme.textPrimary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Tooltip(
+                          message: title,
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(color: AppTheme.textPrimary),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (subtitle != null && subtitle.isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.xs),

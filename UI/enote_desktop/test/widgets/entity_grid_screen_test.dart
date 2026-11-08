@@ -1,9 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/widgets/entity_empty_state.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
@@ -32,6 +34,7 @@ Future<void> _pumpGrid(
     Provider<ApiClient>.value(
       value: apiClient,
       child: MaterialApp(
+        theme: desktopTheme,
         home: Scaffold(
           body: EntityGridScreen<String>(
             config: EntityGridConfig<String>(
@@ -567,5 +570,17 @@ void main() {
       expect(search.top, moreOrLessEquals(filter.top));
       expect(search.top, moreOrLessEquals(add.top));
     });
+  });
+
+  testWidgets('a card title that needs two lines is shown in full', (
+    WidgetTester tester,
+  ) async {
+    const title = 'Muzička radnja Banja Luka';
+    await _pumpGrid(tester, items: const [title]);
+
+    final paragraph = tester.renderObject<RenderParagraph>(find.text(title));
+
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(find.byTooltip(title), findsOneWidget);
   });
 }

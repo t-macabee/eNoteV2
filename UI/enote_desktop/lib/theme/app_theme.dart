@@ -42,7 +42,12 @@ TextTheme _desktopTextTheme(TextTheme base) {
   );
 }
 
+final TextTheme _textTheme = _desktopTextTheme(AppTheme.dark.textTheme);
+
 final ThemeData desktopTheme = AppTheme.dark.copyWith(
-  textTheme: _desktopTextTheme(AppTheme.dark.textTheme),
+  textTheme: _textTheme,
   primaryTextTheme: _desktopTextTheme(AppTheme.dark.primaryTextTheme),
+  dialogTheme: AppTheme.dark.dialogTheme.copyWith(
+    titleTextStyle: _textTheme.titleLarge,
+  ),
 );

@@ -182,7 +182,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         LabeledValue(label: 'Email', value: orDash(profile.email)),
         LabeledValue(label: 'Datum rođenja', value: _dateOrDash(p.dateOfBirth)),
-        LabeledValue(label: 'Upisan od', value: _dateOrDash(p.enrollmentDate)),
+        LabeledValue(
+          label: 'Datum upisa',
+          value: _dateOrDash(p.enrollmentDate),
+        ),
       ],
     );
   }

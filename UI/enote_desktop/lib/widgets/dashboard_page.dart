@@ -26,18 +26,21 @@ class DashboardPage extends StatelessWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(welcome, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: AppSpacing.xl),
-              Wrap(
-                spacing: AppSpacing.lg,
-                runSpacing: AppSpacing.lg,
-                children: cards,
-              ),
-            ],
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(welcome, style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: AppSpacing.xl),
+                Wrap(
+                  spacing: AppSpacing.lg,
+                  runSpacing: AppSpacing.lg,
+                  children: cards,
+                ),
+              ],
+            ),
           ),
         ),
       ),

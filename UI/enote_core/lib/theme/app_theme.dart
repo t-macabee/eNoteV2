@@ -130,6 +130,14 @@ class AppTheme {
         ),
       ),
       dividerTheme: const DividerThemeData(color: outline, thickness: 1),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceContainer,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: const BorderSide(color: outline),
+        ),
+        titleTextStyle: textTheme.titleLarge,
+      ),
       listTileTheme: const ListTileThemeData(
         iconColor: textSecondary,
         selectedColor: primary,
@@ -143,6 +151,8 @@ class AppTheme {
         ),
       ),
       dataTableTheme: const DataTableThemeData(
+        columnSpacing: AppSpacing.xl,
+        horizontalMargin: AppSpacing.lg,
         headingRowHeight: AppSize.tableRowHeight,
         dataRowMinHeight: AppSize.tableRowHeight,
         dataRowMaxHeight: AppSize.tableRowHeight,

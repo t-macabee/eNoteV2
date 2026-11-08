@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
-import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/inline_error_text.dart';
@@ -224,7 +223,7 @@ class _InstructorStudentDetailsDialogState
               label: 'Datum upisa',
               value: formatDateNullable(student.enrollmentDate),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.lg),
             MembershipSection(
               api: context.read<InstructorStudentProvider>(),
               studentId: student.id,
@@ -260,10 +259,15 @@ class _InstructorStudentDetailsDialogState
               )
             else
               ..._enrollments!.map(
-                (e) => DetailRow(
-                  icon: Icons.class_outlined,
-                  label: e.courseName,
-                  value: e.instructorName ?? '—',
+                (e) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.class_outlined),
+                  title: Text(e.courseName),
+                  subtitle: Text(
+                    orDash(e.instructorName),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: AppTheme.textSecondary),
+                  ),
                 ),
               ),
             if (_hasMoreEnrollments)

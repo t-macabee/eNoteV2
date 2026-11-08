@@ -61,10 +61,12 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
           ColumnSpec<AnnouncementDto>(
             label: 'Naslov',
             value: (item) => item.title,
+            maxWidth: AppSize.tableTextColumnMaxWidth,
           ),
           ColumnSpec<AnnouncementDto>(
             label: 'Sadržaj',
-            value: (item) => truncate(item.content, 80),
+            value: (item) => item.content,
+            maxWidth: AppSize.tableTextColumnMaxWidth,
           ),
           ColumnSpec<AnnouncementDto>(
             label: 'Datum objave',

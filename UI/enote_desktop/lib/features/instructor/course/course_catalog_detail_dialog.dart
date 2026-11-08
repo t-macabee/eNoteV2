@@ -35,16 +35,12 @@ class CourseCatalogDetailDialog extends StatelessWidget {
             DetailRow(
               icon: Icons.person_outline,
               label: 'Instruktor',
-              value:
-                  (course.instructorName != null &&
-                      course.instructorName!.isNotEmpty)
-                  ? course.instructorName!
-                  : '-',
+              value: orDash(course.instructorName),
             ),
             DetailRow(
               icon: Icons.payments_outlined,
               label: 'Mjesečna cijena',
-              value: course.price.toStringAsFixed(2),
+              value: formatKM(course.price),
             ),
             DetailRow(
               icon: Icons.event_outlined,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/widgets/workflow_actions.dart';
 
 const _approve = WorkflowAction<RentalTrigger>(
@@ -61,7 +62,7 @@ void main() {
       },
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odbij'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odbij'));
     await tester.pumpAndSettle();
 
     expect(find.text('Razlog *'), findsOneWidget);
@@ -84,7 +85,7 @@ void main() {
       onRun: (trigger, {note}) async => calls++,
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odobri'));
     await tester.pumpAndSettle();
 
     expect(find.text('Odobriti zahtjev?'), findsOneWidget);
@@ -104,7 +105,7 @@ void main() {
       onRun: (trigger, {note}) async => calls++,
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Preuzeto'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Preuzeto'));
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
@@ -118,7 +119,7 @@ void main() {
       onRun: (trigger, {note}) async {},
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odobri'));
     await tester.pumpAndSettle();
 
     expect(
@@ -144,7 +145,7 @@ void main() {
       onRun: (trigger, {note}) async {},
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Odobri'));
     await tester.pumpAndSettle();
 
     expect(
@@ -166,12 +167,12 @@ void main() {
       onRun: (trigger, {note}) => completer.future,
     );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Preuzeto'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Preuzeto'));
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    for (final button in tester.widgetList<ElevatedButton>(
-      find.byType(ElevatedButton),
+    for (final button in tester.widgetList<OutlinedButton>(
+      find.byType(OutlinedButton),
     )) {
       expect(button.onPressed, isNull);
     }
@@ -182,8 +183,8 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(
       tester
-          .widget<ElevatedButton>(
-            find.widgetWithText(ElevatedButton, 'Preuzeto'),
+          .widget<OutlinedButton>(
+            find.widgetWithText(OutlinedButton, 'Preuzeto'),
           )
           .onPressed,
       isNotNull,
@@ -199,6 +200,34 @@ void main() {
     );
 
     expect(find.byType(TextButton), findsNWidgets(2));
-    expect(find.byType(ElevatedButton), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
   });
+
+  testWidgets(
+    'a regular action with a tone is an outlined button in the tone colour',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: desktopTheme,
+          home: Scaffold(
+            body: Center(
+              child: WorkflowActionButtons<RentalTrigger>(
+                actions: const [_reject],
+                onRun: (trigger, {note}) async {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final button = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Odbij'),
+      );
+      final style = button.style!;
+
+      expect(style.foregroundColor?.resolve({}), AppTheme.error);
+      expect(style.side?.resolve({})?.color, AppTheme.error);
+      expect(find.byType(ElevatedButton), findsNothing);
+    },
+  );
 }

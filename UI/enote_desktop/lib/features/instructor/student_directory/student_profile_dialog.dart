@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
+import '../../../widgets/table_text_cell.dart';
 import 'student_directory_provider.dart';
 
 class StudentProfileDialog extends StatefulWidget {
@@ -51,7 +52,7 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
 
     return DialogShell(
       title: 'Profil studenta',
-      width: DialogShellWidth.md,
+      width: DialogShellWidth.lg,
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.xl,
@@ -98,8 +99,8 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
                       ?.copyWith(color: AppTheme.textSecondary),
                 )
               else
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
+                SizedBox(
+                  width: double.infinity,
                   child: DataTable(
                     columns: const [
                       DataColumn(label: Text('Kurs')),
@@ -112,8 +113,18 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
                       for (final course in profile.courses)
                         DataRow(
                           cells: [
-                            DataCell(Text(course.courseName)),
-                            DataCell(Text(orDash(course.instructorName))),
+                            DataCell(
+                              TableTextCell(
+                                text: course.courseName,
+                                maxWidth: AppSize.tableTextColumnMaxWidth,
+                              ),
+                            ),
+                            DataCell(
+                              TableTextCell(
+                                text: orDash(course.instructorName),
+                                maxWidth: AppSize.tableNameColumnMaxWidth,
+                              ),
+                            ),
                             DataCell(
                               Text(
                                 enrollmentStatusLabel(course.enrollmentStatus),

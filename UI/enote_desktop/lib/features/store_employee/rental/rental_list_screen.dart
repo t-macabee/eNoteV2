@@ -133,7 +133,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ColumnSpec<InstrumentRentalDto>(
             label: 'Instrument',
             value: (item) => item.instrumentModel,
-            maxWidth: 200,
+            maxWidth: AppSize.tableTextColumnMaxWidth,
             cellBuilder: (context, item) => Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -158,7 +158,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ColumnSpec<InstrumentRentalDto>(
             label: 'Student',
             value: (item) => item.studentName ?? 'Nepoznat korisnik',
-            maxWidth: 180,
+            maxWidth: AppSize.tableNameColumnMaxWidth,
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Status',

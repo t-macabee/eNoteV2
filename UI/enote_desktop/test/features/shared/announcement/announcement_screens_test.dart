@@ -313,4 +313,64 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'long announcement titles and contents keep every column on screen at the content width of the start window',
+    (tester) async {
+      tester.view.physicalSize = const Size(1024, 720);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final longTitle = 'Obavijest ${'o rasporedu ' * 10}'.trim();
+      final longContent = 'Sadržaj ${'sa detaljima ' * 30}'.trim();
+      final client = ScriptedClient((request) {
+        if (request.url.toString().contains('announcements')) {
+          return jsonResponse({
+            'items': [
+              {
+                'id': 1,
+                'title': longTitle,
+                'content': longContent,
+                'publishedAt': '2026-11-07T10:00:00Z',
+              },
+            ],
+            'page': 1,
+            'pageSize': 20,
+            'totalCount': 1,
+          }, 200);
+        }
+        return jsonResponse('{}', 404);
+      });
+      final authState = AuthState(
+        baseUrl: 'http://localhost/',
+        httpClient: client,
+        tokenReader: () => fakeJwt(username: 'test', role: 'Instructor'),
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost/',
+        authState: authState,
+        httpClient: client,
+      );
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [Provider<ApiClient>.value(value: apiClient)],
+          child: MaterialApp(
+            home: AnnouncementListScreen(
+              provider: AnnouncementProvider(apiClient: apiClient, courseId: 1),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getRect(find.text('Datum objave')).right,
+        lessThanOrEqualTo(1024),
+      );
+      expect(find.byTooltip(longTitle), findsOneWidget);
+      expect(find.byTooltip(longContent), findsOneWidget);
+    },
+  );
 }

@@ -2,6 +2,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../address/address_list_screen.dart';
 import '../city/city_list_screen.dart';
@@ -16,9 +17,11 @@ class ReferenceDataDialog extends StatelessWidget {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 960, maxHeight: 720),
+        constraints: BoxConstraints(
+          maxWidth: DialogShellWidth.xl.value,
+          maxHeight: 720,
+        ),
         child: DefaultTabController(
           length: 4,
           child: Column(

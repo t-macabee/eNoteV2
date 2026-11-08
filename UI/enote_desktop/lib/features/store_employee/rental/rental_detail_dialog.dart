@@ -128,7 +128,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget build(BuildContext context) {
     return DialogShell(
       title: _rental != null
-          ? 'Iznajmljivanje - ${_rental!.instrumentModel}'
+          ? 'Iznajmljivanje — ${_rental!.instrumentModel}'
           : 'Iznajmljivanje',
       width: DialogShellWidth.lg,
       body: _isLoading
@@ -143,7 +143,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Greška pri učitavanju.'),
+                    const InlineErrorText('Greška pri učitavanju.'),
                     const SizedBox(height: AppSpacing.lg),
                     ElevatedButton(
                       onPressed: _load,
@@ -162,11 +162,14 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          StatusChip(
-            label: rentalStatusLabel(rental.rentalStatus),
-            tone: rentalStatusTone(rental.rentalStatus),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: StatusChip(
+              label: rentalStatusLabel(rental.rentalStatus),
+              tone: rentalStatusTone(rental.rentalStatus),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           _buildInstrumentBlock(rental),
@@ -330,21 +333,21 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Napomene', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.sm),
             if (requestNote != null && requestNote.isNotEmpty)
               _noteText('Zahtjev (student)', requestNote),
             if (decisionNote != null && decisionNote.isNotEmpty)
               _noteText('Odgovor', decisionNote),
             if (note != null && note.isNotEmpty)
-              _noteText(
-                isCanceled ? 'Razlog otkazivanja' : 'Napomena',
-                note,
-              ),
+              _noteText(isCanceled ? 'Razlog otkazivanja' : 'Napomena', note),
             if ((requestNote == null || requestNote.isEmpty) &&
                 (decisionNote == null || decisionNote.isEmpty) &&
                 (note == null || note.isEmpty))
-              const Text(
+              Text(
                 'Nema napomena.',
-                style: TextStyle(color: AppTheme.textSecondary),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppTheme.textSecondary),
               ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/widgets/dialog_shell.dart';
 import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 import 'package:enote_desktop/widgets/entity_form_sections.dart';
 import 'package:flutter/material.dart';
@@ -176,7 +177,7 @@ void main() {
 
     expect(
       tester.getSize(find.byType(SingleChildScrollView)).width,
-      AppSize.dialogContentWidth,
+      DialogShellWidth.md.value - 2 * AppSpacing.xl,
     );
   });
 }

@@ -102,11 +102,14 @@ class _WorkflowActionButtonsState<T> extends State<WorkflowActionButtons<T>> {
       runSpacing: AppSpacing.sm,
       children: [
         for (final action in widget.actions)
-          ElevatedButton.icon(
+          OutlinedButton.icon(
             onPressed: _busyTrigger == null ? () => _run(action) : null,
-            style: ElevatedButton.styleFrom(
-              foregroundColor: action.tone?.color,
-            ),
+            style: action.tone == null
+                ? null
+                : OutlinedButton.styleFrom(
+                    foregroundColor: action.tone!.color,
+                    side: BorderSide(color: action.tone!.color),
+                  ),
             icon: _busyTrigger == action.trigger
                 ? _spinner()
                 : Icon(action.icon),
