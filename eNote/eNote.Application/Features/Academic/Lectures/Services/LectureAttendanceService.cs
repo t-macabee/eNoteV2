@@ -91,13 +91,13 @@ public sealed class LectureAttendanceService(
             search,
             async (attendances, ct) =>
             {
-                var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!), ct);
+                var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student), ct);
 
                 return attendances.Select(a => new AttendanceDto
                 {
                     Id = a.Id,
                     StudentId = a.StudentId,
-                    StudentAppUserId = a.Student!.AppUserId,
+                    StudentAppUserId = a.Student.AppUserId,
                     StudentName = names.GetValueOrDefault(a.StudentId, Messages.UnknownUserName),
                     AttendanceStatus = a.AttendanceStatus
                 });
@@ -167,7 +167,7 @@ public sealed class LectureAttendanceService(
             throw new ConflictException(Messages.AttendanceAlreadyMarked);
         }
 
-        var student = attendance.Student ?? await context.Set<Student>()
+        var student = await context.Set<Student>()
             .AsNoTracking()
             .FirstAsync(x => x.Id == attendance.StudentId, cancellationToken);
 

@@ -73,7 +73,10 @@ void main() {
     await tester.pump();
     await _save(tester);
 
-    expect(find.text('Unesite važeću email adresu.'), findsOneWidget);
+    expect(
+      find.text('Unesite e-mail adresu u obliku ime@domena.ba.'),
+      findsOneWidget,
+    );
     expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
   });
 

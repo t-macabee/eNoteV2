@@ -188,6 +188,19 @@ Brisanje nije fizičko: uplate, iznajmljivanja, ocjene i prisustvo ostaju, a li�
 podaci se anonimiziraju i sve sesije se prekidaju. Nalog se ne briše dok student
 ima neplaćen završen najam, najam u toku ili uplatu koja se obrađuje.
 
+## API rute
+
+Katalog instrumenata, proizvođači, otkazivanje upisa i notifikacije koriste ove
+rute. Plaćanja i izvještaji imaju svoje tabele dalje u dokumentu.
+
+| Endpoint | Uloga |
+|---|---|
+| `GET /api/v1/admin/manufacturers`, `POST /api/v1/admin/manufacturers`, `PUT/DELETE /api/v1/admin/manufacturers/{id}` | Administrator |
+| `GET /api/v1/shop/manufacturers` | StoreEmployee |
+| `POST /api/v1/instructor/courses/{courseId}/enrollments/{enrollmentId}/cancel` | Instructor |
+| `GET /api/v1/instruments`, `GET /api/v1/instruments/{id}` | Sve prijavljene uloge |
+| `GET /api/v1/notifications`, `GET /api/v1/notifications/unread-count`, `PATCH /api/v1/notifications/{id}/read`, `PATCH /api/v1/notifications/read-all` | Sve prijavljene uloge |
+
 ## Plaćanja
 
 Najam instrumenta traje 30 dana od preuzimanja (`DueAt = PickedUpAt + 30 dana`).

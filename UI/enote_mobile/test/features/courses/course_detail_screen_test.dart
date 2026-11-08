@@ -137,6 +137,8 @@ ScriptedClient _client({
         );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
+      case 'GET /api/v1/student/lectures/11':
+        body = _lectureJson;
       case 'POST /api/v1/student/courses/2/enroll':
         status = enrollStatus;
         body = {'enrollmentStatus': enrollStatus};

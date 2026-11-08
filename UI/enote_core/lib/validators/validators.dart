@@ -2,7 +2,7 @@ class Validators {
   static String? Function(String?) required(String? fieldName) =>
       (String? value) {
         if (value == null || value.trim().isEmpty) {
-          return '${fieldName ?? 'Field'} je obavezan.';
+          return '${fieldName ?? 'Polje'} je obavezan.';
         }
         return null;
       };
@@ -33,7 +33,7 @@ class Validators {
       return 'Email adresa je obavezna.';
     }
     if (!_emailRegex.hasMatch(value.trim())) {
-      return 'Unesite važeću email adresu.';
+      return 'Unesite e-mail adresu u obliku ime@domena.ba.';
     }
     return null;
   }

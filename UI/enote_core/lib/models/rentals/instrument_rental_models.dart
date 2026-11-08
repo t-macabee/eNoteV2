@@ -100,7 +100,7 @@ class InstrumentRentalDto {
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
       decisionNote: json['decisionNote'] as String?,
-      requestedAt: parseDate(json['requestedAt']) ?? DateTime.now(),
+      requestedAt: parseRequiredDate(json, 'requestedAt'),
       approvedAt: parseDate(json['approvedAt']),
       rejectedAt: parseDate(json['rejectedAt']),
       canceledAt: parseDate(json['canceledAt']),

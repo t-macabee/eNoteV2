@@ -38,7 +38,7 @@ class AnnouncementDto {
       scope: AnnouncementScope.fromJson(json['scope'] as String?),
       courseName: json['courseName'] as String?,
       storeName: json['storeName'] as String?,
-      publishedAt: parseDate(json['publishedAt']) ?? DateTime.now(),
+      publishedAt: parseRequiredDate(json, 'publishedAt'),
     );
   }
 
@@ -101,7 +101,7 @@ class NotificationDto {
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
+      createdAt: parseRequiredDate(json, 'createdAt'),
     );
   }
 
@@ -184,7 +184,7 @@ class EventDto {
       id: json['id'] as int? ?? 0,
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      startsAt: parseDate(json['startsAt']) ?? DateTime.now(),
+      startsAt: parseRequiredDate(json, 'startsAt'),
       endsAt: parseDate(json['endsAt']),
       addressId: json['addressId'] as int?,
       addressStreet: json['addressStreet'] as String?,
@@ -260,7 +260,7 @@ class NotificationPushDto {
       announcementId: json['announcementId'] as int?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
+      createdAt: parseRequiredDate(json, 'createdAt'),
     );
   }
 }

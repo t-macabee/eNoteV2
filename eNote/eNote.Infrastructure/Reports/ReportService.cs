@@ -150,7 +150,7 @@ internal sealed class ReportService(
             .ShownForLecture()
             .ToListAsync(cancellationToken);
 
-        var nameMap = await displayNames.GetStudentDisplayNamesAsync(attended.Select(a => a.Student!), cancellationToken);
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(attended.Select(a => a.Student), cancellationToken);
 
         return [.. attended
             .Select(a => new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus))

@@ -3,6 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:enote_core/validators/validators.dart';
 
 void main() {
+  group('required', () {
+    test('fallback field name is Bosnian', () {
+      expect(Validators.required(null)(null), equals('Polje je obavezan.'));
+    });
+  });
+
   group('confirmPassword live getter', () {
     test('F4-09: reads the current password on every call, not a snapshot', () {
       var current = 'Test1234!';
@@ -54,24 +60,34 @@ void main() {
     test('rejects an address without a domain dot', () {
       expect(
         Validators.email('student@example'),
-        equals('Unesite važeću email adresu.'),
+        equals('Unesite e-mail adresu u obliku ime@domena.ba.'),
       );
     });
 
     test('rejects an empty top-level domain', () {
-      expect(Validators.email('a@b.'), equals('Unesite važeću email adresu.'));
+      expect(
+        Validators.email('a@b.'),
+        equals('Unesite e-mail adresu u obliku ime@domena.ba.'),
+      );
     });
 
     test('rejects whitespace inside the address', () {
       expect(
         Validators.email('a b@c.d'),
-        equals('Unesite važeću email adresu.'),
+        equals('Unesite e-mail adresu u obliku ime@domena.ba.'),
       );
     });
 
     test('rejects empty input as required', () {
       expect(Validators.email(''), equals('Email adresa je obavezna.'));
       expect(Validators.email(null), equals('Email adresa je obavezna.'));
+    });
+
+    test('states the expected e-mail shape', () {
+      expect(
+        Validators.email('ana@'),
+        equals('Unesite e-mail adresu u obliku ime@domena.ba.'),
+      );
     });
   });
 

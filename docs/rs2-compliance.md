@@ -30,6 +30,9 @@ imaju oblik grad, ulica, broj, a instrumenti nemaju kategorije odvojene od vrste
 Prazne tabele bez upita, filtera ili izvještaja koji ih koriste bile bi
 normalizacija bez svrhe.
 
+`DataProtectionKeys` je tabela za ključeve ASP.NET Core i nema vezu sa domenom;
+svaka druga tabela je povezana stranim ključem.
+
 ## Rang lista
 
 Rang lista kursa je ograničena lista: API vraća 15 najboljih studenata
@@ -125,6 +128,14 @@ administrator.
 ## Slike na formama
 
 Sličice su 40 piksela, što je oko 5 posto širine forme.
+
+## Anonimni endpointi
+
+`auth/forgot-password` i `auth/reset-password` su anonimni jer korisnik koji je
+zaboravio lozinku ne može da se prijavi. Stripe webhook
+(`payments/stripe/webhook`) je anoniman jer Stripe ne šalje JWT; umjesto tokena
+API provjerava potpis događaja. Sva tri endpointa su zaštićena: auth rute imaju
+rate limiting, a webhook potpis.
 
 ## Lozinke seed naloga
 

@@ -50,7 +50,7 @@ class LectureDto {
       isCancelled: json['isCancelled'] as bool? ?? false,
       cancellationReason: json['cancellationReason'] as String?,
       cancelledAt: parseDate(json['cancelledAt']),
-      lectureTime: parseDate(json['lectureTime']) ?? DateTime.now(),
+      lectureTime: parseRequiredDate(json, 'lectureTime'),
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
       attendeeCount: json['attendeeCount'] as int? ?? 0,

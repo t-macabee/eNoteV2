@@ -17,6 +17,7 @@ public static class Messages
     public const string UsernameTaken = "Korisničko ime je već zauzeto.";
     public const string UsernameInvalidCharacters = "Korisničko ime smije sadržavati samo slova, cifre i znakove - . _ @ +";
     public const string EmailTaken = "Email adresa je već registrovana.";
+    public const string EmailFormat = "Unesite e-mail adresu u obliku ime@domena.ba.";
     public const string TokenRevoked = "Token je opozvan.";
     public const string TokenInvalid = "Token više nije važeći.";
     public const string InvalidUserClaim = "Autentificirani korisnik nema važeći identifikator.";

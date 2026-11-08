@@ -21,7 +21,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
             || l.CreatedById == u.Id
             || l.UpdatedById == u.Id
             || (l.StudentId.HasValue && l.Student!.AppUserId == u.Id))
-        || context.Set<Attendance>().Any(a => a.Student!.AppUserId == u.Id)
+        || context.Set<Attendance>().Any(a => a.Student.AppUserId == u.Id)
         || context.Set<AssignmentSubmission>().Any(s => s.Student.AppUserId == u.Id)
         || context.Set<MembershipPayment>().Any(m => m.Student.AppUserId == u.Id)
         || context.Set<Course>().Any(c =>

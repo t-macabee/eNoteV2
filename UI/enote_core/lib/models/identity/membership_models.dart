@@ -26,9 +26,9 @@ class MembershipPaymentDto {
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      paidAt: parseDate(json['paidAt']) ?? DateTime.now(),
-      periodStart: parseDate(json['periodStart']) ?? DateTime.now(),
-      periodEnd: parseDate(json['periodEnd']) ?? DateTime.now(),
+      paidAt: parseRequiredDate(json, 'paidAt'),
+      periodStart: parseRequiredDate(json, 'periodStart'),
+      periodEnd: parseRequiredDate(json, 'periodEnd'),
       receiptNumber: json['receiptNumber'] as String? ?? '',
       note: json['note'] as String?,
     );

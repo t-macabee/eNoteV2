@@ -179,7 +179,10 @@ void main() {
     await tester.enterText(emailField, 'not-an-email');
     await _tapSave(tester);
 
-    expect(find.text('Unesite važeću email adresu.'), findsOneWidget);
+    expect(
+      find.text('Unesite e-mail adresu u obliku ime@domena.ba.'),
+      findsOneWidget,
+    );
     final puts = harness.client.requests.where(
       (r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me',
     );

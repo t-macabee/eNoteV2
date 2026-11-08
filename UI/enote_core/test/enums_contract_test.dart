@@ -175,6 +175,7 @@ void main() {
   group('DTO tolerant enum deserialization', () {
     test('LectureDto.fromJson parses string lectureStatus and preserves null attendance', () {
       final dto = LectureDto.fromJson({
+        'lectureTime': '2026-09-14T18:00:00',
         'lectureStatus': 'Held',
         'myAttendanceStatus': null,
       });
@@ -184,6 +185,7 @@ void main() {
 
     test('LectureDto.fromJson parses string attendance status', () {
       final dto = LectureDto.fromJson({
+        'lectureTime': '2026-09-14T18:00:00',
         'lectureStatus': 'Scheduled',
         'myAttendanceStatus': 'Present',
       });
@@ -197,7 +199,10 @@ void main() {
     });
 
     test('InstrumentRentalDto.fromJson parses string rentalStatus', () {
-      final dto = InstrumentRentalDto.fromJson({'rentalStatus': 'Completed'});
+      final dto = InstrumentRentalDto.fromJson({
+        'rentalStatus': 'Completed',
+        'requestedAt': '2026-09-14T18:00:00',
+      });
       expect(dto.rentalStatus, InstrumentRentalStatus.completed);
     });
   });

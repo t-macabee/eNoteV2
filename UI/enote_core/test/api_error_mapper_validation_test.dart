@@ -25,12 +25,12 @@ void main() {
         'status': 400,
         'errors': {
           'Username': ['Korisničko ime je obavezno.', 'Druga greška.'],
-          'Email': ['Unesite važeću email adresu.'],
+          'Email': ['Unesite e-mail adresu u obliku ime@domena.ba.'],
         },
       });
       expect(
         ApiErrorMapper.mapError(400, body),
-        'Korisničko ime je obavezno.\nDruga greška.\nUnesite važeću email adresu.',
+        'Korisničko ime je obavezno.\nDruga greška.\nUnesite e-mail adresu u obliku ime@domena.ba.',
       );
     });
 

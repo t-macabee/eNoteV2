@@ -110,3 +110,11 @@ DateTime? parseDate(dynamic value) {
   }
   return null;
 }
+
+DateTime parseRequiredDate(Map<String, dynamic> json, String field) {
+  final parsed = parseDate(json[field]);
+  if (parsed == null) {
+    throw FormatException('Polje "$field" nema ispravan datum.', json[field]);
+  }
+  return parsed;
+}

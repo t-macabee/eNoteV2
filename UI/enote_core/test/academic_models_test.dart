@@ -232,9 +232,45 @@ void main() {
     });
   });
 
+  group('LectureDto required lectureTime', () {
+    test('missing lectureTime throws a FormatException naming the field', () {
+      expect(
+        () => LectureDto.fromJson({'id': 1, 'name': 'n'}),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('lectureTime'),
+          ),
+        ),
+      );
+    });
+
+    test('invalid lectureTime throws a FormatException naming the field', () {
+      expect(
+        () => LectureDto.fromJson({
+          'id': 1,
+          'name': 'n',
+          'lectureTime': 'not-a-date',
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('lectureTime'),
+          ),
+        ),
+      );
+    });
+  });
+
   group('LectureDto.myAttendanceStatus', () {
     test('missing key defaults to null', () {
-      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
+      });
       expect(dto.myAttendanceStatus, isNull);
     });
 
@@ -242,6 +278,7 @@ void main() {
       final dto = LectureDto.fromJson({
         'id': 1,
         'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
         'myAttendanceStatus': null,
       });
       expect(dto.myAttendanceStatus, isNull);
@@ -251,6 +288,7 @@ void main() {
       final dto = LectureDto.fromJson({
         'id': 1,
         'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
         'myAttendanceStatus': 'Present',
       });
       expect(dto.myAttendanceStatus, AttendanceStatus.present);
@@ -259,7 +297,11 @@ void main() {
 
   group('LectureDto cancellation fields', () {
     test('missing keys default to null', () {
-      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
+      });
       expect(dto.cancellationReason, isNull);
       expect(dto.cancelledAt, isNull);
     });
@@ -268,6 +310,7 @@ void main() {
       final dto = LectureDto.fromJson({
         'id': 1,
         'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
         'lectureStatus': 'Cancelled',
         'isCancelled': true,
         'cancellationReason': 'Instrument je pokvaren',
@@ -283,6 +326,7 @@ void main() {
       final dto = LectureDto.fromJson({
         'id': 1,
         'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
         'lectureStatus': 'Cancelled',
         'isCancelled': true,
         'cancellationReason': 'Instrument je pokvaren',
@@ -298,7 +342,11 @@ void main() {
 
   group('LectureDto individual fields', () {
     test('missing keys default to a group lecture', () {
-      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
+      });
 
       expect(dto.studentId, isNull);
       expect(dto.studentName, isNull);
@@ -309,6 +357,7 @@ void main() {
       final dto = LectureDto.fromJson({
         'id': 1,
         'name': 'n',
+        'lectureTime': '2026-09-14T18:00:00',
         'studentId': 7,
         'studentName': 'Amar Hodžić',
       });

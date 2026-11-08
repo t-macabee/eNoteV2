@@ -25,7 +25,7 @@ class AssignmentDto {
       lectureId: json['lectureId'] as int? ?? 0,
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      dueAt: parseDate(json['dueAt']) ?? DateTime.now(),
+      dueAt: parseRequiredDate(json, 'dueAt'),
       mySubmittedAt: parseDate(json['mySubmittedAt']),
       myGrade: json['myGrade'] as int?,
     );
