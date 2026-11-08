@@ -1,0 +1,31 @@
+name: windows-build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: UI/enote_desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.9
+      - run: flutter clean
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath build/windows/x64/runner/Release/enote_desktop.exe -PassThru
+          Start-Sleep -Seconds 15
+          if ($p.HasExited) { exit 1 }
+          Stop-Process -Id $p.Id
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: UI/enote_desktop/build/windows/x64/runner/Release
