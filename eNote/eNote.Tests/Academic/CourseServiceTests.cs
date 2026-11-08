@@ -1136,7 +1136,7 @@ public sealed class CourseServiceTests
 
         Assert.Single(gateway.CancelCalls);
         Assert.Equal("pi_open", gateway.CancelCalls[0].PaymentIntentId);
-        var payment = await harness.Context.Set<CoursePayment>().AsNoTracking().SingleAsync();
+        var payment = await harness.Context.Set<CoursePayment>().AsNoTracking().IgnoreQueryFilters().SingleAsync();
         Assert.Equal(PaymentStatus.Canceled, payment.Status);
         var course = await harness.Context.Set<Course>().AsNoTracking().IgnoreQueryFilters().SingleAsync(c => c.Id == harness.Course.Id);
         Assert.False(course.IsActive);

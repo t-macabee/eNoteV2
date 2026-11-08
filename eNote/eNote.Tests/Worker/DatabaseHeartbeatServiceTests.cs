@@ -1,6 +1,8 @@
 using eNote.Worker.Health;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Worker;
@@ -48,6 +50,61 @@ public sealed class DatabaseHeartbeatServiceTests
         }
     }
 
+    [Fact]
+    public async Task ExecuteAsync_RunsFirstCheck_OnlyAfterEveryHostedServiceHasStarted()
+    {
+        var order = new List<string>();
+        var healthChecks = new RecordingHealthCheckService(order);
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<HealthCheckService>(healthChecks);
+                services.AddHostedService<DatabaseHeartbeatService>();
+                services.AddHostedService(_ => new SlowStartService(order));
+            })
+            .Build();
+
+        await host.StartAsync();
+        await healthChecks.FirstCheck.WaitAsync(TimeSpan.FromSeconds(5));
+        await host.StopAsync();
+
+        Assert.Equal(["slow-started", "health-check"], order.Take(2));
+    }
+
+    private sealed class RecordingHealthCheckService(List<string> order) : HealthCheckService
+    {
+        private readonly TaskCompletionSource _first = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task FirstCheck => _first.Task;
+
+        public override Task<HealthReport> CheckHealthAsync(
+            Func<HealthCheckRegistration, bool>? predicate,
+            CancellationToken cancellationToken = default)
+        {
+            lock (order)
+            {
+                order.Add("health-check");
+            }
+
+            _first.TrySetResult();
+            return Task.FromResult(new HealthReport(new Dictionary<string, HealthReportEntry>(), TimeSpan.Zero));
+        }
+    }
+
+    private sealed class SlowStartService(List<string> order) : IHostedService
+    {
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await Task.Delay(300, cancellationToken);
+            lock (order)
+            {
+                order.Add("slow-started");
+            }
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
     private static DatabaseHeartbeatService CreateService(string? markerPath) =>
         new(null!,
             NullLogger<DatabaseHeartbeatService>.Instance,
@@ -55,7 +112,8 @@ public sealed class DatabaseHeartbeatServiceTests
                 .AddInMemoryCollection(markerPath is null
                     ? []
                     : new Dictionary<string, string?> { ["Worker:HealthMarkerPath"] = markerPath })
-                .Build());
+                .Build(),
+            null!);
 
     private static HealthReport ReportWith(HealthStatus status) =>
         new(new Dictionary<string, HealthReportEntry>

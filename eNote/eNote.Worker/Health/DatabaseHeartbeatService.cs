@@ -2,7 +2,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace eNote.Worker.Health;
 
-public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, ILogger<DatabaseHeartbeatService> logger, IConfiguration configuration) : BackgroundService
+public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, ILogger<DatabaseHeartbeatService> logger, IConfiguration configuration, IHostApplicationLifetime lifetime) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
@@ -11,6 +11,8 @@ public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, IL
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await WaitForApplicationStartedAsync(stoppingToken);
+
         using var timer = new PeriodicTimer(Interval);
 
         do
@@ -29,6 +31,13 @@ public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, IL
             await UpdateMarkerAsync(report, stoppingToken);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+
+    private async Task WaitForApplicationStartedAsync(CancellationToken stoppingToken)
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var registration = lifetime.ApplicationStarted.Register(() => started.TrySetResult());
+        await started.Task.WaitAsync(stoppingToken);
     }
 
     internal async Task UpdateMarkerAsync(HealthReport report, CancellationToken cancellationToken)

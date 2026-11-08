@@ -8,6 +8,8 @@ public sealed class CoursePaymentConfig : IEntityTypeConfiguration<CoursePayment
 {
     public void Configure(EntityTypeBuilder<CoursePayment> builder)
     {
+        builder.HasQueryFilter(x => x.Enrollment.Course.IsActive);
+
         builder.HasOne(x => x.Enrollment)
                .WithMany(e => e.Payments)
                .HasForeignKey(x => x.EnrollmentId)
