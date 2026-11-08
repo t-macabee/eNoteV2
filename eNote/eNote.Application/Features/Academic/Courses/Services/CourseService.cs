@@ -107,7 +107,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
         var now = clock.UtcNow;
 
-        var dto = await context.Set<Course>()
+        var row = await context.Set<Course>()
             .AsNoTracking()
             .Where(c => c.Id == id &&
                 (c.IsPublished || c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now))))
@@ -115,47 +115,52 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
-        dto.HasEnded = Course.HasEndedOn(dto.EndDate, now);
+        row.Dto.HasEnded = Course.HasEndedOn(row.Dto.EndDate, now);
+        row.Dto.InstructorName = await ResolveInstructorNameAsync(row.InstructorAppUserId, cancellationToken);
 
-        return dto;
+        return row.Dto;
     }
 
-    private static Expression<Func<Course, CourseDto>> ProjectForStudent(int studentId, DateTime now) =>
-        c => new CourseDto
+    private static Expression<Func<Course, CourseInstructorRow>> ProjectForStudent(int studentId, DateTime now) =>
+        c => new CourseInstructorRow
         {
-            Id = c.Id,
-            InstructorId = c.InstructorId,
-            Name = c.Name,
-            Description = c.Description,
-            IsPublished = c.IsPublished,
-            StartDate = c.StartDate,
-            EndDate = c.EndDate,
-            Price = c.Price,
-            EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
-            IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
-            HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
-            LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
-                && (l.StudentId == null || l.StudentId == studentId)),
-            EnrollmentId = c.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => (int?)e.Id)
-                .FirstOrDefault(),
-            PaidUntil = c.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => e.PaidUntil)
-                .FirstOrDefault(),
-            EnrollmentStatus = c.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
-                .FirstOrDefault(),
-            EnrollmentDecisionNote = c.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => e.DecisionNote)
-                .FirstOrDefault(),
-            EnrollmentCancellationReason = c.Enrollments
-                .Where(e => e.StudentId == studentId)
-                .Select(e => e.CancellationReason)
-                .FirstOrDefault()
+            Dto = new CourseDto
+            {
+                Id = c.Id,
+                InstructorId = c.InstructorId,
+                Name = c.Name,
+                Description = c.Description,
+                IsPublished = c.IsPublished,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Price = c.Price,
+                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+                IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+                HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
+                LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
+                    && (l.StudentId == null || l.StudentId == studentId)),
+                EnrollmentId = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => (int?)e.Id)
+                    .FirstOrDefault(),
+                PaidUntil = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => e.PaidUntil)
+                    .FirstOrDefault(),
+                EnrollmentStatus = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
+                    .FirstOrDefault(),
+                EnrollmentDecisionNote = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => e.DecisionNote)
+                    .FirstOrDefault(),
+                EnrollmentCancellationReason = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => e.CancellationReason)
+                    .FirstOrDefault()
+            },
+            InstructorAppUserId = c.Instructor.AppUserId
         };
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
@@ -240,13 +245,17 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(x => x.StartDate)
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ProjectForStudent(studentId, now))
             .ToListAsync(cancellationToken);
+
+        await FillInstructorNamesAsync(rows, cancellationToken);
+
+        var items = rows.Select(x => x.Dto).ToList();
 
         foreach (var item in items)
         {
@@ -284,12 +293,12 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(c => c.StartDate)
             .ThenBy(c => c.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new
+            .Select(c => new CourseInstructorRow
             {
                 Dto = new CourseDto
                 {
@@ -307,24 +316,29 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             })
             .ToListAsync(cancellationToken);
 
-        var appUserIds = items
+        await FillInstructorNamesAsync(rows, cancellationToken);
+
+        return new PagedResult<CourseDto>
+        {
+            Items = rows.Select(x => x.Dto).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
+    private async Task FillInstructorNamesAsync(IReadOnlyCollection<CourseInstructorRow> rows, CancellationToken cancellationToken)
+    {
+        var appUserIds = rows
             .Select(x => x.InstructorAppUserId)
             .Distinct();
 
         var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
 
-        foreach (var item in items)
+        foreach (var row in rows)
         {
-            item.Dto.InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(item.InstructorAppUserId));
+            row.Dto.InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(row.InstructorAppUserId));
         }
-
-        return new PagedResult<CourseDto>
-        {
-            Items = items.Select(x => x.Dto).ToList(),
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
     }
 
     public async Task<CourseDto> GetByIdForAdminAsync(int id, CancellationToken cancellationToken = default)
@@ -337,7 +351,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         var result = await query
             .AsNoTracking()
             .Where(c => c.Id == id)
-            .Select(c => new
+            .Select(c => new CourseInstructorRow
             {
                 Dto = new CourseDto
                 {
@@ -470,5 +484,11 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             expected: null,
             Messages.PaymentProcessing,
             cancellationToken);
+    }
+
+    private sealed record CourseInstructorRow
+    {
+        public CourseDto Dto { get; init; } = null!;
+        public int InstructorAppUserId { get; init; }
     }
 }

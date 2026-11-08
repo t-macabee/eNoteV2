@@ -102,6 +102,47 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForStudentAsync_ResolvesInstructorNamesWithSingleBulkLookup()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var identity = new RecordingUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith")
+        });
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor, identity: identity);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
+
+        Assert.Equal("Jane Doe", result.Items.Single(c => c.Name == "Guitar 101").InstructorName);
+        Assert.Equal("Alice Smith", result.Items.Single(c => c.Name == "Violin").InstructorName);
+        Assert.Equal(1, identity.BulkCallCount);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsInstructorName()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe")
+        });
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor, identity: identity);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.Equal("Jane Doe", dto.InstructorName);
+    }
+
+    [Fact]
     public async Task GetByIdForStudentAsync_Throws_WhenCourseUnpublishedAndNotEnrolled()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
