@@ -144,12 +144,13 @@ flutter run --dart-define=API_BASE_URL=http://localhost:5059/api/v1/
 Iz foldera `UI/enote_mobile`:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=<pk_test_...>
 ```
 
 `10.0.2.2` je adresa preko koje Android emulator vidi host mašinu. Putanja mora
 sadržavati `/api/v1/`. Stripe publishable ključ se prosljeđuje na isti način jer
-ga API ne izlaže kroz endpoint.
+ga API ne izlaže kroz endpoint. Aplikacija pri pokretanju odbija prazan ključ i
+primjer vrijednosti `pk_test_vas_kljuc`.
 
 ### Fizički uređaj
 
@@ -160,13 +161,13 @@ adresu računara (`ipconfig`) treba dodati u
 Zatim pokrenite, uz dozvoljen dolazni TCP 5059 kroz firewall:
 
 ```bash
-flutter run -d <device-id> --dart-define=API_BASE_URL=http://192.168.1.20:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+flutter run -d <device-id> --dart-define=API_BASE_URL=http://192.168.1.20:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=<pk_test_...>
 ```
 
 Release APK za predaju (defines su ugrađene, tuđa mašina ne treba okruženje):
 
 ```bash
-flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=<pk_test_...>
 ```
 
 Link za reset lozinke iz e-maila (Mailhog) se na emulatoru otvara kroz `adb`.
@@ -242,15 +243,30 @@ treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 
 Mobilna aplikacija plaća unutar aplikacije kroz Stripe PaymentSheet. Publishable
 ključ se ne izlaže kroz endpoint nego se prosljeđuje sa
-`--dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_…`. Za lokalno testiranje pokrenite
-`stripe listen --forward-to localhost:5059/api/v1/payments/stripe/webhook`; isti
-webhook pokriva i najam i školarinu.
+`--dart-define=STRIPE_PUBLISHABLE_KEY=<pk_test_...>`. Isti webhook pokriva i
+najam i školarinu.
 
-Za pregled rada treba [Stripe CLI](https://docs.stripe.com/stripe-cli). Prijava
-na Stripe nalog nije potrebna. Kada API radi, u drugom terminalu pokrenite:
+Za lokalno testiranje na emulatoru pratite ove korake:
+
+1. U Stripe Dashboard-u (Test mode / isti sandbox -> **Developers** -> **API keys**)
+   kopirajte oba ključa iz istog sandboxa: **Publishable key** (`pk_test_...`) i
+   **Secret key** (`sk_test_...`).
+2. U datoteku `.env` u korijenu repozitorija upišite tajni ključ u
+   `Stripe__SecretKey=<sk_test_...>` i pokrenite backend (`docker compose up --build`).
+3. Proslijedite publishable ključ iz istog sandboxa u mobilnu aplikaciju preko
+   `--dart-define=STRIPE_PUBLISHABLE_KEY=<pk_test_...>` (prazna vrijednost ili
+   primjer `pk_test_vas_kljuc` se odbija pri pokretanju aplikacije).
+4. Instalirajte [Stripe CLI](https://docs.stripe.com/stripe-cli) i, dok API
+   radi, u drugom terminalu pokrenite:
 
 ```bash
-stripe listen --api-key <Stripe__SecretKey iz .env> --forward-to localhost:5059/api/v1/payments/stripe/webhook
+stripe listen --forward-to http://localhost:5059/api/v1/payments/stripe/webhook
+```
+
+Ako niste prijavljeni u Stripe CLI, proslijedite isti tajni ključ iz `.env`:
+
+```bash
+stripe listen --api-key <Stripe__SecretKey iz .env> --forward-to http://localhost:5059/api/v1/payments/stripe/webhook
 ```
 
 Bez ovog koraka webhook ne stiže do API-ja i plaćanje ostaje neplaćeno.

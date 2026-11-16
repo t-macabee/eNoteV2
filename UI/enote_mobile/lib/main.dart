@@ -35,9 +35,8 @@ Future<void> main() async {
     authState: authState,
     httpClient: sessionHttp,
   );
-  if (kStripePublishableKey.isNotEmpty) {
-    Stripe.publishableKey = kStripePublishableKey;
-  }
+  validateStripePublishableKey(kStripePublishableKey);
+  Stripe.publishableKey = kStripePublishableKey;
   runApp(
     EnoteMobileApp(
       authState: authState,
